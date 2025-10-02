@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+    <id>websocket-extension</id>
+    <name>WebSocket Protocol Extension</name>
+    <version>1.0.0</version>
+    <author>Network Service Template</author>
+    <description>WebSocket protocol extension for real-time communication</description>
+    <priority>70</priority>
+    <start-priority>700</start-priority>
+    <main-class>com.dtc.ws.WebSocketExtension</main-class>
+    <dependencies>
+        <dependency>core</dependency>
+    </dependencies>
+    <configuration>
+        <property name="enabled" value="true" />
+        <property name="port" value="8081" />
+        <property name="protocol-name" value="WebSocket" />
+        <property name="max-frame-size" value="65536" />
+        <property name="ping-interval" value="30" />
+    </configuration>
+</extension>

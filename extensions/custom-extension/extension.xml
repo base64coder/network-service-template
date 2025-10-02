@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+    <id>custom-extension</id>
+    <name>Custom Protocol Extension</name>
+    <version>1.0.0</version>
+    <author>Network Service Template</author>
+    <description>Custom protocol extension with custom codecs</description>
+    <priority>100</priority>
+    <start-priority>1000</start-priority>
+    <main-class>com.dtc.custom.CustomProtocolExtension</main-class>
+    <dependencies>
+        <dependency>core</dependency>
+    </dependencies>
+    <configuration>
+        <property name="enabled" value="true" />
+        <property name="port" value="9999" />
+        <property name="protocol-name" value="CustomProtocol" />
+    </configuration>
+</extension>

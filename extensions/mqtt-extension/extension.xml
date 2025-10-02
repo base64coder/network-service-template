@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+    <id>mqtt-extension</id>
+    <name>MQTT Protocol Extension</name>
+    <version>1.0.0</version>
+    <author>Network Service Template</author>
+    <description>MQTT protocol extension for IoT messaging</description>
+    <priority>90</priority>
+    <start-priority>900</start-priority>
+    <main-class>com.dtc.mqtt.MqttExtension</main-class>
+    <dependencies>
+        <dependency>core</dependency>
+    </dependencies>
+    <configuration>
+        <property name="enabled" value="true" />
+        <property name="port" value="1883" />
+        <property name="protocol-name" value="MQTT" />
+        <property name="max-message-size" value="268435456" />
+        <property name="keep-alive" value="60" />
+    </configuration>
+</extension>

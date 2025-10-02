@@ -12,8 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 网络服务Guice启动器
- * 负责创建和配置依赖注入容器
+ * 网络服务Guice启动器 负责创建和配置依赖注入容器
  * 
  * @author Network Service Template
  */
@@ -55,7 +54,13 @@ public class GuiceContainerFactory {
                     /* 安全模块 */
                     new SecurityModule(),
                     /* 诊断模块 */
-                    new DiagnosticModule());
+                    new DiagnosticModule(),
+                    /* 序列化模块 */
+                    new SerializationModule(),
+                    /* 队列模块 */
+                    new QueueModule(),
+                    /* 编解码器模块 */
+                    new CodecModule());
 
             return Guice.createInjector(Stage.PRODUCTION, modules.build());
 
@@ -80,12 +85,8 @@ public class GuiceContainerFactory {
 
         final ImmutableList.Builder<AbstractModule> modules = ImmutableList.builder();
 
-        modules.add(
-                new SystemInformationModule(configuration),
-                new ConfigurationModule(configuration),
-                new LazySingletonModule(),
-                new LifecycleModule(),
-                new ExtensionModule());
+        modules.add(new SystemInformationModule(configuration), new ConfigurationModule(configuration),
+                new LazySingletonModule(), new LifecycleModule(), new ExtensionModule());
 
         return Guice.createInjector(Stage.PRODUCTION, modules.build());
     }
@@ -102,12 +103,8 @@ public class GuiceContainerFactory {
 
         final ImmutableList.Builder<AbstractModule> modules = ImmutableList.builder();
 
-        modules.add(
-                new SystemInformationModule(configuration),
-                new ConfigurationModule(configuration),
-                new LazySingletonModule(),
-                new LifecycleModule(),
-                new PersistenceModule());
+        modules.add(new SystemInformationModule(configuration), new ConfigurationModule(configuration),
+                new LazySingletonModule(), new LifecycleModule(), new PersistenceModule());
 
         return Guice.createInjector(Stage.PRODUCTION, modules.build());
     }

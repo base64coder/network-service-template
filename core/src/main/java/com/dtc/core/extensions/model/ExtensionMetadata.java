@@ -4,8 +4,7 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 
 /**
- * 扩展元数据
- * 包含扩展的基本信息
+ * 扩展元数据 包含扩展的基本信息
  * 
  * @author Network Service Template
  */
@@ -15,6 +14,8 @@ public class ExtensionMetadata {
     private final @NotNull String name;
     private final @NotNull String version;
     private final @Nullable String author;
+    private final @Nullable String description;
+    private final @Nullable String mainClass;
     private final int priority;
     private final int startPriority;
 
@@ -23,6 +24,8 @@ public class ExtensionMetadata {
         this.name = builder.name;
         this.version = builder.version;
         this.author = builder.author;
+        this.description = builder.description;
+        this.mainClass = builder.mainClass;
         this.priority = builder.priority;
         this.startPriority = builder.startPriority;
     }
@@ -47,6 +50,16 @@ public class ExtensionMetadata {
         return author;
     }
 
+    @Nullable
+    public String getDescription() {
+        return description;
+    }
+
+    @Nullable
+    public String getMainClass() {
+        return mainClass;
+    }
+
     public int getPriority() {
         return priority;
     }
@@ -64,6 +77,8 @@ public class ExtensionMetadata {
         private String name;
         private String version;
         private String author;
+        private String description;
+        private String mainClass;
         private int priority = 100;
         private int startPriority = 1000;
 
@@ -84,6 +99,16 @@ public class ExtensionMetadata {
 
         public Builder author(@Nullable String author) {
             this.author = author;
+            return this;
+        }
+
+        public Builder description(@Nullable String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder mainClass(@Nullable String mainClass) {
+            this.mainClass = mainClass;
             return this;
         }
 

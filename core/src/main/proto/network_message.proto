@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package com.dtc.core.protobuf;
+
+option java_package = "com.dtc.core.protobuf";
+option java_outer_classname = "NetworkMessageProtos";
+
+// 基础消息类型
+enum MessageType {
+    UNKNOWN = 0;
+    HEARTBEAT = 1;
+    DATA = 2;
+    ACK = 3;
+    ERROR = 4;
+    CLOSE = 5;
+}
+
+// 基础网络消息
+message NetworkMessage {
+    string message_id = 1;
+    MessageType type = 2;
+    int64 timestamp = 3;
+    string client_id = 4;
+    string server_id = 5;
+    oneof payload {
+        HeartbeatMessage heartbeat = 10;
+        DataMessage data = 11;
+        AckMessage ack = 12;
+        ErrorMessage error = 13;
+        CloseMessage close = 14;
+    }
+}
+
+// 心跳消息
+message HeartbeatMessage {
+    string client_id = 1;
+    int64 last_heartbeat = 2;
+    map<string, string> metadata = 3;
+}
+
+// 数据消息
+message DataMessage {
+    string topic = 1;
+    bytes content = 2;
+    string content_type = 3;
+    map<string, string> headers = 4;
+    int32 priority = 5;
+}
+
+// 确认消息
+message AckMessage {
+    string original_message_id = 1;
+    bool success = 2;
+    string error_message = 3;
+    int64 processing_time = 4;
+}
+
+// 错误消息
+message ErrorMessage {
+    int32 error_code = 1;
+    string error_message = 2;
+    string details = 3;
+    string stack_trace = 4;
+}
+
+// 关闭消息
+message CloseMessage {
+    int32 close_code = 1;
+    string close_reason = 2;
+    bool graceful = 3;
+}
+
+// 用户消息
+message UserMessage {
+    int64 user_id = 1;
+    string username = 2;
+    string email = 3;
+    repeated string roles = 4;
+    map<string, string> attributes = 5;
+    int64 created_at = 6;
+    int64 updated_at = 7;
+}
+
+// 订单消息
+message OrderMessage {
+    int64 order_id = 1;
+    int64 user_id = 2;
+    repeated OrderItem items = 3;
+    double total_amount = 4;
+    string status = 5;
+    int64 created_at = 6;
+    int64 updated_at = 7;
+}
+
+message OrderItem {
+    int64 product_id = 1;
+    string product_name = 2;
+    int32 quantity = 3;
+    double unit_price = 4;
+    double total_price = 5;
+}
+
+// 产品消息
+message ProductMessage {
+    int64 product_id = 1;
+    string name = 2;
+    string description = 3;
+    double price = 4;
+    string category = 5;
+    repeated string tags = 6;
+    map<string, string> properties = 7;
+    int64 created_at = 8;
+    int64 updated_at = 9;
+}

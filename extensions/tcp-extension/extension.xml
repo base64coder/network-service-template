@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+    <id>tcp-extension</id>
+    <name>TCP Protocol Extension</name>
+    <version>1.0.0</version>
+    <author>Network Service Template</author>
+    <description>TCP protocol extension for reliable communication</description>
+    <priority>80</priority>
+    <start-priority>800</start-priority>
+    <main-class>com.dtc.tcp.TcpExtension</main-class>
+    <dependencies>
+        <dependency>core</dependency>
+    </dependencies>
+    <configuration>
+        <property name="enabled" value="true" />
+        <property name="port" value="8080" />
+        <property name="protocol-name" value="TCP" />
+        <property name="keep-alive" value="true" />
+        <property name="tcp-nodelay" value="true" />
+    </configuration>
+</extension>

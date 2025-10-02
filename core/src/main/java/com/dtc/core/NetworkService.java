@@ -7,6 +7,8 @@ import com.dtc.core.bootstrap.ioc.GuiceContainerFactory;
 import com.dtc.core.config.ServerConfiguration;
 import com.dtc.core.extensions.ExtensionBootstrap;
 import com.dtc.core.extensions.ExtensionManager;
+import com.dtc.core.messaging.MessageProcessor;
+import com.dtc.core.messaging.NetworkMessageHandler;
 import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,8 @@ public class NetworkService {
     private final @NotNull ExtensionManager extensionManager;
     private final @NotNull Injector injector;
     private final @NotNull ServerStatusDisplay statusDisplay;
+    private final @NotNull MessageProcessor messageProcessor;
+    private final @NotNull NetworkMessageHandler messageHandler;
 
     private volatile boolean started = false;
     private volatile boolean stopped = false;
@@ -46,6 +50,8 @@ public class NetworkService {
         this.extensionBootstrap = injector.getInstance(ExtensionBootstrap.class);
         this.networkLauncher = injector.getInstance(NetworkServiceLauncher.class);
         this.extensionManager = injector.getInstance(ExtensionManager.class);
+        this.messageProcessor = injector.getInstance(MessageProcessor.class);
+        this.messageHandler = injector.getInstance(NetworkMessageHandler.class);
         this.statusDisplay = new ServerStatusDisplay(configuration);
     }
 
@@ -65,10 +71,13 @@ public class NetworkService {
         return extensionBootstrap.startExtensionSystem().thenCompose(v -> networkLauncher.startServer()).thenRun(() -> {
             started = true;
 
+            // 启动消息处理器
+            messageProcessor.start();
+
             // 启动状态显示器
             statusDisplay.startStatusDisplay();
 
-            log.info("🎉 Network Service 启动成功！");
+            log.info("🎉 Network Service 启动成功！消息处理系统已就绪");
         }).exceptionally(throwable -> {
             log.error("❌ Network Service 启动失败", throwable);
             throw new RuntimeException("Failed to start Network Service", throwable);
@@ -89,6 +98,9 @@ public class NetworkService {
         log.info("Stopping Network Service...");
 
         return networkLauncher.stopServer().thenCompose(v -> extensionBootstrap.stopExtensionSystem()).thenRun(() -> {
+            // 停止消息处理器
+            messageProcessor.shutdown();
+
             // 停止状态显示器
             statusDisplay.stopStatusDisplay();
             statusDisplay.displayShutdownInfo();
@@ -120,6 +132,26 @@ public class NetworkService {
     @NotNull
     public Injector getInjector() {
         return injector;
+    }
+
+    /**
+     * 获取消息处理器
+     * 
+     * @return 消息处理器
+     */
+    @NotNull
+    public NetworkMessageHandler getMessageHandler() {
+        return messageHandler;
+    }
+
+    /**
+     * 获取消息处理器统计信息
+     * 
+     * @return 统计信息
+     */
+    @NotNull
+    public NetworkMessageHandler.HandlerStats getMessageStats() {
+        return messageHandler.getStats();
     }
 
     /**
