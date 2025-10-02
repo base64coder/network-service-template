@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+    <id>http-extension</id>
+    <name>HTTP REST Protocol Extension</name>
+    <version>1.0.0</version>
+    <author>Network Service Template</author>
+    <description>HTTP REST protocol extension for handling HTTP requests and responses</description>
+    <priority>60</priority>
+    <start-priority>1000</start-priority>
+    <main-class>com.dtc.http.HttpExtension</main-class>
+    <dependencies>
+        <dependency>core</dependency>
+    </dependencies>
+    <configuration>
+        <port>8080</port>
+        <max-connections>1000</max-connections>
+        <request-timeout>30000</request-timeout>
+        <cors-enabled>true</cors-enabled>
+        <cors-origins>*</cors-origins>
+        <cors-methods>GET, POST, PUT, DELETE, OPTIONS</cors-methods>
+        <cors-headers>Content-Type, Authorization</cors-headers>
+        <rate-limit-enabled>true</rate-limit-enabled>
+        <rate-limit-max-requests>100</rate-limit-max-requests>
+        <rate-limit-window-ms>60000</rate-limit-window-ms>
+        <auth-enabled>true</auth-enabled>
+        <public-paths>/,/health,/status,/api/info</public-paths>
+        <admin-paths>/api/admin</admin-paths>
+    </configuration>
+</extension>
