@@ -36,18 +36,21 @@ network-service-template/
 
 ```mermaid
 graph TD
-    A[NetworkService] --> B[NetworkServiceBootstrap]
-    B --> C[GuiceBootstrap]
-    C --> D[Module Layer]
+    A[NetworkService] --> B[GuiceContainerFactory]
+    B --> C[Module Layer]
     
-    D --> E[SystemInformationModule]
-    D --> F[ConfigurationModule]
-    D --> G[NettyModule]
-    D --> H[ExtensionModule]
-    D --> I[MetricsModule]
-    D --> J[SecurityModule]
-    D --> K[DiagnosticModule]
-    D --> L[PersistenceModule]
+    C --> D[SystemInformationModule]
+    C --> E[ConfigurationModule]
+    C --> F[NettyModule]
+    C --> G[ExtensionModule]
+    C --> H[MetricsModule]
+    C --> I[SecurityModule]
+    C --> J[DiagnosticModule]
+    C --> K[PersistenceModule]
+    
+    A --> L[NetworkServiceLauncher]
+    A --> M[ExtensionBootstrap]
+    A --> N[ExtensionManager]
     
     H --> M[ExtensionBootstrap]
     M --> N[ExtensionLoader]
@@ -87,7 +90,7 @@ graph TD
 ```bash
 # 克隆项目
 git clone <repository-url>
-cd dtc-service-template
+cd network-service-template
 
 # 构建项目
 mvn clean package
@@ -97,7 +100,7 @@ mvn clean package
 
 ```bash
 # 进入发行包目录
-cd distribution/target/dtc-service-1.0.0
+cd distribution/target/network-service-1.0.0
 
 # 启动服务 (Linux/Mac)
 ./bin/start.sh
@@ -114,17 +117,23 @@ telnet localhost 1883
 
 # 检查WebSocket服务 (端口8080)
 curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" http://localhost:8080/
+
+# 测试TCP服务 (端口9999)
+echo "ping" | nc localhost 9999
+echo "hello" | nc localhost 9999
 ```
 
 ## 🏗️ 分层设计架构
 
-### GuiceBootstrap分层设计
+### 分层依赖注入设计
 
-基于HiveMQ的GuiceBootstrap设计，我们的模板采用了分层依赖注入架构：
+基于HiveMQ的GuiceBootstrap设计，我们的模板采用了清晰的分层依赖注入架构：
 
 #### 1. **核心启动器层**
-- `NetworkServiceBootstrap` - 网络服务启动器
-- `GuiceBootstrap` - Guice依赖注入启动器
+
+- `NetworkService` - 网络服务主类
+- `GuiceContainerFactory` - Guice容器工厂
+- `NetworkServiceLauncher` - 网络服务启动器
 - `ExtensionBootstrap` - 扩展系统启动器
 
 #### 2. **模块层**
@@ -156,6 +165,18 @@ curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Ve
 3. **🧪 可测试** - 每个模块可以独立测试
 4. **📊 可观测** - 完整的监控和诊断体系
 5. **🔒 安全性** - 统一的安全管理机制
+6. **🎯 清晰性** - 类名明确表达职责，避免混淆
+7. **🏗️ 分层性** - 依赖关系清晰，便于理解和维护
+
+### 类名设计原则
+
+为了避免同名类造成的混淆，我们采用了清晰的命名策略：
+
+- **`GuiceContainerFactory`** - Guice容器工厂，负责创建依赖注入容器
+- **`NetworkServiceLauncher`** - 网络服务启动器，负责启动网络服务组件
+- **`NetworkService`** - 网络服务主类，协调各个组件
+- **`ExtensionBootstrap`** - 扩展系统启动器，管理扩展生命周期
+- **`ExtensionManager`** - 扩展管理器，管理已加载的扩展
 
 ## 🔧 开发自定义扩展
 
@@ -167,7 +188,7 @@ mkdir extensions/my-protocol-extension
 cd extensions/my-protocol-extension
 
 # 创建Maven项目结构
-mkdir -p src/main/java/com/dtc/myprotocol
+mkdir -p src/main/java/com/network/myprotocol
 ```
 
 ### 2. 实现扩展接口
@@ -228,7 +249,7 @@ public class MyProtocolExtension implements ExtensionMain, ProtocolExtension {
 mvn clean package
 
 # 复制到扩展目录
-cp target/my-protocol-extension-1.0.0.jar /path/to/dtc-service/extensions/my-protocol-extension/
+cp target/my-protocol-extension-1.0.0.jar /path/to/network-service/extensions/my-protocol-extension/
 
 # 重启服务或热重载
 ```
