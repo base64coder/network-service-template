@@ -9,8 +9,7 @@ import javax.inject.Singleton;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Netty启动器
- * 负责启动和管理Netty服务器
+ * Netty启动器 负责启动和管理Netty服务器
  * 
  * @author Network Service Template
  */
@@ -42,11 +41,12 @@ public class NettyBootstrap {
 
         return CompletableFuture.runAsync(() -> {
             try {
+                log.info("🔧 初始化 Netty 服务器组件...");
                 nettyServer.start();
                 started = true;
-                log.info("Netty server started successfully");
+                log.info("✅ Netty 服务器启动成功 - 网络层已就绪");
             } catch (Exception e) {
-                log.error("Failed to start Netty server", e);
+                log.error("❌ Netty 服务器启动失败", e);
                 throw new RuntimeException("Failed to start Netty server", e);
             }
         });

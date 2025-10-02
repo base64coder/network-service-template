@@ -1,8 +1,8 @@
 package com.dtc.tcp;
 
 import com.dtc.api.ExtensionMain;
-import com.dtc.api.ProtocolExtension;
 import com.dtc.api.MessageHandler;
+import com.dtc.api.ProtocolExtension;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.api.parameter.ExtensionStartInput;

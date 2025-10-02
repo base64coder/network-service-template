@@ -1,8 +1,8 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
 import com.dtc.core.diagnostic.DiagnosticService;
 import com.dtc.core.diagnostic.HealthChecker;
+import com.google.inject.AbstractModule;
 
 /**
  * 诊断模块

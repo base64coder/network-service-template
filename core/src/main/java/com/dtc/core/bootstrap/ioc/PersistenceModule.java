@@ -1,8 +1,8 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
-import com.dtc.core.persistence.PersistenceManager;
 import com.dtc.core.persistence.DataStore;
+import com.dtc.core.persistence.PersistenceManager;
+import com.google.inject.AbstractModule;
 
 /**
  * 持久化模块

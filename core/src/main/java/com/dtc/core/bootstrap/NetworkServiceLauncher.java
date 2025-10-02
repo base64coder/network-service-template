@@ -1,20 +1,19 @@
 package com.dtc.core.bootstrap;
 
-import com.google.inject.Injector;
 import com.dtc.api.annotations.NotNull;
-import com.dtc.api.annotations.Nullable;
 import com.dtc.core.config.ServerConfiguration;
-import com.dtc.core.netty.NettyBootstrap;
 import com.dtc.core.extensions.ExtensionBootstrap;
 import com.dtc.core.extensions.ExtensionManager;
+import com.dtc.core.netty.NettyBootstrap;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 网络服务启动器
- * 负责启动网络服务的各个组件
+ * 网络服务启动器 负责启动网络服务的各个组件
  * 
  * @author Network Service Template
  */
@@ -27,20 +26,20 @@ public class NetworkServiceLauncher {
     private final @NotNull NettyBootstrap nettyBootstrap;
     private final @NotNull ExtensionBootstrap extensionBootstrap;
     private final @NotNull ExtensionManager extensionManager;
+    private final @NotNull StartupBanner startupBanner;
 
     private volatile boolean started = false;
 
-    public NetworkServiceLauncher(
-            @NotNull ServerConfiguration configuration,
-            @NotNull Injector injector,
-            @NotNull NettyBootstrap nettyBootstrap,
-            @NotNull ExtensionBootstrap extensionBootstrap,
-            @NotNull ExtensionManager extensionManager) {
+    @Inject
+    public NetworkServiceLauncher(@NotNull ServerConfiguration configuration, @NotNull Injector injector,
+            @NotNull NettyBootstrap nettyBootstrap, @NotNull ExtensionBootstrap extensionBootstrap,
+            @NotNull ExtensionManager extensionManager, @NotNull StartupBanner startupBanner) {
         this.configuration = configuration;
         this.injector = injector;
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.extensionManager = extensionManager;
+        this.startupBanner = startupBanner;
     }
 
     /**
@@ -58,16 +57,31 @@ public class NetworkServiceLauncher {
 
         return CompletableFuture.runAsync(() -> {
             try {
+                // 显示启动横幅
+                startupBanner.displayBanner();
+                startupBanner.displayServerInfo();
+                startupBanner.displaySystemInfo();
+                startupBanner.displayEnvironmentInfo();
+
+                log.info("🚀 开始启动网络服务组件...");
+
                 // 1. 启动Netty服务器
+                log.info("📡 启动 Netty 服务器...");
                 nettyBootstrap.startServer().join();
+                log.info("✅ Netty 服务器启动完成");
 
                 // 2. 启动扩展系统
+                log.info("🔌 启动扩展系统...");
                 extensionBootstrap.startExtensionSystem().join();
+                log.info("✅ 扩展系统启动完成");
 
                 started = true;
-                log.info("Network Service Server started successfully");
+
+                // 显示启动完成信息
+                startupBanner.displayStartupComplete();
+                log.info("🎉 网络服务启动成功！所有组件已就绪");
             } catch (Exception e) {
-                log.error("Failed to start Network Service Server", e);
+                log.error("❌ 网络服务启动失败", e);
                 throw new RuntimeException("Failed to start Network Service Server", e);
             }
         });

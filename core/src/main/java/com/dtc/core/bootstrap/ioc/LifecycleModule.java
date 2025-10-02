@@ -1,7 +1,7 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
 import com.dtc.core.lifecycle.LifecycleManager;
+import com.google.inject.AbstractModule;
 
 /**
  * 生命周期模块

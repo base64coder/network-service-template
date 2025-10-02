@@ -1,10 +1,12 @@
 package com.dtc.core.config;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.api.annotations.Nullable;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,6 +24,7 @@ public class ServerConfiguration {
     private final @NotNull Path extensionsFolder;
     private final @NotNull Map<String, String> systemProperties;
     private final @NotNull Map<String, String> environmentVariables;
+    private final @NotNull List<ListenerConfiguration> listeners;
     private final boolean embedded;
 
     private ServerConfiguration(Builder builder) {
@@ -33,6 +36,7 @@ public class ServerConfiguration {
         this.extensionsFolder = builder.extensionsFolder;
         this.systemProperties = new HashMap<>(builder.systemProperties);
         this.environmentVariables = new HashMap<>(builder.environmentVariables);
+        this.listeners = new ArrayList<>(builder.listeners);
         this.embedded = builder.embedded;
     }
 
@@ -76,6 +80,11 @@ public class ServerConfiguration {
         return new HashMap<>(environmentVariables);
     }
 
+    @NotNull
+    public List<ListenerConfiguration> getListeners() {
+        return new ArrayList<>(listeners);
+    }
+
     public boolean isEmbedded() {
         return embedded;
     }
@@ -93,6 +102,7 @@ public class ServerConfiguration {
         private Path extensionsFolder = Paths.get("extensions");
         private Map<String, String> systemProperties = new HashMap<>();
         private Map<String, String> environmentVariables = new HashMap<>();
+        private List<ListenerConfiguration> listeners = new ArrayList<>();
         private boolean embedded = false;
 
         public Builder serverName(@NotNull String serverName) {
@@ -137,6 +147,17 @@ public class ServerConfiguration {
 
         public Builder embedded(boolean embedded) {
             this.embedded = embedded;
+            return this;
+        }
+
+        public Builder addListener(@NotNull ListenerConfiguration listener) {
+            this.listeners.add(listener);
+            return this;
+        }
+
+        public Builder addListener(@NotNull String type, int port, @NotNull String bindAddress, boolean enabled,
+                @NotNull String name, String description) {
+            this.listeners.add(new ListenerConfiguration(type, port, bindAddress, enabled, name, description));
             return this;
         }
 

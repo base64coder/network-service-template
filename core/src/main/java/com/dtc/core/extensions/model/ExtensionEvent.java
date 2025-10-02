@@ -1,12 +1,10 @@
 package com.dtc.core.extensions.model;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.api.annotations.Nullable;
 import java.nio.file.Path;
 
 /**
- * 扩展事件
- * 表示扩展的状态变化
+ * 扩展事件 表示扩展的状态变化
  * 
  * @author Network Service Template
  */
@@ -24,17 +22,11 @@ public class ExtensionEvent {
     private final @NotNull Path extensionFolder;
     private final boolean embedded;
 
-    public ExtensionEvent(
-            @NotNull Change change,
-            @NotNull ExtensionMetadata metadata,
-            @NotNull Path extensionFolder) {
+    public ExtensionEvent(@NotNull Change change, @NotNull ExtensionMetadata metadata, @NotNull Path extensionFolder) {
         this(change, metadata, extensionFolder, false);
     }
 
-    public ExtensionEvent(
-            @NotNull Change change,
-            @NotNull ExtensionMetadata metadata,
-            @NotNull Path extensionFolder,
+    public ExtensionEvent(@NotNull Change change, @NotNull ExtensionMetadata metadata, @NotNull Path extensionFolder,
             boolean embedded) {
         this.change = change;
         this.metadata = metadata;
@@ -68,7 +60,7 @@ public class ExtensionEvent {
 
     @Override
     public String toString() {
-        return String.format("ExtensionEvent{change=%s, id=%s, version=%s, embedded=%s}",
-                change, metadata.getId(), metadata.getVersion(), embedded);
+        return String.format("ExtensionEvent{change=%s, id=%s, version=%s, embedded=%s}", change, metadata.getId(),
+                metadata.getVersion(), embedded);
     }
 }

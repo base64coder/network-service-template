@@ -1,9 +1,7 @@
 package com.dtc.core.config;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.api.annotations.Nullable;
 import com.dtc.api.parameter.ServerInformation;
-import com.dtc.core.config.ServerConfiguration;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

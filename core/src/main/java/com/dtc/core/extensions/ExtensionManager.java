@@ -2,7 +2,6 @@ package com.dtc.core.extensions;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import com.dtc.core.extensions.model.ExtensionMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,8 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 扩展管理器
- * 负责管理扩展的生命周期
+ * 扩展管理器 负责管理扩展的生命周期
  * 
  * @author Network Service Template
  */
@@ -81,8 +79,7 @@ public class ExtensionManager {
     public CompletableFuture<Void> startExtension(@NotNull String extensionId) {
         NetworkExtension extension = extensions.get(extensionId);
         if (extension == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("Extension not found: " + extensionId));
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Extension not found: " + extensionId));
         }
 
         return CompletableFuture.runAsync(() -> {
@@ -106,8 +103,7 @@ public class ExtensionManager {
     public CompletableFuture<Void> stopExtension(@NotNull String extensionId) {
         NetworkExtension extension = extensions.get(extensionId);
         if (extension == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("Extension not found: " + extensionId));
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Extension not found: " + extensionId));
         }
 
         return CompletableFuture.runAsync(() -> {
@@ -128,10 +124,8 @@ public class ExtensionManager {
      */
     @NotNull
     public CompletableFuture<Void> stopAllExtensions() {
-        return CompletableFuture.allOf(
-                extensions.keySet().stream()
-                        .map(this::stopExtension)
-                        .toArray(CompletableFuture[]::new));
+        return CompletableFuture
+                .allOf(extensions.keySet().stream().map(this::stopExtension).toArray(CompletableFuture[]::new));
     }
 
     /**

@@ -1,10 +1,10 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
 import com.dtc.core.extensions.ExtensionBootstrap;
-import com.dtc.core.extensions.ExtensionLoader;
 import com.dtc.core.extensions.ExtensionLifecycleHandler;
+import com.dtc.core.extensions.ExtensionLoader;
 import com.dtc.core.extensions.ExtensionManager;
+import com.google.inject.AbstractModule;
 
 /**
  * 扩展系统模块

@@ -1,12 +1,13 @@
 package com.dtc.core;
 
-import com.google.inject.Injector;
 import com.dtc.api.annotations.NotNull;
-import com.dtc.api.annotations.Nullable;
 import com.dtc.core.bootstrap.NetworkServiceLauncher;
+import com.dtc.core.bootstrap.ServerStatusDisplay;
+import com.dtc.core.bootstrap.ioc.GuiceContainerFactory;
 import com.dtc.core.config.ServerConfiguration;
 import com.dtc.core.extensions.ExtensionBootstrap;
 import com.dtc.core.extensions.ExtensionManager;
+import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 网络服务主类
- * 负责启动和管理网络服务
+ * 网络服务主类 负责启动和管理网络服务
  * 
  * @author Network Service Template
  */
@@ -28,6 +28,7 @@ public class NetworkService {
     private final @NotNull NetworkServiceLauncher networkLauncher;
     private final @NotNull ExtensionManager extensionManager;
     private final @NotNull Injector injector;
+    private final @NotNull ServerStatusDisplay statusDisplay;
 
     private volatile boolean started = false;
     private volatile boolean stopped = false;
@@ -36,7 +37,7 @@ public class NetworkService {
         this.configuration = config;
 
         // 使用分层设计初始化依赖注入容器
-        this.injector = com.dtc.core.bootstrap.ioc.GuiceContainerFactory.bootstrapInjector(configuration);
+        this.injector = GuiceContainerFactory.bootstrapInjector(configuration);
         if (injector == null) {
             throw new RuntimeException("Failed to initialize dependency injection container");
         }
@@ -45,6 +46,7 @@ public class NetworkService {
         this.extensionBootstrap = injector.getInstance(ExtensionBootstrap.class);
         this.networkLauncher = injector.getInstance(NetworkServiceLauncher.class);
         this.extensionManager = injector.getInstance(ExtensionManager.class);
+        this.statusDisplay = new ServerStatusDisplay(configuration);
     }
 
     /**
@@ -60,16 +62,17 @@ public class NetworkService {
 
         log.info("Starting Network Service...");
 
-        return extensionBootstrap.startExtensionSystem()
-                .thenCompose(v -> networkLauncher.startServer())
-                .thenRun(() -> {
-                    started = true;
-                    log.info("Network Service started successfully");
-                })
-                .exceptionally(throwable -> {
-                    log.error("Failed to start Network Service", throwable);
-                    throw new RuntimeException("Failed to start Network Service", throwable);
-                });
+        return extensionBootstrap.startExtensionSystem().thenCompose(v -> networkLauncher.startServer()).thenRun(() -> {
+            started = true;
+
+            // 启动状态显示器
+            statusDisplay.startStatusDisplay();
+
+            log.info("🎉 Network Service 启动成功！");
+        }).exceptionally(throwable -> {
+            log.error("❌ Network Service 启动失败", throwable);
+            throw new RuntimeException("Failed to start Network Service", throwable);
+        });
     }
 
     /**
@@ -85,17 +88,18 @@ public class NetworkService {
 
         log.info("Stopping Network Service...");
 
-        return networkLauncher.stopServer()
-                .thenCompose(v -> extensionBootstrap.stopExtensionSystem())
-                .thenRun(() -> {
-                    stopped = true;
-                    started = false;
-                    log.info("Network Service stopped successfully");
-                })
-                .exceptionally(throwable -> {
-                    log.error("Failed to stop Network Service", throwable);
-                    throw new RuntimeException("Failed to stop Network Service", throwable);
-                });
+        return networkLauncher.stopServer().thenCompose(v -> extensionBootstrap.stopExtensionSystem()).thenRun(() -> {
+            // 停止状态显示器
+            statusDisplay.stopStatusDisplay();
+            statusDisplay.displayShutdownInfo();
+
+            stopped = true;
+            started = false;
+            log.info("🛑 Network Service 已停止");
+        }).exceptionally(throwable -> {
+            log.error("❌ Network Service 停止失败", throwable);
+            throw new RuntimeException("Failed to stop Network Service", throwable);
+        });
     }
 
     /**
@@ -144,13 +148,12 @@ public class NetworkService {
     public static void main(String[] args) {
         try {
             // 创建服务器配置
-            ServerConfiguration config = ServerConfiguration.builder()
-                    .serverName("Network Service")
-                    .serverVersion("1.0.0")
-                    .dataFolder("data")
-                    .configFolder("conf")
-                    .extensionsFolder("extensions")
-                    .build();
+            ServerConfiguration config = ServerConfiguration.builder().serverName("Network Service")
+                    .serverVersion("1.0.0").dataFolder("data").configFolder("conf").extensionsFolder("extensions")
+                    .addListener("HTTP", 8080, "0.0.0.0", true, "HTTP API", "REST API 服务端口")
+                    .addListener("WebSocket", 8081, "0.0.0.0", true, "WebSocket", "WebSocket 连接端口")
+                    .addListener("TCP", 9999, "0.0.0.0", true, "TCP Server", "TCP 服务器端口")
+                    .addListener("MQTT", 1883, "0.0.0.0", true, "MQTT Broker", "MQTT 消息代理端口").build();
 
             // 创建并启动服务
             NetworkService service = new NetworkService(config);

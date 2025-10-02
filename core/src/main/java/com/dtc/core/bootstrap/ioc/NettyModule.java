@@ -1,8 +1,8 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
 import com.dtc.core.netty.NettyBootstrap;
 import com.dtc.core.netty.NettyServer;
+import com.google.inject.AbstractModule;
 
 /**
  * Netty网络模块

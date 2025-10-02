@@ -1,9 +1,9 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
-import com.dtc.core.security.SecurityManager;
 import com.dtc.core.security.AuthenticationService;
 import com.dtc.core.security.AuthorizationService;
+import com.dtc.core.security.SecurityManager;
+import com.google.inject.AbstractModule;
 
 /**
  * 安全模块

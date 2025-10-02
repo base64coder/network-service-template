@@ -1,18 +1,13 @@
 package com.dtc.core.bootstrap.ioc;
 
+import com.dtc.api.annotations.NotNull;
+import com.dtc.api.annotations.Nullable;
+import com.dtc.core.config.ServerConfiguration;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
-import com.dtc.api.annotations.NotNull;
-import com.dtc.api.annotations.Nullable;
-import com.dtc.core.config.ServerConfiguration;
-import com.dtc.core.extensions.ExtensionBootstrap;
-import com.dtc.core.extensions.ExtensionLoader;
-import com.dtc.core.extensions.ExtensionLifecycleHandler;
-import com.dtc.core.extensions.ExtensionManager;
-import com.dtc.core.netty.NettyBootstrap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

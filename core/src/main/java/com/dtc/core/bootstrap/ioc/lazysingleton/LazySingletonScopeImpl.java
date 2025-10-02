@@ -3,7 +3,6 @@ package com.dtc.core.bootstrap.ioc.lazysingleton;
 import com.google.inject.Key;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
-import com.google.inject.Scopes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

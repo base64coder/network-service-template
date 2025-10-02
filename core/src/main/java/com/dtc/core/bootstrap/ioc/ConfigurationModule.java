@@ -1,10 +1,10 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
 import com.dtc.api.annotations.NotNull;
+import com.dtc.core.config.ConfigurationService;
 import com.dtc.core.config.ServerConfiguration;
 import com.dtc.core.config.ServerId;
-import com.dtc.core.config.ConfigurationService;
+import com.google.inject.AbstractModule;
 
 /**
  * 配置模块

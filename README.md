@@ -130,7 +130,6 @@ echo "hello" | nc localhost 9999
 基于HiveMQ的GuiceBootstrap设计，我们的模板采用了清晰的分层依赖注入架构：
 
 #### 1. **核心启动器层**
-
 - `NetworkService` - 网络服务主类
 - `GuiceContainerFactory` - Guice容器工厂
 - `NetworkServiceLauncher` - 网络服务启动器

@@ -1,9 +1,9 @@
 package com.dtc.core.extensions;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.api.annotations.Nullable;
 import com.dtc.core.config.ServerConfiguration;
 import com.dtc.core.extensions.model.ExtensionEvent;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,8 +11,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 扩展系统启动器
- * 负责启动和管理扩展系统
+ * 扩展系统启动器 负责启动和管理扩展系统
  * 
  * @author Network Service Template
  */
@@ -25,11 +24,9 @@ public class ExtensionBootstrap {
     private final @NotNull ExtensionManager extensionManager;
     private final @NotNull ExtensionLifecycleHandler lifecycleHandler;
 
-    public ExtensionBootstrap(
-            @NotNull ServerConfiguration configuration,
-            @NotNull ExtensionLoader extensionLoader,
-            @NotNull ExtensionManager extensionManager,
-            @NotNull ExtensionLifecycleHandler lifecycleHandler) {
+    @Inject
+    public ExtensionBootstrap(@NotNull ServerConfiguration configuration, @NotNull ExtensionLoader extensionLoader,
+            @NotNull ExtensionManager extensionManager, @NotNull ExtensionLifecycleHandler lifecycleHandler) {
         this.configuration = configuration;
         this.extensionLoader = extensionLoader;
         this.extensionManager = extensionManager;
@@ -47,15 +44,21 @@ public class ExtensionBootstrap {
 
         return CompletableFuture.runAsync(() -> {
             try {
+                log.info("🔍 扫描扩展目录: {}", configuration.getExtensionsFolder());
+
                 // 扫描扩展目录
-                Collection<ExtensionEvent> extensionEvents = extensionLoader.loadExtensions(configuration.getExtensionsFolder());
+                Collection<ExtensionEvent> extensionEvents = extensionLoader
+                        .loadExtensions(configuration.getExtensionsFolder());
+
+                log.info("📦 发现 {} 个扩展事件", extensionEvents.size());
 
                 // 处理扩展事件
+                log.info("⚙️ 处理扩展事件...");
                 lifecycleHandler.handleExtensionEvents(extensionEvents).join();
 
-                log.info("Extension system started successfully");
+                log.info("✅ 扩展系统启动成功 - 已加载 {} 个扩展", extensionEvents.size());
             } catch (Exception e) {
-                log.error("Failed to start extension system", e);
+                log.error("❌ 扩展系统启动失败", e);
                 throw new RuntimeException("Failed to start extension system", e);
             }
         });

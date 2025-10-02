@@ -1,8 +1,8 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
 import com.dtc.core.metrics.MetricsCollector;
 import com.dtc.core.metrics.MetricsRegistry;
+import com.google.inject.AbstractModule;
 
 /**
  * 指标监控模块

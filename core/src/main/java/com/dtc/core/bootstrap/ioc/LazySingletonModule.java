@@ -1,7 +1,7 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.AbstractModule;
 import com.dtc.core.bootstrap.ioc.lazysingleton.LazySingletonScope;
+import com.google.inject.AbstractModule;
 
 /**
  * 懒加载单例模块
