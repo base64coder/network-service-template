@@ -104,7 +104,9 @@ public class DisruptorQueue<T> {
      * @param consumer 消费者
      */
     public void addConsumer(@NotNull QueueConsumer<T> consumer) {
-        disruptor.handleEventsWith(new QueueEventHandler<>(consumer));
+        @SuppressWarnings("unchecked")
+        QueueEventHandler<T>[] handlers = new QueueEventHandler[] { new QueueEventHandler<>(consumer) };
+        disruptor.handleEventsWith(handlers);
         log.info("Added consumer: {}", consumer.getClass().getSimpleName());
     }
 
@@ -115,7 +117,8 @@ public class DisruptorQueue<T> {
      */
     @SafeVarargs
     public final void addConsumers(@NotNull QueueConsumer<T>... consumers) {
-        QueueEventHandler<T>[] handlers = new QueueEventHandler[consumers.length];
+        @SuppressWarnings("unchecked")
+        QueueEventHandler<T>[] handlers = (QueueEventHandler<T>[]) new QueueEventHandler[consumers.length];
         for (int i = 0; i < consumers.length; i++) {
             handlers[i] = new QueueEventHandler<>(consumers[i]);
         }

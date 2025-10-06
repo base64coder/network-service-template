@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Singleton;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -202,18 +203,18 @@ public class SerializationCacheManager {
      * 清理指定缓存中的过期条目
      */
     private <T> int cleanupCache(ConcurrentHashMap<?, CacheEntry<T>> cache, long currentTime) {
-        int cleanedCount = 0;
+        AtomicInteger cleanedCount = new AtomicInteger();
 
         cache.entrySet().removeIf(entry -> {
             CacheEntry<T> cacheEntry = entry.getValue();
             if (cacheEntry.isExpired(currentTime)) {
-                cleanedCount++;
+                cleanedCount.getAndIncrement();
                 return true;
             }
             return false;
         });
 
-        return cleanedCount;
+        return cleanedCount.get();
     }
 
     /**

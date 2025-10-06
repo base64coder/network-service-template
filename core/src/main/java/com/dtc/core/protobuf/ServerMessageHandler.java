@@ -56,26 +56,27 @@ public class ServerMessageHandler {
      * 处理接收到的消息
      */
     @NotNull
-    public NetworkMessage handleReceivedMessage(@NotNull NetworkMessage message) {
+    public NetworkMessage handleReceivedMessage(
+            @NotNull NetworkMessage message) {
         log.debug("Handling received message: {} of type: {}", message.getMessageId(), message.getType());
 
         receivedCount.incrementAndGet();
 
         switch (message.getType()) {
-        case HEARTBEAT:
-            return handleHeartbeatMessage(message);
-        case DATA:
-            return handleDataMessage(message);
-        case ACK:
-            return handleAckMessage(message);
-        case ERROR:
-            return handleErrorMessage(message);
-        case CLOSE:
-            return handleCloseMessage(message);
-        default:
-            log.warn("Unknown message type received: {}", message.getType());
-            return createErrorMessage(message.getClientId(), message.getServerId(), 400, "Unknown message type", null,
-                    null);
+            case HEARTBEAT:
+                return handleHeartbeatMessage(message);
+            case DATA:
+                return handleDataMessage(message);
+            case ACK:
+                return handleAckMessage(message);
+            case ERROR:
+                return handleErrorMessage(message);
+            case CLOSE:
+                return handleCloseMessage(message);
+            default:
+                log.warn("Unknown message type received: {}", message.getType());
+                return createErrorMessage(message.getClientId(), message.getServerId(), 400, "Unknown message type",
+                        null, null);
         }
     }
 
@@ -83,10 +84,11 @@ public class ServerMessageHandler {
      * 处理心跳消息
      */
     @NotNull
-    private NetworkMessage handleHeartbeatMessage(@NotNull NetworkMessage message) {
+    private NetworkMessage handleHeartbeatMessage(
+            @NotNull NetworkMessage message) {
         if (message.hasHeartbeat()) {
             HeartbeatMessage heartbeat = message.getHeartbeat();
-            log.debug("Received heartbeat from client: {} at {}", heartbeat.getClientId(),
+            log.debug("Received heartbeat from client: {} at {}", message.getClientId(),
                     heartbeat.getLastHeartbeat());
 
             // 更新客户端会话
@@ -104,7 +106,8 @@ public class ServerMessageHandler {
      * 处理数据消息
      */
     @NotNull
-    private NetworkMessage handleDataMessage(@NotNull NetworkMessage message) {
+    private NetworkMessage handleDataMessage(
+            @NotNull NetworkMessage message) {
         if (message.hasData()) {
             DataMessage data = message.getData();
             log.debug("Received data message on topic: {} from client: {}", data.getTopic(), message.getClientId());
@@ -139,15 +142,15 @@ public class ServerMessageHandler {
     private boolean processDataMessage(@NotNull DataMessage data, @NotNull String clientId) {
         try {
             switch (data.getTopic()) {
-            case "user":
-                return processUserData(data, clientId);
-            case "order":
-                return processOrderData(data, clientId);
-            case "product":
-                return processProductData(data, clientId);
-            default:
-                log.warn("Unknown topic: {}", data.getTopic());
-                return false;
+                case "user":
+                    return processUserData(data, clientId);
+                case "order":
+                    return processOrderData(data, clientId);
+                case "product":
+                    return processProductData(data, clientId);
+                default:
+                    log.warn("Unknown topic: {}", data.getTopic());
+                    return false;
             }
         } catch (Exception e) {
             log.error("Error processing data for topic: {}", data.getTopic(), e);
@@ -212,7 +215,7 @@ public class ServerMessageHandler {
     /**
      * 处理确认消息
      */
-    @NotNull
+    @Nullable
     private NetworkMessage handleAckMessage(@NotNull NetworkMessage message) {
         if (message.hasAck()) {
             AckMessage ack = message.getAck();
@@ -226,8 +229,9 @@ public class ServerMessageHandler {
     /**
      * 处理错误消息
      */
-    @NotNull
-    private NetworkMessage handleErrorMessage(@NotNull NetworkMessage message) {
+    @Nullable
+    private NetworkMessage handleErrorMessage(
+            @NotNull NetworkMessage message) {
         if (message.hasError()) {
             ErrorMessage error = message.getError();
             log.error("Received error message: {} - {}", error.getErrorCode(), error.getErrorMessage());
@@ -240,11 +244,12 @@ public class ServerMessageHandler {
     /**
      * 处理关闭消息
      */
-    @NotNull
-    private NetworkMessage handleCloseMessage(@NotNull NetworkMessage message) {
+    @Nullable
+    private NetworkMessage handleCloseMessage(
+            @NotNull NetworkMessage message) {
         if (message.hasClose()) {
             CloseMessage close = message.getClose();
-            log.info("Received close message: {} - {}", close.getCloseCode(), close.getCloseReason());
+            log.info("Received close message: {} - {}", close.getCloseReason(), close.getGraceful());
 
             // 清理客户端会话
             clientSessions.remove(message.getClientId());
@@ -272,8 +277,11 @@ public class ServerMessageHandler {
         log.debug("Broadcasting message: {} to {} clients", message.getMessageId(), clientSessions.size());
 
         for (String clientId : clientSessions.keySet()) {
-            NetworkMessage broadcastMessage = message.toBuilder().setClientId(clientId)
-                    .setMessageId(java.util.UUID.randomUUID().toString()).build();
+            NetworkMessage broadcastMessage = message.toBuilder()
+                    .setClientId(message.getClientId())
+                    .setServerId(clientId)
+                    .setMessageId(java.util.UUID.randomUUID().toString())
+                    .build();
             sendMessage(broadcastMessage);
         }
     }
@@ -283,8 +291,10 @@ public class ServerMessageHandler {
      */
     public void sendMessageToClient(@NotNull String clientId, @NotNull NetworkMessage message) {
         if (clientSessions.containsKey(clientId)) {
-            NetworkMessage targetMessage = message.toBuilder().setClientId(clientId)
-                    .setMessageId(java.util.UUID.randomUUID().toString()).build();
+            NetworkMessage targetMessage = message.toBuilder()
+                    .setServerId(clientId)
+                    .setMessageId(java.util.UUID.randomUUID().toString())
+                    .build();
             sendMessage(targetMessage);
         } else {
             log.warn("Client not found: {}", clientId);
@@ -294,26 +304,32 @@ public class ServerMessageHandler {
     // 消息创建方法
 
     @NotNull
-    private NetworkMessage createWelcomeMessage(@NotNull String clientId, @NotNull String serverId) {
-        return messageFactory.createTextDataMessage(clientId, serverId, "welcome", "Welcome to the server!", null, 1);
+    private NetworkMessage createWelcomeMessage(@NotNull String clientId,
+                                                @NotNull String serverId) {
+        return messageFactory.createTextDataMessage(clientId, serverId, "welcome",
+                "Welcome to the server!", null, 1);
     }
 
     @NotNull
     private NetworkMessage createHeartbeatAck(@NotNull String clientId, @NotNull String serverId) {
-        return messageFactory.createAckMessage(clientId, serverId, "heartbeat", true, null, 0);
+        return messageFactory.createAckMessage(clientId, serverId, "heartbeat",
+                true, null, 0);
     }
 
     @NotNull
     private NetworkMessage createAckMessage(@NotNull String clientId, @NotNull String serverId,
             @NotNull String originalMessageId, boolean success, @Nullable String errorMessage, long processingTime) {
-        return messageFactory.createAckMessage(clientId, serverId, originalMessageId, success, errorMessage,
+        return messageFactory.createAckMessage(clientId, serverId,
+                originalMessageId, success, errorMessage,
                 processingTime);
     }
 
     @NotNull
-    private NetworkMessage createErrorMessage(@NotNull String clientId, @NotNull String serverId, int errorCode,
+    private NetworkMessage createErrorMessage(@NotNull String clientId, @NotNull String serverId,
+                                              int errorCode,
             @NotNull String errorMessage, @Nullable String details, @Nullable String stackTrace) {
-        return messageFactory.createErrorMessage(clientId, serverId, errorCode, errorMessage, details, stackTrace);
+        return messageFactory.createErrorMessage(clientId, serverId, errorCode,
+                errorMessage, details, stackTrace);
     }
 
     /**

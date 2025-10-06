@@ -1,0 +1,634 @@
+package com.dtc.core.extensions;
+
+import com.dtc.core.extensions.model.ExtensionMetadata;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.matcher.ElementMatchers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * ByteBuddy 工厂工具类
+ * 提供底层的 ByteBuddy 操作支持
+ * 
+ * @author Network Service Template
+ */
+public class ByteBuddyFactory {
+
+    private static final Logger log = LoggerFactory.getLogger(ByteBuddyFactory.class);
+    private static final Map<String, Class<?>> CLASS_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, Object> INSTANCE_CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * 创建 ByteBuddy 增强类
+     * 
+     * @param originalClass 原始类
+     * @param classLoader   类加载器
+     * @param extensionId   扩展ID
+     * @return 增强类
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Class<? extends T> createEnhancedClass(Class<T> originalClass,
+            ClassLoader classLoader,
+            String extensionId) {
+        String cacheKey = generateCacheKey(originalClass.getName(), classLoader);
+
+        return (Class<? extends T>) CLASS_CACHE.computeIfAbsent(cacheKey, key -> {
+            try {
+                log.debug("Generating ByteBuddy enhanced class for: {} with key: {}", originalClass.getName(),
+                        cacheKey);
+
+                return new ByteBuddy()
+                        .subclass(originalClass)
+                        .method(ElementMatchers.any())
+                        .intercept(MethodDelegation.to(new ExtensionMethodInterceptor(originalClass, extensionId)))
+                        .make()
+                        .load(classLoader, ClassLoadingStrategy.Default.INJECTION)
+                        .getLoaded();
+
+            } catch (Exception e) {
+                log.warn("Failed to generate ByteBuddy enhanced class for: {}, using original class",
+                        originalClass.getName(), e);
+                return originalClass; // 回退到原始类
+            }
+        });
+    }
+
+    /**
+     * 获取或创建扩展实例（分层策略）
+     * 
+     * @param originalClass 原始类
+     * @param classLoader   类加载器
+     * @param extensionId   扩展ID
+     * @param args          构造函数参数
+     * @return 扩展实例
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getOrCreateInstance(Class<T> originalClass,
+            ClassLoader classLoader,
+            String extensionId,
+            Object... args) {
+        String cacheKey = generateCacheKey(originalClass.getName(), classLoader);
+
+        // 优先级1: 检查缓存
+        Object cachedInstance = INSTANCE_CACHE.get(cacheKey);
+        if (cachedInstance != null) {
+            log.debug("Found cached instance for: {} with key: {}", originalClass.getName(), cacheKey);
+            return (T) cachedInstance;
+        }
+
+        log.debug("Creating new instance for: {} with key: {}", originalClass.getName(), cacheKey);
+
+        T instance = null;
+        Exception lastException = null;
+
+        // 优先级2: 尝试无参构造函数
+        try {
+            instance = tryNoArgConstructor(originalClass);
+            if (instance != null) {
+                log.debug("Successfully created instance using no-arg constructor for: {}", originalClass.getName());
+            }
+        } catch (Exception e) {
+            log.debug("No-arg constructor failed for: {}", originalClass.getName(), e);
+            lastException = e;
+        }
+
+        // 优先级3: 尝试可注入构造函数
+        if (instance == null) {
+            try {
+                instance = tryInjectableConstructor(originalClass, args);
+                if (instance != null) {
+                    log.debug("Successfully created instance using injectable constructor for: {}",
+                            originalClass.getName());
+                }
+            } catch (Exception e) {
+                log.debug("Injectable constructor failed for: {}", originalClass.getName(), e);
+                lastException = e;
+            }
+        }
+
+        // 优先级4: 尝试 ByteBuddy 动态子类/代理
+        if (instance == null) {
+            try {
+                instance = tryByteBuddyEnhancement(originalClass, classLoader, extensionId, args);
+                if (instance != null) {
+                    log.debug("Successfully created instance using ByteBuddy enhancement for: {}",
+                            originalClass.getName());
+                }
+            } catch (Exception e) {
+                log.debug("ByteBuddy enhancement failed for: {}", originalClass.getName(), e);
+                lastException = e;
+            }
+        }
+
+        // 优先级5: 简单包装
+        if (instance == null) {
+            try {
+                instance = createSimpleWrapper(originalClass, extensionId);
+                log.debug("Successfully created simple wrapper for: {}", originalClass.getName());
+            } catch (Exception e) {
+                log.error("All creation strategies failed for: {}", originalClass.getName(), e);
+                if (lastException != null) {
+                    throw new RuntimeException("Failed to create instance for: " + originalClass.getName(),
+                            lastException);
+                }
+                throw new RuntimeException("Failed to create instance for: " + originalClass.getName(), e);
+            }
+        }
+
+        // 缓存实例
+        if (instance != null) {
+            INSTANCE_CACHE.put(cacheKey, instance);
+            log.debug("Cached instance for: {} with key: {}", originalClass.getName(), cacheKey);
+        }
+
+        return instance;
+    }
+
+    /**
+     * 生成缓存键
+     */
+    private static String generateCacheKey(String className, ClassLoader classLoader) {
+        int classLoaderHash = System.identityHashCode(classLoader);
+        return className + ":" + classLoaderHash;
+    }
+
+    /**
+     * 尝试无参构造函数
+     */
+    private static <T> T tryNoArgConstructor(Class<T> clazz) throws Exception {
+        Constructor<T> constructor = clazz.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
+    }
+
+    /**
+     * 尝试可注入构造函数
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T tryInjectableConstructor(Class<T> clazz, Object... args) throws Exception {
+        Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+
+        for (Constructor<?> constructor : constructors) {
+            if (constructor.getParameterCount() == args.length) {
+                try {
+                    constructor.setAccessible(true);
+                    Object[] processedArgs = unwrapAndCoerceArgs(constructor.getParameterTypes(), args);
+                    return (T) constructor.newInstance(processedArgs);
+                } catch (Exception e) {
+                    log.debug("Constructor {} failed, trying next", constructor, e);
+                }
+            }
+        }
+
+        throw new NoSuchMethodException("No suitable constructor found for " + clazz.getName());
+    }
+
+    /**
+     * 尝试 ByteBuddy 增强
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T tryByteBuddyEnhancement(Class<T> originalClass,
+            ClassLoader classLoader,
+            String extensionId,
+            Object... args) throws Exception {
+        Class<? extends T> enhancedClass = createEnhancedClass(originalClass, classLoader, extensionId);
+        Constructor<?> constructor = findMatchingConstructor(enhancedClass, args);
+        Object[] processedArgs = unwrapAndCoerceArgs(constructor.getParameterTypes(), args);
+        return (T) constructor.newInstance(processedArgs);
+    }
+
+    /**
+     * 创建简单包装
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T createSimpleWrapper(Class<T> clazz, String extensionId) {
+        if (NetworkExtension.class.isAssignableFrom(clazz)) {
+            return (T) new NetworkExtension() {
+                @Override
+                public String getId() {
+                    return extensionId;
+                }
+
+                @Override
+                public String getName() {
+                    return clazz.getSimpleName();
+                }
+
+                @Override
+                public String getVersion() {
+                    return "1.0.0";
+                }
+
+                @Override
+                public String getAuthor() {
+                    return "System";
+                }
+
+                @Override
+                public int getPriority() {
+                    return 0;
+                }
+
+                @Override
+                public int getStartPriority() {
+                    return 0;
+                }
+
+                @Override
+                public ExtensionMetadata getMetadata() {
+                    return ExtensionMetadata.builder()
+                            .id(getId())
+                            .name(getName())
+                            .version(getVersion())
+                            .author(getAuthor())
+                            .priority(getPriority())
+                            .startPriority(getStartPriority())
+                            .build();
+                }
+
+                @Override
+                public java.nio.file.Path getExtensionFolderPath() {
+                    return java.nio.file.Paths.get("extensions", getId());
+                }
+
+                @Override
+                public ClassLoader getExtensionClassloader() {
+                    return clazz.getClassLoader();
+                }
+
+                @Override
+                public void start() throws Exception {
+                    log.info("Simple wrapper started for: {}", clazz.getName());
+                }
+
+                @Override
+                public void stop() throws Exception {
+                    log.info("Simple wrapper stopped for: {}", clazz.getName());
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    return true;
+                }
+
+                @Override
+                public void setEnabled(boolean enabled) {
+                    // 简单包装不支持禁用
+                }
+
+                @Override
+                public boolean isStarted() {
+                    return true;
+                }
+
+                @Override
+                public boolean isStopped() {
+                    return false;
+                }
+
+                @Override
+                public void cleanup(boolean disable) {
+                    log.info("Simple wrapper cleaned up for: {}", clazz.getName());
+                }
+            };
+        }
+
+        // 如果不是 NetworkExtension，尝试创建原始类的实例
+        try {
+            return tryNoArgConstructor(clazz);
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot create simple wrapper for: " + clazz.getName(), e);
+        }
+    }
+
+    /**
+     * 清理缓存
+     */
+    public static void clearCache() {
+        CLASS_CACHE.clear();
+        INSTANCE_CACHE.clear();
+        log.info("Cleared all caches");
+    }
+
+    /**
+     * 清理特定类的缓存
+     */
+    public static void clearCacheForClass(String className, ClassLoader classLoader) {
+        String cacheKey = generateCacheKey(className, classLoader);
+        CLASS_CACHE.remove(cacheKey);
+        INSTANCE_CACHE.remove(cacheKey);
+        log.debug("Cleared cache for class: {} with key: {}", className, cacheKey);
+    }
+
+    /**
+     * 获取缓存统计信息
+     */
+    public static String getCacheStats() {
+        return String.format("Class cache size: %d, Instance cache size: %d",
+                CLASS_CACHE.size(), INSTANCE_CACHE.size());
+    }
+
+    /**
+     * 创建增强实例（已弃用，请使用 ExtensionCreationManager）
+     * 
+     * @deprecated 使用 ExtensionCreationManager.createEnhancedExtension() 替代
+     */
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    public static <T> T createEnhancedInstance(Class<T> originalClass, ClassLoader classLoader, String extensionId,
+            Object... args) {
+        log.warn("ByteBuddyFactory.createEnhancedInstance() is deprecated, use ExtensionCreationManager instead");
+
+        try {
+            log.debug("Creating enhanced instance for {} with {} arguments", originalClass.getName(), args.length);
+
+            Class<? extends T> enhancedClass = createEnhancedClass(originalClass, classLoader, extensionId);
+
+            // 如果生成失败，回退到原始类
+            if (enhancedClass == originalClass) {
+                log.debug("Using original class {} instead of enhanced version", originalClass.getName());
+                Constructor<?> ctor = findMatchingConstructor(originalClass, args);
+                Object[] processedArgs = unwrapAndCoerceArgs(ctor.getParameterTypes(), args);
+                T instance = (T) ctor.newInstance(processedArgs);
+
+                // 验证实例不为空
+                if (instance == null) {
+                    throw new RuntimeException(
+                            "Constructor returned null instance for original class: " + originalClass.getName());
+                }
+
+                return instance;
+            }
+
+            Constructor<?> ctor = findMatchingConstructor(enhancedClass, args);
+            Object[] processedArgs = unwrapAndCoerceArgs(ctor.getParameterTypes(), args);
+
+            log.debug("Successfully created enhanced instance of {} with constructor {}",
+                    originalClass.getName(), ctor);
+            T instance = (T) ctor.newInstance(processedArgs);
+
+            // 验证实例不为空
+            if (instance == null) {
+                throw new RuntimeException("Constructor returned null instance for: " + originalClass.getName());
+            }
+
+            return instance;
+        } catch (Exception e) {
+            log.error("Failed to create enhanced instance of {} with {} arguments",
+                    originalClass.getName(), args != null ? args.length : 0, e);
+            throw new RuntimeException("Failed to create enhanced instance of " + originalClass.getName(), e);
+        }
+    }
+
+    /**
+     * 自动匹配构造函数
+     */
+    private static Constructor<?> findMatchingConstructor(Class<?> clazz, Object[] args) throws NoSuchMethodException {
+        if (args == null || args.length == 0) {
+            // 尝试无参构造函数
+            try {
+                Constructor<?> noArgCtor = clazz.getDeclaredConstructor();
+                noArgCtor.setAccessible(true);
+                return noArgCtor;
+            } catch (NoSuchMethodException e) {
+                // 继续尝试其他构造函数
+            }
+        }
+
+        Class<?>[] argTypes = Arrays.stream(args)
+                .map(arg -> arg != null ? arg.getClass() : Object.class)
+                .toArray(Class<?>[]::new);
+
+        log.debug("Looking for constructor in {} with {} arguments: {}",
+                clazz.getName(), args != null ? args.length : 0, Arrays.toString(argTypes));
+
+        // 首先尝试精确匹配
+        for (Constructor<?> c : clazz.getDeclaredConstructors()) {
+            Class<?>[] paramTypes = c.getParameterTypes();
+            if (paramTypes.length == (args != null ? args.length : 0)) {
+                boolean exactMatch = true;
+                for (int i = 0; i < paramTypes.length; i++) {
+                    if (args != null && args[i] != null && !paramTypes[i].isAssignableFrom(args[i].getClass())) {
+                        exactMatch = false;
+                        break;
+                    }
+                }
+                if (exactMatch) {
+                    log.debug("Found exact constructor match: {}", c);
+                    c.setAccessible(true);
+                    return c;
+                }
+            }
+        }
+
+        // 然后尝试兼容匹配
+        for (Constructor<?> c : clazz.getDeclaredConstructors()) {
+            if (isCompatible(c.getParameterTypes(), argTypes)) {
+                log.debug("Found compatible constructor: {}", c);
+                c.setAccessible(true);
+                return c;
+            }
+        }
+
+        // 如果还是找不到，尝试强制匹配（忽略类型检查）
+        for (Constructor<?> c : clazz.getDeclaredConstructors()) {
+            if (c.getParameterCount() == (args != null ? args.length : 0)) {
+                log.debug("Found constructor with matching parameter count: {}", c);
+                c.setAccessible(true);
+                return c;
+            }
+        }
+
+        // 最后尝试：如果是ByteBuddy生成的子类，尝试使用父类构造函数
+        if (clazz.getName().contains("ByteBuddy")) {
+            log.debug("Attempting to use parent class constructor for ByteBuddy subclass: {}", clazz.getName());
+            return findParentClassConstructor(clazz, args);
+        }
+
+        throw new NoSuchMethodException("No compatible constructor found for " + clazz.getName() +
+                " with " + (args != null ? args.length : 0) + " arguments");
+    }
+
+    /**
+     * 查找父类构造函数（用于ByteBuddy子类）
+     */
+    private static Constructor<?> findParentClassConstructor(Class<?> clazz, Object[] args)
+            throws NoSuchMethodException {
+        Class<?> parentClass = clazz.getSuperclass();
+        if (parentClass == null || parentClass == Object.class) {
+            throw new NoSuchMethodException("No parent class constructor found for " + clazz.getName());
+        }
+
+        log.debug("Looking for parent class constructor in: {}", parentClass.getName());
+
+        // 尝试在父类中查找匹配的构造函数
+        for (Constructor<?> c : parentClass.getDeclaredConstructors()) {
+            if (c.getParameterCount() == args.length) {
+                log.debug("Found parent class constructor: {}", c);
+                c.setAccessible(true);
+                return c;
+            }
+        }
+
+        // 递归查找父类的父类
+        return findParentClassConstructor(parentClass, args);
+    }
+
+    /**
+     * 解包 DefaultWrapper 并自动装箱/类型适配
+     */
+    private static Object[] unwrapAndCoerceArgs(Class<?>[] paramTypes, Object[] args) {
+        Object[] result = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            Object arg = args[i];
+            Class<?> expected = paramTypes[i];
+
+            // 解包 DefaultWrapper
+            if (arg != null && arg.getClass().getSimpleName().equals("DefaultWrapper")) {
+                try {
+                    Method get = arg.getClass().getMethod("get");
+                    arg = get.invoke(arg);
+                    log.debug("Unwrapped DefaultWrapper: {} -> {}", arg.getClass().getName(), expected.getName());
+                } catch (Exception e) {
+                    log.debug("Failed to unwrap DefaultWrapper: {}", e.getMessage());
+                }
+            }
+
+            // 类型转换和适配
+            if (arg != null) {
+                arg = coerceArgument(arg, expected);
+            }
+
+            result[i] = arg;
+        }
+        return result;
+    }
+
+    /**
+     * 强制类型转换参数
+     */
+    private static Object coerceArgument(Object arg, Class<?> expectedType) {
+        if (arg == null) {
+            return null;
+        }
+
+        Class<?> argType = arg.getClass();
+
+        // 如果类型已经匹配，直接返回
+        if (expectedType.isAssignableFrom(argType)) {
+            return arg;
+        }
+
+        // 处理基本类型和包装类型
+        if (expectedType.isPrimitive()) {
+            Class<?> wrapperType = wrapperOrSame(expectedType);
+            if (wrapperType.isAssignableFrom(argType)) {
+                return arg;
+            }
+        } else if (argType.isPrimitive()) {
+            Class<?> argWrapperType = wrapperOrSame(argType);
+            if (expectedType.isAssignableFrom(argWrapperType)) {
+                return arg;
+            }
+        }
+
+        // 尝试强制转换
+        try {
+            if (expectedType == String.class && arg != null) {
+                return arg.toString();
+            }
+
+            // 对于数字类型，尝试转换
+            if (Number.class.isAssignableFrom(argType) && Number.class.isAssignableFrom(expectedType)) {
+                if (expectedType == Integer.class || expectedType == int.class) {
+                    return ((Number) arg).intValue();
+                } else if (expectedType == Long.class || expectedType == long.class) {
+                    return ((Number) arg).longValue();
+                } else if (expectedType == Double.class || expectedType == double.class) {
+                    return ((Number) arg).doubleValue();
+                } else if (expectedType == Float.class || expectedType == float.class) {
+                    return ((Number) arg).floatValue();
+                }
+            }
+
+            // 最后尝试直接转换
+            return expectedType.cast(arg);
+        } catch (Exception e) {
+            log.warn("Failed to coerce argument from {} to {}: {}",
+                    argType.getName(), expectedType.getName(), e.getMessage());
+            return null; // 返回null作为fallback
+        }
+    }
+
+    private static boolean isCompatible(Class<?>[] paramTypes, Class<?>[] argTypes) {
+        if (paramTypes.length != argTypes.length)
+            return false;
+
+        for (int i = 0; i < paramTypes.length; i++) {
+            Class<?> expected = paramTypes[i];
+            Class<?> actual = argTypes[i];
+
+            if (actual == null) {
+                // null值总是兼容的
+                continue;
+            }
+
+            // 处理基本类型和包装类型
+            if (expected.isPrimitive()) {
+                Class<?> wrapperType = wrapperOrSame(expected);
+                if (wrapperType.isAssignableFrom(actual)) {
+                    continue;
+                }
+            } else if (actual.isPrimitive()) {
+                Class<?> actualWrapperType = wrapperOrSame(actual);
+                if (expected.isAssignableFrom(actualWrapperType)) {
+                    continue;
+                }
+            }
+
+            // 直接类型检查
+            if (expected.isAssignableFrom(actual)) {
+                continue;
+            }
+
+            // 特殊处理：Object类型可以接受任何类型
+            if (expected == Object.class) {
+                continue;
+            }
+
+            // 如果都不匹配，返回false
+            return false;
+        }
+        return true;
+    }
+
+    private static Class<?> wrapperOrSame(Class<?> clazz) {
+        if (!clazz.isPrimitive())
+            return clazz;
+        if (clazz == int.class)
+            return Integer.class;
+        if (clazz == long.class)
+            return Long.class;
+        if (clazz == boolean.class)
+            return Boolean.class;
+        if (clazz == double.class)
+            return Double.class;
+        if (clazz == float.class)
+            return Float.class;
+        if (clazz == char.class)
+            return Character.class;
+        if (clazz == byte.class)
+            return Byte.class;
+        if (clazz == short.class)
+            return Short.class;
+        return clazz;
+    }
+}

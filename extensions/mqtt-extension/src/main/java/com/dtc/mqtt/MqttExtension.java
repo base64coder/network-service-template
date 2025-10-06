@@ -9,9 +9,17 @@ import com.dtc.api.parameter.ExtensionStartInput;
 import com.dtc.api.parameter.ExtensionStartOutput;
 import com.dtc.api.parameter.ExtensionStopInput;
 import com.dtc.api.parameter.ExtensionStopOutput;
+import com.dtc.core.extensions.NetworkExtension;
+import com.dtc.core.extensions.model.ExtensionMetadata;
+import com.dtc.core.extensions.GracefulShutdownExtension;
+import com.dtc.core.extensions.RequestStatisticsExtension;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * MQTT协议扩展示例
@@ -19,12 +27,20 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Network Service Template
  */
-public class MqttExtension implements ExtensionMain, ProtocolExtension {
+public class MqttExtension implements ExtensionMain, ProtocolExtension, NetworkExtension,
+        GracefulShutdownExtension, RequestStatisticsExtension {
 
     private static final Logger log = LoggerFactory.getLogger(MqttExtension.class);
 
     private volatile boolean started = false;
     private volatile boolean enabled = true;
+    private volatile boolean shutdownPrepared = false;
+
+    // 请求统计
+    private final AtomicLong totalProcessedRequests = new AtomicLong(0);
+    private final AtomicLong errorRequestCount = new AtomicLong(0);
+    private final AtomicLong activeRequestCount = new AtomicLong(0);
+    private final AtomicLong totalProcessingTime = new AtomicLong(0);
 
     @Override
     public void extensionStart(@NotNull ExtensionStartInput input, @NotNull ExtensionStartOutput output) {
@@ -167,5 +183,209 @@ public class MqttExtension implements ExtensionMain, ProtocolExtension {
             return messageType.getName().contains("Mqtt") ||
                     messageType.getName().contains("MQTT");
         }
+    }
+
+    // NetworkExtension 实现
+    @Override
+    @NotNull
+    public String getId() {
+        return "mqtt-extension";
+    }
+
+    @Override
+    @NotNull
+    public String getName() {
+        return "MQTT Protocol Extension";
+    }
+
+    @Override
+    @NotNull
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    @Nullable
+    public String getAuthor() {
+        return "Network Service Template";
+    }
+
+    @Override
+    public int getPriority() {
+        return 50;
+    }
+
+    @Override
+    public int getStartPriority() {
+        return 1000;
+    }
+
+    @Override
+    @NotNull
+    public ExtensionMetadata getMetadata() {
+        return ExtensionMetadata.builder()
+                .id(getId())
+                .name(getName())
+                .version(getVersion())
+                .author(getAuthor())
+                .priority(getPriority())
+                .startPriority(getStartPriority())
+                .build();
+    }
+
+    @Override
+    @NotNull
+    public Path getExtensionFolderPath() {
+        return Paths.get("extensions", getId());
+    }
+
+    @Override
+    @Nullable
+    public ClassLoader getExtensionClassloader() {
+        return this.getClass().getClassLoader();
+    }
+
+    @Override
+    public void start() throws Exception {
+        if (!started) {
+            log.info("Starting MQTT extension...");
+            started = true;
+            log.info("MQTT extension started successfully");
+        }
+    }
+
+    @Override
+    public void stop() throws Exception {
+        if (started) {
+            log.info("Stopping MQTT extension...");
+            started = false;
+            log.info("MQTT extension stopped successfully");
+        }
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        log.info("MQTT extension {} {}", getId(), enabled ? "enabled" : "disabled");
+    }
+
+    @Override
+    public boolean isStarted() {
+        return started;
+    }
+
+    @Override
+    public boolean isStopped() {
+        return !started;
+    }
+
+    @Override
+    public void cleanup(boolean disable) {
+        log.info("Cleaning up MQTT extension: {} (disable: {})", getId(), disable);
+        if (disable) {
+            setEnabled(false);
+        }
+    }
+
+    // ========== GracefulShutdownExtension 实现 ==========
+
+    @Override
+    public void prepareForShutdown() throws Exception {
+        log.info("Preparing MQTT extension for shutdown...");
+        shutdownPrepared = true;
+
+        // 停止接收新的 MQTT 连接
+        // 这里可以关闭端口、移除路由等
+        log.info("MQTT extension prepared for shutdown");
+    }
+
+    @Override
+    public boolean canShutdownSafely() {
+        return activeRequestCount.get() == 0;
+    }
+
+    @Override
+    public int getActiveRequestCount() {
+        return (int) activeRequestCount.get();
+    }
+
+    @Override
+    public boolean waitForRequestsToComplete(long timeoutMs) {
+        long startTime = System.currentTimeMillis();
+
+        while (activeRequestCount.get() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+
+        return activeRequestCount.get() == 0;
+    }
+
+    // ========== RequestStatisticsExtension 实现 ==========
+
+    @Override
+    public int getPendingRequestCount() {
+        return getActiveRequestCount();
+    }
+
+    @Override
+    public long getTotalProcessedRequests() {
+        return totalProcessedRequests.get();
+    }
+
+    @Override
+    public long getErrorRequestCount() {
+        return errorRequestCount.get();
+    }
+
+    @Override
+    public double getAverageProcessingTime() {
+        long total = totalProcessedRequests.get();
+        if (total == 0) {
+            return 0.0;
+        }
+        return (double) totalProcessingTime.get() / total;
+    }
+
+    @Override
+    public void resetStatistics() {
+        totalProcessedRequests.set(0);
+        errorRequestCount.set(0);
+        activeRequestCount.set(0);
+        totalProcessingTime.set(0);
+        log.info("MQTT extension statistics reset");
+    }
+
+    /**
+     * 记录请求开始处理
+     */
+    public void recordRequestStart() {
+        activeRequestCount.incrementAndGet();
+    }
+
+    /**
+     * 记录请求处理完成
+     */
+    public void recordRequestComplete(long processingTimeMs) {
+        activeRequestCount.decrementAndGet();
+        totalProcessedRequests.incrementAndGet();
+        totalProcessingTime.addAndGet(processingTimeMs);
+    }
+
+    /**
+     * 记录请求处理错误
+     */
+    public void recordRequestError() {
+        activeRequestCount.decrementAndGet();
+        errorRequestCount.incrementAndGet();
     }
 }

@@ -13,7 +13,6 @@ import java.nio.file.Path;
  * @author Network Service Template
  */
 public interface NetworkExtension {
-
     /**
      * 获取扩展ID
      * 

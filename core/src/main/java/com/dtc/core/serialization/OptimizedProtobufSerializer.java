@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.matcher.ElementMatchers;
 
 import javax.inject.Singleton;
 
@@ -12,9 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dtc.api.annotations.NotNull;
+import com.dtc.api.annotations.Nullable;
 import com.google.protobuf.Message;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
+import com.google.protobuf.ExtensionRegistryLite;
 
 /**
  * 优化的 Protobuf 序列化器 提供高性能的序列化/反序列化功能，包含多种性能优化策略
@@ -235,13 +240,111 @@ public class OptimizedProtobufSerializer {
         try {
             Method parserMethod = parserMethodCache.get(messageClass);
             if (parserMethod == null) {
-                parserMethod = messageClass.getMethod("parser");
+                // 使用 ByteBuddy 创建解析器
+                parserMethod = createByteBuddyParserMethod(messageClass);
+                if (parserMethod == null) {
+                    // 如果没有 parser() 方法，尝试使用默认的解析方式
+                    log.warn("No parser() method found for class: {}, using fallback parser",
+                            messageClass.getSimpleName());
+                    return createFallbackParser(messageClass);
+                }
                 parserMethodCache.put(messageClass, parserMethod);
             }
             return (Parser<T>) parserMethod.invoke(null);
         } catch (Exception e) {
-            throw new SerializationException("Failed to create parser for class: " + messageClass.getSimpleName(), e);
+            log.warn("Failed to create parser for class: {}, using fallback parser", messageClass.getSimpleName(), e);
+            return createFallbackParser(messageClass);
         }
+    }
+
+    /**
+     * 使用 ByteBuddy 创建解析器方法
+     * 
+     * @param messageClass 消息类
+     * @return 解析器方法
+     */
+    @Nullable
+    private <T extends Message> Method createByteBuddyParserMethod(@NotNull Class<T> messageClass) {
+        try {
+            // 尝试获取原始的 parser 方法
+            try {
+                return messageClass.getMethod("parser");
+            } catch (NoSuchMethodException e) {
+                log.debug("No parser() method found for class: {}, creating ByteBuddy parser",
+                        messageClass.getSimpleName());
+
+                // 使用 ByteBuddy 创建动态解析器
+                Class<?> parserClass = new ByteBuddy()
+                        .subclass(Object.class)
+                        .implement(Parser.class)
+                        .method(ElementMatchers.any())
+                        .intercept(MethodDelegation.to(new ByteBuddyParserInterceptor<T>(messageClass)))
+                        .make()
+                        .load(messageClass.getClassLoader())
+                        .getLoaded();
+
+                // 返回解析器实例的 parser 方法
+                Object parserInstance = parserClass.getDeclaredConstructor().newInstance();
+                return parserInstance.getClass().getMethod("parseFrom", byte[].class);
+
+            }
+        } catch (Exception e) {
+            log.warn("Failed to create ByteBuddy parser for class: {}", messageClass.getSimpleName(), e);
+            return null;
+        }
+    }
+
+    /**
+     * ByteBuddy 解析器拦截器
+     */
+    public static class ByteBuddyParserInterceptor<T extends Message> {
+        private final Class<T> messageClass;
+        private static final Logger log = LoggerFactory.getLogger(ByteBuddyParserInterceptor.class);
+
+        public ByteBuddyParserInterceptor(Class<T> messageClass) {
+            this.messageClass = messageClass;
+        }
+
+        @net.bytebuddy.implementation.bind.annotation.RuntimeType
+        public Object intercept(@net.bytebuddy.implementation.bind.annotation.AllArguments Object[] args,
+                @net.bytebuddy.implementation.bind.annotation.Origin java.lang.reflect.Method method) {
+            try {
+                String methodName = method.getName();
+                if ("parseFrom".equals(methodName) && args.length == 1 && args[0] instanceof byte[]) {
+                    return parseFromByteArray((byte[]) args[0]);
+                } else if ("parseFrom".equals(methodName) && args.length == 2 && args[0] instanceof byte[]) {
+                    return parseFromByteArrayWithRegistry((byte[]) args[0], (ExtensionRegistryLite) args[1]);
+                }
+                // 其他方法的默认实现
+                return null;
+            } catch (Exception e) {
+                log.error("Error in ByteBuddy parser interceptor", e);
+                throw new RuntimeException("Failed to parse message", e);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private T parseFromByteArray(byte[] data) throws Exception {
+            Method parseFromMethod = messageClass.getMethod("parseFrom", byte[].class);
+            return (T) parseFromMethod.invoke(null, data);
+        }
+
+        @SuppressWarnings("unchecked")
+        private T parseFromByteArrayWithRegistry(byte[] data, ExtensionRegistryLite registry) throws Exception {
+            Method parseFromMethod = messageClass.getMethod("parseFrom", byte[].class, ExtensionRegistryLite.class);
+            return (T) parseFromMethod.invoke(null, data, registry);
+        }
+    }
+
+    /**
+     * 创建备用 Parser（用于没有标准 parser() 方法的类）
+     */
+    @SuppressWarnings("unchecked")
+    @NotNull
+    private <T extends Message> Parser<T> createFallbackParser(@NotNull Class<T> messageClass) {
+        // 对于测试类，直接抛出异常，让测试失败
+        throw new SerializationException("No parser() method found for class: " + messageClass.getSimpleName() +
+                ". This class is not a proper Protobuf generated class.", new RuntimeException("Invalid class"));
     }
 
     /**

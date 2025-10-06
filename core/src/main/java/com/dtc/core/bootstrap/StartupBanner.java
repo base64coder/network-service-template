@@ -4,7 +4,6 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.core.config.ListenerConfiguration;
 import com.dtc.core.config.ServerConfiguration;
 import com.google.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,9 +20,10 @@ import java.util.Map;
 public class StartupBanner {
 
     private static final Logger log = LoggerFactory.getLogger(StartupBanner.class);
-    private static final String BANNER = "╔══════════════════════════════════════════════════════════════╗\n"
+    private static final String BANNER = ""
+            + "╔══════════════════════════════════════════════════════════════╗\n"
             + "║                    Network Service Template                  ║\n"
-            + "║                    可扩展的网络服务框架                        ║\n"
+            + "║                    可扩展的网络服务框架                         ║\n"
             + "╚══════════════════════════════════════════════════════════════╝\n";
 
     private final @NotNull ServerConfiguration configuration;

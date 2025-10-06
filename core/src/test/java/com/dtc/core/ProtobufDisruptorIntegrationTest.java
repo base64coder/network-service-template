@@ -8,7 +8,9 @@ import com.google.protobuf.ByteString;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Protobuf 和 Disruptor 集成测试
@@ -86,7 +88,7 @@ public class ProtobufDisruptorIntegrationTest {
     }
 
     @Test
-    public void testFullIntegration() throws InterruptedException {
+    public void testFullIntegration() throws InterruptedException, ExecutionException, TimeoutException {
         // 测试完整集成
         ServerConfiguration config = ServerConfiguration.builder().serverName("Integration Test Server")
                 .serverVersion("1.0.0").build();

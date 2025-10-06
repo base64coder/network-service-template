@@ -60,7 +60,9 @@ public class GuiceContainerFactory {
                     /* 队列模块 */
                     new QueueModule(),
                     /* 编解码器模块 */
-                    new CodecModule());
+                    new CodecModule(),
+                    /* 验证模块 */
+                    new ValidationModule());
 
             return Guice.createInjector(Stage.PRODUCTION, modules.build());
 

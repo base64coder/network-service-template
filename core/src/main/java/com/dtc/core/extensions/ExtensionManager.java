@@ -24,14 +24,43 @@ public class ExtensionManager {
     /**
      * 注册扩展
      * 
-     * @param extension 扩展实例
+     * @param extension   扩展实例
+     * @param extensionId 扩展ID
      */
-    public void registerExtension(@NotNull NetworkExtension extension) {
-        String extensionId = extension.getId();
-        extensions.put(extensionId, extension);
-        extensionClassLoaders.put(extensionId, extension.getExtensionClassloader());
+    public void registerExtension(@NotNull NetworkExtension extension, @NotNull String extensionId) {
+        // 验证输入参数
+        if (extension == null) {
+            throw new IllegalArgumentException("Extension cannot be null");
+        }
+        if (extensionId == null || extensionId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Extension ID cannot be null or empty");
+        }
 
-        log.info("Registered extension: {} v{}", extensionId, extension.getVersion());
+        try {
+            log.debug("Registering extension: {} with class: {}", extensionId, extension.getClass().getName());
+
+            // 检查扩展是否已经存在
+            if (extensions.containsKey(extensionId)) {
+                log.warn("Extension {} already exists, replacing with new instance", extensionId);
+            }
+
+            extensions.put(extensionId, extension);
+
+            // 安全地获取类加载器
+            ClassLoader classLoader = extension.getExtensionClassloader();
+            if (classLoader != null) {
+                extensionClassLoaders.put(extensionId, classLoader);
+                log.debug("Registered class loader for extension: {}", extensionId);
+            } else {
+                log.warn("Extension {} has null class loader", extensionId);
+            }
+
+            log.info("Registered extension: {} v{}", extensionId, extension.getVersion());
+        } catch (Exception e) {
+            log.error("Failed to register extension: {} with class: {}", extensionId,
+                    extension.getClass().getName(), e);
+            throw new RuntimeException("Failed to register extension: " + extensionId, e);
+        }
     }
 
     /**
@@ -66,7 +95,7 @@ public class ExtensionManager {
      */
     @NotNull
     public Map<String, NetworkExtension> getAllExtensions() {
-        return Map.copyOf(extensions);
+        return new java.util.HashMap<>(extensions);
     }
 
     /**

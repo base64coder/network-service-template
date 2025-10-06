@@ -9,11 +9,20 @@ import com.dtc.api.parameter.ExtensionStartInput;
 import com.dtc.api.parameter.ExtensionStartOutput;
 import com.dtc.api.parameter.ExtensionStopInput;
 import com.dtc.api.parameter.ExtensionStopOutput;
+import com.dtc.core.extensions.NetworkExtension;
+import com.dtc.core.extensions.model.ExtensionMetadata;
+import com.dtc.core.extensions.GracefulShutdownExtension;
+import com.dtc.core.extensions.RequestStatisticsExtension;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * WebSocket协议扩展示例
@@ -21,12 +30,23 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Network Service Template
  */
-public class WebSocketExtension implements ExtensionMain, ProtocolExtension {
+public class WebSocketExtension implements ExtensionMain, ProtocolExtension, NetworkExtension,
+        GracefulShutdownExtension, RequestStatisticsExtension {
 
     private static final Logger log = LoggerFactory.getLogger(WebSocketExtension.class);
 
     private volatile boolean started = false;
     private volatile boolean enabled = true;
+    private volatile boolean shutdownPrepared = false;
+
+    // 请求统计
+    private final AtomicLong totalProcessedRequests = new AtomicLong(0);
+    private final AtomicLong errorRequestCount = new AtomicLong(0);
+    private final AtomicLong activeRequestCount = new AtomicLong(0);
+    private final AtomicLong totalProcessingTime = new AtomicLong(0);
+
+    // 连接管理
+    private final ConcurrentHashMap<String, ChannelHandlerContext> activeConnections = new ConcurrentHashMap<>();
 
     @Override
     public void extensionStart(@NotNull ExtensionStartInput input, @NotNull ExtensionStartOutput output) {
@@ -81,6 +101,9 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension {
     public void onConnect(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
         log.info("WebSocket client connected: {} from {}", clientId, ctx.channel().remoteAddress());
 
+        // 添加连接到活跃连接管理
+        activeConnections.put(clientId, ctx);
+
         // 处理WebSocket连接
         // 这里可以实现WebSocket握手和连接建立逻辑
     }
@@ -88,6 +111,9 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension {
     @Override
     public void onDisconnect(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
         log.info("WebSocket client disconnected: {}", clientId);
+
+        // 从活跃连接中移除
+        activeConnections.remove(clientId);
 
         // 处理WebSocket断开连接
         // 这里可以实现WebSocket关闭逻辑
@@ -97,9 +123,24 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension {
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
         log.debug("WebSocket message received: {}", message.getClass().getSimpleName());
 
-        // 处理WebSocket消息
-        if (message instanceof WebSocketFrame) {
-            handleWebSocketFrame(ctx, (WebSocketFrame) message);
+        // 记录请求开始处理
+        recordRequestStart();
+        long startTime = System.currentTimeMillis();
+
+        try {
+            // 处理WebSocket消息
+            if (message instanceof WebSocketFrame) {
+                handleWebSocketFrame(ctx, (WebSocketFrame) message);
+            }
+
+            // 记录请求处理完成
+            long processingTime = System.currentTimeMillis() - startTime;
+            recordRequestComplete(processingTime);
+
+        } catch (Exception e) {
+            // 记录请求处理错误
+            recordRequestError();
+            log.error("Error processing WebSocket message", e);
         }
     }
 
@@ -206,6 +247,263 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension {
             // 检查是否支持该消息类型
             return messageType.getName().contains("WebSocket") ||
                     messageType.getName().contains("websocket");
+        }
+    }
+
+    // NetworkExtension 实现
+    @Override
+    @NotNull
+    public String getId() {
+        return "websocket-extension";
+    }
+
+    @Override
+    @NotNull
+    public String getName() {
+        return "WebSocket Protocol Extension";
+    }
+
+    @Override
+    @NotNull
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    @Nullable
+    public String getAuthor() {
+        return "Network Service Template";
+    }
+
+    @Override
+    public int getPriority() {
+        return 60;
+    }
+
+    @Override
+    public int getStartPriority() {
+        return 1000;
+    }
+
+    @Override
+    @NotNull
+    public ExtensionMetadata getMetadata() {
+        return ExtensionMetadata.builder()
+                .id(getId())
+                .name(getName())
+                .version(getVersion())
+                .author(getAuthor())
+                .priority(getPriority())
+                .startPriority(getStartPriority())
+                .build();
+    }
+
+    @Override
+    @NotNull
+    public Path getExtensionFolderPath() {
+        return Paths.get("extensions", getId());
+    }
+
+    @Override
+    @Nullable
+    public ClassLoader getExtensionClassloader() {
+        return this.getClass().getClassLoader();
+    }
+
+    @Override
+    public void start() throws Exception {
+        if (!started) {
+            log.info("Starting WebSocket extension...");
+            started = true;
+            log.info("WebSocket extension started successfully");
+        }
+    }
+
+    @Override
+    public void stop() throws Exception {
+        if (started) {
+            log.info("Stopping WebSocket extension...");
+            started = false;
+            log.info("WebSocket extension stopped successfully");
+        }
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        log.info("WebSocket extension {} {}", getId(), enabled ? "enabled" : "disabled");
+    }
+
+    @Override
+    public boolean isStarted() {
+        return started;
+    }
+
+    @Override
+    public boolean isStopped() {
+        return !started;
+    }
+
+    @Override
+    public void cleanup(boolean disable) {
+        log.info("Cleaning up WebSocket extension: {} (disable: {})", getId(), disable);
+        if (disable) {
+            setEnabled(false);
+        }
+    }
+
+    // ========== GracefulShutdownExtension 实现 ==========
+
+    @Override
+    public void prepareForShutdown() throws Exception {
+        log.info("Preparing WebSocket extension for shutdown...");
+        shutdownPrepared = true;
+
+        // 停止接收新的 WebSocket 连接
+        // 这里可以关闭端口、移除路由等
+        log.info("WebSocket extension prepared for shutdown");
+    }
+
+    @Override
+    public boolean canShutdownSafely() {
+        return activeRequestCount.get() == 0 && activeConnections.isEmpty();
+    }
+
+    @Override
+    public int getActiveRequestCount() {
+        return (int) activeRequestCount.get();
+    }
+
+    @Override
+    public boolean waitForRequestsToComplete(long timeoutMs) {
+        long startTime = System.currentTimeMillis();
+
+        while (activeRequestCount.get() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+
+        return activeRequestCount.get() == 0;
+    }
+
+    // ========== RequestStatisticsExtension 实现 ==========
+
+    @Override
+    public int getPendingRequestCount() {
+        return getActiveRequestCount();
+    }
+
+    @Override
+    public long getTotalProcessedRequests() {
+        return totalProcessedRequests.get();
+    }
+
+    @Override
+    public long getErrorRequestCount() {
+        return errorRequestCount.get();
+    }
+
+    @Override
+    public double getAverageProcessingTime() {
+        long total = totalProcessedRequests.get();
+        if (total == 0) {
+            return 0.0;
+        }
+        return (double) totalProcessingTime.get() / total;
+    }
+
+    @Override
+    public void resetStatistics() {
+        totalProcessedRequests.set(0);
+        errorRequestCount.set(0);
+        activeRequestCount.set(0);
+        totalProcessingTime.set(0);
+        log.info("WebSocket extension statistics reset");
+    }
+
+    /**
+     * 记录请求开始处理
+     */
+    public void recordRequestStart() {
+        activeRequestCount.incrementAndGet();
+    }
+
+    /**
+     * 记录请求处理完成
+     */
+    public void recordRequestComplete(long processingTimeMs) {
+        activeRequestCount.decrementAndGet();
+        totalProcessedRequests.incrementAndGet();
+        totalProcessingTime.addAndGet(processingTimeMs);
+    }
+
+    /**
+     * 记录请求处理错误
+     */
+    public void recordRequestError() {
+        activeRequestCount.decrementAndGet();
+        errorRequestCount.incrementAndGet();
+    }
+
+    /**
+     * 获取活跃连接数量
+     */
+    public int getActiveConnectionCount() {
+        return activeConnections.size();
+    }
+
+    /**
+     * 获取所有活跃连接
+     */
+    public ConcurrentHashMap<String, ChannelHandlerContext> getActiveConnections() {
+        return new ConcurrentHashMap<>(activeConnections);
+    }
+
+    /**
+     * 优雅关闭所有连接
+     */
+    public void gracefulCloseAllConnections() {
+        log.info("Gracefully closing {} active WebSocket connections", activeConnections.size());
+
+        for (String clientId : activeConnections.keySet()) {
+            try {
+                ChannelHandlerContext ctx = activeConnections.get(clientId);
+                if (ctx != null && ctx.channel().isActive()) {
+                    // 发送 WebSocket 关闭帧
+                    sendWebSocketCloseFrame(ctx, clientId);
+                    // 关闭连接
+                    ctx.close();
+                }
+            } catch (Exception e) {
+                log.warn("Failed to close WebSocket connection for client: {}", clientId, e);
+            }
+        }
+
+        activeConnections.clear();
+        log.info("All WebSocket connections closed gracefully");
+    }
+
+    /**
+     * 发送 WebSocket 关闭帧
+     */
+    private void sendWebSocketCloseFrame(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
+        try {
+            // 发送关闭帧
+            TextWebSocketFrame closeFrame = new TextWebSocketFrame(
+                    "Server is shutting down. Connection will be closed.");
+            ctx.writeAndFlush(closeFrame);
+            log.debug("Sent WebSocket close frame to client: {}", clientId);
+        } catch (Exception e) {
+            log.warn("Failed to send WebSocket close frame to client: {}", clientId, e);
         }
     }
 }
