@@ -1,8 +1,8 @@
 package com.dtc.core.http.route;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.http.HttpRequest;
-import com.dtc.core.http.HttpResponse;
+import com.dtc.core.http.HttpRequestEx;
+import com.dtc.core.http.HttpResponseEx;
 
 import java.util.HashMap;
 import java.util.Map;

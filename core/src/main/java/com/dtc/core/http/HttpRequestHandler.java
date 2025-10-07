@@ -4,6 +4,8 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.core.http.route.HttpRoute;
 import com.dtc.core.http.middleware.HttpMiddleware;
+import com.dtc.core.messaging.NetworkMessageEvent;
+import com.dtc.core.queue.QueueConsumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Network Service Template
  */
 @Singleton
-public class HttpRequestHandler {
+public class HttpRequestHandler{
 
     private static final Logger log = LoggerFactory.getLogger(HttpRequestHandler.class);
 
@@ -45,14 +47,14 @@ public class HttpRequestHandler {
      * @return HTTP 响应
      */
     @NotNull
-    public HttpResponse handleRequest(@NotNull HttpRequest request) {
+    public HttpResponseEx handleRequest(@NotNull HttpRequestEx request) {
         try {
             processedRequests.incrementAndGet();
 
             log.debug("Processing HTTP request: {} {}", request.getMethod(), request.getPath());
 
             // 执行前置中间件
-            HttpResponse preResponse = executePreMiddleware(request);
+            HttpResponseEx preResponse = executePreMiddleware(request);
             if (preResponse != null) {
                 return preResponse;
             }
@@ -67,7 +69,7 @@ public class HttpRequestHandler {
             extractPathParameters(request, route);
 
             // 执行路由处理器
-            HttpResponse response = route.getHandler().handle(request);
+            HttpResponseEx response = route.getHandler().handle(request);
             if (response == null) {
                 response = createInternalServerErrorResponse("Route handler returned null");
             }
@@ -91,12 +93,12 @@ public class HttpRequestHandler {
      * 执行前置中间件
      */
     @Nullable
-    private HttpResponse executePreMiddleware(@NotNull HttpRequest request) {
+    private HttpResponseEx executePreMiddleware(@NotNull HttpRequestEx request) {
         List<HttpMiddleware> middlewares = middlewareManager.getMiddlewares();
 
         for (HttpMiddleware middleware : middlewares) {
             try {
-                HttpResponse response = middleware.beforeRequest(request);
+                HttpResponseEx response = middleware.beforeRequest(request);
                 if (response != null) {
                     log.debug("Middleware {} intercepted request", middleware.getClass().getSimpleName());
                     return response;
@@ -114,14 +116,14 @@ public class HttpRequestHandler {
      * 执行后置中间件
      */
     @NotNull
-    private HttpResponse executePostMiddleware(@NotNull HttpRequest request, @NotNull HttpResponse response) {
+    private HttpResponseEx executePostMiddleware(@NotNull HttpRequestEx request, @NotNull HttpResponseEx response) {
         List<HttpMiddleware> middlewares = middlewareManager.getMiddlewares();
 
-        HttpResponse currentResponse = response;
+        HttpResponseEx currentResponse = response;
 
         for (HttpMiddleware middleware : middlewares) {
             try {
-                HttpResponse newResponse = middleware.afterRequest(request, currentResponse);
+                HttpResponseEx newResponse = middleware.afterRequest(request, currentResponse);
                 if (newResponse != null) {
                     currentResponse = newResponse;
                 }
@@ -137,7 +139,7 @@ public class HttpRequestHandler {
     /**
      * 提取路径参数
      */
-    private void extractPathParameters(@NotNull HttpRequest request, @NotNull HttpRoute route) {
+    private void extractPathParameters(@NotNull HttpRequestEx request, @NotNull HttpRoute route) {
         Map<String, String> pathParams = route.extractPathParameters(request.getPath());
         if (pathParams != null) {
             request.getPathParameters().putAll(pathParams);
@@ -148,7 +150,7 @@ public class HttpRequestHandler {
      * 解析 JSON 请求体
      */
     @Nullable
-    public <T> T parseJsonBody(@NotNull HttpRequest request, @NotNull Class<T> clazz) {
+    public <T> T parseJsonBody(@NotNull HttpRequestEx request, @NotNull Class<T> clazz) {
         if (!request.isJsonContent() || request.getBody() == null) {
             return null;
         }
@@ -165,7 +167,7 @@ public class HttpRequestHandler {
      * 解析查询参数
      */
     @NotNull
-    public Map<String, String> parseQueryParameters(@NotNull HttpRequest request) {
+    public Map<String, String> parseQueryParameters(@NotNull HttpRequestEx request) {
         return request.getQueryParameters();
     }
 
@@ -173,7 +175,7 @@ public class HttpRequestHandler {
      * 解析表单参数
      */
     @NotNull
-    public Map<String, String> parseFormParameters(@NotNull HttpRequest request) {
+    public Map<String, String> parseFormParameters(@NotNull HttpRequestEx request) {
         // 这里可以实现表单参数解析逻辑
         return new java.util.HashMap<>();
     }
@@ -181,7 +183,7 @@ public class HttpRequestHandler {
     /**
      * 验证请求
      */
-    public boolean validateRequest(@NotNull HttpRequest request) {
+    public boolean validateRequest(@NotNull HttpRequestEx request) {
         // 基本验证
         if (request.getMethod() == null || request.getPath() == null) {
             return false;
@@ -199,8 +201,8 @@ public class HttpRequestHandler {
      * 创建 404 响应
      */
     @NotNull
-    private HttpResponse createNotFoundResponse(@NotNull HttpRequest request) {
-        return new HttpResponse.Builder().notFound().jsonContent()
+    private HttpResponseEx createNotFoundResponse(@NotNull HttpRequestEx request) {
+        return new HttpResponseEx.Builder().notFound().jsonContent()
                 .body(createErrorJson("Not Found", "The requested resource was not found")).build();
     }
 
@@ -208,8 +210,8 @@ public class HttpRequestHandler {
      * 创建 500 响应
      */
     @NotNull
-    private HttpResponse createInternalServerErrorResponse(@Nullable String message) {
-        return new HttpResponse.Builder().internalServerError().jsonContent()
+    private HttpResponseEx createInternalServerErrorResponse(@Nullable String message) {
+        return new HttpResponseEx.Builder().internalServerError().jsonContent()
                 .body(createErrorJson("Internal Server Error", message)).build();
     }
 

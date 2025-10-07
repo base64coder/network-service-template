@@ -4,8 +4,10 @@ import com.dtc.api.ProtocolExtension;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.core.extensions.ExtensionManager;
+import com.dtc.core.extensions.NetworkExtension;
 import com.dtc.core.messaging.NetworkMessageHandler;
 import com.dtc.core.netty.codec.CodecFactory;
+import com.dtc.core.netty.PipelineConfigurer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -13,13 +15,19 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +48,7 @@ public class NettyServer {
     private final @NotNull CodecFactory codecFactory;
     private final @NotNull NetworkMessageHandler messageHandler;
     private final @NotNull ExtensionManager extensionManager;
+    private final @NotNull PipelineConfigurer pipelineConfigurer;
     private final AtomicBoolean started = new AtomicBoolean(false);
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
@@ -48,10 +57,11 @@ public class NettyServer {
 
     @Inject
     public NettyServer(@NotNull CodecFactory codecFactory, @NotNull NetworkMessageHandler messageHandler,
-            @NotNull ExtensionManager extensionManager) {
+            @NotNull ExtensionManager extensionManager, @NotNull PipelineConfigurer pipelineConfigurer) {
         this.codecFactory = codecFactory;
         this.messageHandler = messageHandler;
         this.extensionManager = extensionManager;
+        this.pipelineConfigurer = pipelineConfigurer;
     }
 
     /**
@@ -69,7 +79,7 @@ public class NettyServer {
 
             try {
                 // 获取所有已注册的扩展
-                Map<String, com.dtc.core.extensions.NetworkExtension> extensions = extensionManager.getAllExtensions();
+                Map<String, NetworkExtension> extensions = extensionManager.getAllExtensions();
                 log.info("📦 Found {} registered extensions", extensions.size());
 
                 // 扫描协议扩展
@@ -77,7 +87,7 @@ public class NettyServer {
                 log.info("🔌 Found {} protocol extensions", protocolExtensions.size());
 
                 if (protocolExtensions.isEmpty()) {
-                    log.warn("⚠️ No protocol extensions found, starting default server on port 8080");
+                    log.warn("⚠️ No protocol extensions found, starting default server on port 9090");
                     startDefaultServer();
                 } else {
                     // 为每个协议扩展启动对应的服务器
@@ -170,10 +180,10 @@ public class NettyServer {
      */
     @NotNull
     private List<ProtocolExtension> scanProtocolExtensions(
-            @NotNull Map<String, com.dtc.core.extensions.NetworkExtension> extensions) {
+            @NotNull Map<String, NetworkExtension> extensions) {
         List<ProtocolExtension> protocolExtensions = new ArrayList<>();
 
-        for (com.dtc.core.extensions.NetworkExtension extension : extensions.values()) {
+        for (NetworkExtension extension : extensions.values()) {
             if (extension.isEnabled() && extension.isStarted()) {
                 // 检查扩展是否实现了 ProtocolExtension 接口
                 if (extension instanceof ProtocolExtension) {
@@ -194,8 +204,8 @@ public class NettyServer {
      * @throws Exception 启动异常
      */
     private void startDefaultServer() throws Exception {
-        log.info("🌐 Starting default server on port 8080");
-        startServerOnPort(8080, null);
+        log.info("🌐 Starting default server on port 9090");
+        startServerOnPort(9090, null);
     }
 
     /**
@@ -238,34 +248,8 @@ public class NettyServer {
                         // 添加日志处理器
                         pipeline.addLast("logging", new LoggingHandler(LogLevel.INFO));
 
-                        // 添加长度字段解码器
-                        pipeline.addLast("frameDecoder",
-                                new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, 4, 0, 4));
-
-                        // 添加长度字段编码器
-                        pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
-
-                        // 根据协议扩展选择编解码器
-                        if (extension != null) {
-                            // 使用协议扩展的编解码器
-                            String protocolName = extension.getProtocolName().toLowerCase();
-                            try {
-                                CodecFactory.CodecPair codecPair = codecFactory.createCodecPair(protocolName);
-                                pipeline.addLast("decoder", codecPair.getDecoder());
-                                pipeline.addLast("encoder", codecPair.getEncoder());
-                                log.debug("Using {} codec for protocol {}", protocolName, extension.getProtocolName());
-                            } catch (Exception e) {
-                                log.warn("Failed to create {} codec, using simple codec", protocolName);
-                                CodecFactory.CodecPair codecPair = codecFactory.createCodecPair("simple");
-                                pipeline.addLast("decoder", codecPair.getDecoder());
-                                pipeline.addLast("encoder", codecPair.getEncoder());
-                            }
-                        } else {
-                            // 使用默认简单编解码器
-                            CodecFactory.CodecPair codecPair = codecFactory.createCodecPair("simple");
-                            pipeline.addLast("decoder", codecPair.getDecoder());
-                            pipeline.addLast("encoder", codecPair.getEncoder());
-                        }
+                        // 配置Pipeline
+                        pipelineConfigurer.configurePipeline(pipeline, extension);
 
                         // 添加业务处理器
                         pipeline.addLast("handler", new NettyServerHandler(messageHandler, extension));

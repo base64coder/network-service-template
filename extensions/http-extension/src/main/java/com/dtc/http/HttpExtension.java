@@ -5,6 +5,7 @@ import com.dtc.api.MessageHandler;
 import com.dtc.api.ProtocolExtension;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
+import com.dtc.api.ServiceConfig;
 import com.dtc.api.parameter.ExtensionStartInput;
 import com.dtc.api.parameter.ExtensionStartOutput;
 import com.dtc.api.parameter.ExtensionStopInput;
@@ -12,18 +13,26 @@ import com.dtc.api.parameter.ExtensionStopOutput;
 import com.dtc.core.extensions.NetworkExtension;
 import com.dtc.core.extensions.model.ExtensionMetadata;
 import com.dtc.core.extensions.GracefulShutdownExtension;
-import com.dtc.core.extensions.RequestStatisticsExtension;
+import com.dtc.core.http.HttpRequestEx;
+import com.dtc.core.http.HttpResponseEx;
 import com.dtc.core.http.*;
+import com.dtc.core.statistics.StatisticsAware;
+import com.dtc.core.http.middleware.AuthMiddleware;
+import com.dtc.core.http.middleware.CorsMiddleware;
+import com.dtc.core.http.middleware.LoggingMiddleware;
+import com.dtc.core.http.middleware.RateLimitMiddleware;
+import com.dtc.core.messaging.NetworkMessageEvent;
+import com.dtc.core.messaging.NetworkMessageQueue;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.FullHttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * HTTP REST 协议扩展
@@ -32,27 +41,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Network Service Template
  */
 @Singleton
-public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkExtension,
-        GracefulShutdownExtension, RequestStatisticsExtension {
+public class HttpExtension extends StatisticsAware implements ExtensionMain, ProtocolExtension, NetworkExtension,
+        GracefulShutdownExtension {
 
     private static final Logger log = LoggerFactory.getLogger(HttpExtension.class);
 
+    @SuppressWarnings("unused") // 保留用于依赖注入，但由NettyServer统一管理
     private final HttpServer httpServer;
     private final HttpRequestHandler requestHandler;
     private final HttpResponseHandler responseHandler;
     private final HttpRouteManager routeManager;
     private final HttpMiddlewareManager middlewareManager;
+    private final NetworkMessageQueue messageQueue;
 
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean enabled = new AtomicBoolean(true);
-    private final AtomicBoolean stopped = new AtomicBoolean(false);
-    private final AtomicBoolean shutdownPrepared = new AtomicBoolean(false);
-
-    // 请求统计
-    private final AtomicLong totalProcessedRequests = new AtomicLong(0);
-    private final AtomicLong errorRequestCount = new AtomicLong(0);
-    private final AtomicLong activeRequestCount = new AtomicLong(0);
-    private final AtomicLong totalProcessingTime = new AtomicLong(0);
+    private volatile boolean started = false;
+    private volatile boolean enabled = true;
+    private volatile boolean shutdownPrepared = false;
+    private volatile boolean stopped = false;
 
     // NetworkExtension 需要的字段
     private final String id = "http-extension";
@@ -69,12 +74,16 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
             @NotNull HttpRequestHandler requestHandler,
             @NotNull HttpResponseHandler responseHandler,
             @NotNull HttpRouteManager routeManager,
-            @NotNull HttpMiddlewareManager middlewareManager) {
+            @NotNull HttpMiddlewareManager middlewareManager,
+            @NotNull NetworkMessageQueue messageQueue,
+            @NotNull com.dtc.core.statistics.StatisticsCollector statisticsCollector) {
+        super(statisticsCollector);
         this.httpServer = httpServer;
         this.requestHandler = requestHandler;
         this.responseHandler = responseHandler;
         this.routeManager = routeManager;
         this.middlewareManager = middlewareManager;
+        this.messageQueue = messageQueue;
 
         // 初始化 NetworkExtension 字段
         this.metadata = ExtensionMetadata.builder()
@@ -94,7 +103,8 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public void extensionStart(@NotNull ExtensionStartInput input, @NotNull ExtensionStartOutput output) {
-        if (started.compareAndSet(false, true)) {
+        if (!started) {
+            started = true;
             log.info("🚀 Starting HTTP REST extension...");
 
             try {
@@ -104,13 +114,10 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
                 // 初始化中间件
                 initializeMiddleware();
 
-                // 启动 HTTP 服务器
-                httpServer.start();
-
-                log.info("✅ HTTP REST extension started successfully on port {}", getDefaultPort());
+                log.info("✅ HTTP REST extension started successfully (server managed by NettyServer)");
             } catch (Exception e) {
                 log.error("❌ Failed to start HTTP REST extension", e);
-                started.set(false);
+                started = false;
                 output.preventStartup("Failed to start HTTP REST extension: " + e.getMessage());
                 throw new RuntimeException("Failed to start HTTP REST extension", e);
             }
@@ -119,15 +126,14 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public void extensionStop(@NotNull ExtensionStopInput input, @NotNull ExtensionStopOutput output) {
-        if (started.compareAndSet(true, false)) {
+        if (started) {
+            started = false;
             log.info("🛑 Stopping HTTP REST extension...");
 
             try {
-                // 停止 HTTP 服务器
-                httpServer.stop();
-                stopped.set(true);
+                stopped = true;
 
-                log.info("✅ HTTP REST extension stopped successfully");
+                log.info("✅ HTTP REST extension stopped successfully (server managed by NettyServer)");
             } catch (Exception e) {
                 log.error("❌ Error stopping HTTP REST extension", e);
                 throw new RuntimeException("Failed to stop HTTP REST extension", e);
@@ -140,7 +146,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
     @Override
     @NotNull
     public String getProtocolName() {
-        return "HTTP";
+        return ServiceConfig.HTTP.getServiceName();
     }
 
     @Override
@@ -151,7 +157,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public int getDefaultPort() {
-        return 8080;
+        return ServiceConfig.HTTP.getDefaultPort();
     }
 
     @Override
@@ -171,16 +177,29 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
         log.debug("📨 HTTP message received from client: {}", ctx.channel().remoteAddress());
 
         try {
-            // 处理 HTTP 消息
-            if (message instanceof com.dtc.core.http.HttpRequest) {
-                com.dtc.core.http.HttpRequest httpRequest = (com.dtc.core.http.HttpRequest) message;
-                com.dtc.core.http.HttpResponse httpResponse = requestHandler.handleRequest(httpRequest);
+            // 处理 HTTP 消息 - 使用 Disruptor 异步处理
+            if (message instanceof FullHttpRequest) {
+                FullHttpRequest nettyRequest = (FullHttpRequest) message;
 
-                // 发送响应
-                ctx.writeAndFlush(httpResponse);
+                // 创建网络消息事件
+                NetworkMessageEvent event = createNetworkMessageEvent(ctx, nettyRequest);
+
+                // 发布到 Disruptor 队列进行异步处理
+                boolean published = messageQueue.publish(event);
+                if (published) {
+                    log.debug("✅ HTTP message published to Disruptor queue: {}", event.getEventId());
+                } else {
+                    log.error("❌ Failed to publish HTTP message to Disruptor queue");
+                    // 如果发布失败，发送错误响应
+                    sendErrorResponse(ctx, "Service temporarily unavailable");
+                }
+            } else {
+                log.warn("⚠️ Received unexpected message type in HTTP extension: {}",
+                        message.getClass().getSimpleName());
             }
         } catch (Exception e) {
             log.error("❌ Error handling HTTP message from client: {}", ctx.channel().remoteAddress(), e);
+            sendErrorResponse(ctx, "Internal server error");
         }
     }
 
@@ -190,7 +209,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
         try {
             // 创建错误响应
-            com.dtc.core.http.HttpResponse errorResponse = responseHandler.createErrorResponse(500,
+            HttpResponseEx errorResponse = responseHandler.createErrorResponse(500,
                     "Internal Server Error", cause.getMessage());
             ctx.writeAndFlush(errorResponse);
         } catch (Exception e) {
@@ -200,7 +219,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     @Nullable
-    public com.dtc.api.MessageHandler getMessageHandler() {
+    public MessageHandler getMessageHandler() {
         return new HttpMessageHandler();
     }
 
@@ -260,7 +279,11 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public void start() throws Exception {
-        if (started.compareAndSet(false, true)) {
+        log.info("🔍 HttpExtension.start() method called - thread: {}", Thread.currentThread().getName());
+        log.info("🔍 Current started state: {}", started);
+
+        if (!started) {
+            started = true;
             log.info("🚀 Starting HTTP REST extension...");
 
             try {
@@ -269,14 +292,10 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
                 // 初始化中间件
                 initializeMiddleware();
-
-                // 启动 HTTP 服务器
-                httpServer.start();
-
-                log.info("✅ HTTP REST extension started successfully on port {}", getDefaultPort());
+                log.info("✅ HTTP REST extension initialized successfully (server managed by NettyServer)");
             } catch (Exception e) {
-                log.error("❌ Failed to start HTTP REST extension", e);
-                started.set(false);
+                log.error("❌ Failed to initialize HTTP REST extension", e);
+                started = false;
                 throw e;
             }
         }
@@ -284,15 +303,14 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public void stop() throws Exception {
-        if (started.compareAndSet(true, false)) {
+        if (started) {
+            started = false;
             log.info("🛑 Stopping HTTP REST extension...");
 
             try {
-                // 停止 HTTP 服务器
-                httpServer.stop();
-                stopped.set(true);
+                stopped = true;
 
-                log.info("✅ HTTP REST extension stopped successfully");
+                log.info("✅ HTTP REST extension stopped successfully (server managed by NettyServer)");
             } catch (Exception e) {
                 log.error("❌ Error stopping HTTP REST extension", e);
                 throw e;
@@ -302,23 +320,23 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public boolean isEnabled() {
-        return enabled.get();
+        return enabled;
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        this.enabled.set(enabled);
+        this.enabled = enabled;
         log.info("HTTP REST extension {} {}", enabled ? "enabled" : "disabled");
     }
 
     @Override
     public boolean isStarted() {
-        return started.get();
+        return started;
     }
 
     @Override
     public boolean isStopped() {
-        return stopped.get();
+        return stopped;
     }
 
     @Override
@@ -326,7 +344,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
         log.info("🧹 Cleaning up HTTP REST extension (disable: {})", disable);
 
         try {
-            if (started.get()) {
+            if (started) {
                 stop();
             }
 
@@ -385,37 +403,38 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
         log.info("🔧 Initializing HTTP middleware...");
 
         // 注册中间件
-        middlewareManager.addMiddleware(new com.dtc.core.http.middleware.CorsMiddleware());
-        middlewareManager.addMiddleware(new com.dtc.core.http.middleware.LoggingMiddleware());
-        middlewareManager.addMiddleware(new com.dtc.core.http.middleware.AuthMiddleware());
-        middlewareManager.addMiddleware(new com.dtc.core.http.middleware.RateLimitMiddleware());
+        middlewareManager.addMiddleware(new CorsMiddleware());
+        middlewareManager.addMiddleware(new LoggingMiddleware());
+        middlewareManager.addMiddleware(new AuthMiddleware());
+        middlewareManager.addMiddleware(new RateLimitMiddleware());
 
         log.info("✅ HTTP middleware initialized successfully");
     }
 
     // ========== 路由处理方法 ==========
 
-    private com.dtc.core.http.HttpResponse handleRoot(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleRoot(HttpRequestEx request) {
         return responseHandler.createJsonResponse(200, Map.of(
                 "message", "Welcome to HTTP REST API",
                 "version", "1.0.0",
                 "timestamp", System.currentTimeMillis()));
     }
 
-    private com.dtc.core.http.HttpResponse handleHealth(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleHealth(HttpRequestEx request) {
         return responseHandler.createJsonResponse(200, Map.of(
                 "status", "healthy",
                 "timestamp", System.currentTimeMillis()));
     }
 
-    private com.dtc.core.http.HttpResponse handleStatus(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleStatus(HttpRequestEx request) {
         return responseHandler.createJsonResponse(200, Map.of(
                 "status", "running",
                 "uptime", System.currentTimeMillis(),
-                "activeConnections", httpServer.getActiveConnections()));
+                "activeConnections", statisticsCollector.getActiveConnections(),
+                "totalRequests", statisticsCollector.getTotalRequests()));
     }
 
-    private com.dtc.core.http.HttpResponse handleApiInfo(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleApiInfo(HttpRequestEx request) {
         return responseHandler.createJsonResponse(200, Map.of(
                 "name", "Network Service Template HTTP API",
                 "version", "1.0.0",
@@ -427,7 +446,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
     }
 
     // 用户相关路由
-    private com.dtc.core.http.HttpResponse handleGetUsers(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleGetUsers(HttpRequestEx request) {
         // 实现获取用户列表逻辑
         return responseHandler.createJsonResponse(200, Map.of(
                 "users", java.util.Arrays.asList(
@@ -435,14 +454,14 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
                         Map.of("id", 2, "name", "Jane Smith", "email", "jane@example.com"))));
     }
 
-    private com.dtc.core.http.HttpResponse handleCreateUser(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleCreateUser(HttpRequestEx request) {
         // 实现创建用户逻辑
         return responseHandler.createJsonResponse(201, Map.of(
                 "message", "User created successfully",
                 "id", System.currentTimeMillis()));
     }
 
-    private com.dtc.core.http.HttpResponse handleGetUser(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleGetUser(HttpRequestEx request) {
         // 实现获取单个用户逻辑
         String userId = request.getPathParameters().get("id");
         return responseHandler.createJsonResponse(200, Map.of(
@@ -451,7 +470,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
                 "email", "john@example.com"));
     }
 
-    private com.dtc.core.http.HttpResponse handleUpdateUser(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleUpdateUser(HttpRequestEx request) {
         // 实现更新用户逻辑
         String userId = request.getPathParameters().get("id");
         return responseHandler.createJsonResponse(200, Map.of(
@@ -459,7 +478,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
                 "id", userId));
     }
 
-    private com.dtc.core.http.HttpResponse handleDeleteUser(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleDeleteUser(HttpRequestEx request) {
         // 实现删除用户逻辑
         String userId = request.getPathParameters().get("id");
         return responseHandler.createJsonResponse(200, Map.of(
@@ -468,20 +487,20 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
     }
 
     // 订单相关路由
-    private com.dtc.core.http.HttpResponse handleGetOrders(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleGetOrders(HttpRequestEx request) {
         return responseHandler.createJsonResponse(200, Map.of(
                 "orders", java.util.Arrays.asList(
                         Map.of("id", 1, "userId", 1, "total", 99.99, "status", "pending"),
                         Map.of("id", 2, "userId", 2, "total", 149.99, "status", "completed"))));
     }
 
-    private com.dtc.core.http.HttpResponse handleCreateOrder(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleCreateOrder(HttpRequestEx request) {
         return responseHandler.createJsonResponse(201, Map.of(
                 "message", "Order created successfully",
                 "id", System.currentTimeMillis()));
     }
 
-    private com.dtc.core.http.HttpResponse handleGetOrder(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleGetOrder(HttpRequestEx request) {
         String orderId = request.getPathParameters().get("id");
         return responseHandler.createJsonResponse(200, Map.of(
                 "id", orderId,
@@ -491,20 +510,20 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
     }
 
     // 产品相关路由
-    private com.dtc.core.http.HttpResponse handleGetProducts(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleGetProducts(HttpRequestEx request) {
         return responseHandler.createJsonResponse(200, Map.of(
                 "products", java.util.Arrays.asList(
                         Map.of("id", 1, "name", "Product A", "price", 99.99),
                         Map.of("id", 2, "name", "Product B", "price", 149.99))));
     }
 
-    private com.dtc.core.http.HttpResponse handleCreateProduct(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleCreateProduct(HttpRequestEx request) {
         return responseHandler.createJsonResponse(201, Map.of(
                 "message", "Product created successfully",
                 "id", System.currentTimeMillis()));
     }
 
-    private com.dtc.core.http.HttpResponse handleGetProduct(com.dtc.core.http.HttpRequest request) {
+    private HttpResponseEx handleGetProduct(HttpRequestEx request) {
         String productId = request.getPathParameters().get("id");
         return responseHandler.createJsonResponse(200, Map.of(
                 "id", productId,
@@ -518,14 +537,14 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
     /**
      * HTTP 消息处理器
      */
-    private class HttpMessageHandler implements MessageHandler {
+    public class HttpMessageHandler implements MessageHandler {
         @Override
         @Nullable
         public Object handleMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-            if (message instanceof com.dtc.core.http.HttpRequest) {
-                com.dtc.core.http.HttpRequest httpRequest = (com.dtc.core.http.HttpRequest) message;
+            if (message instanceof HttpRequestEx) {
+                HttpRequestEx httpRequest = (HttpRequestEx) message;
                 try {
-                    com.dtc.core.http.HttpResponse response = requestHandler.handleRequest(httpRequest);
+                    HttpResponseEx response = requestHandler.handleRequest(httpRequest);
                     log.debug("HTTP request processed: {} {}", httpRequest.getMethod(), httpRequest.getPath());
                     return response;
                 } catch (Exception e) {
@@ -539,8 +558,8 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
         @Override
         @Nullable
         public Object handleOutboundMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-            if (message instanceof com.dtc.core.http.HttpResponse) {
-                com.dtc.core.http.HttpResponse httpResponse = (com.dtc.core.http.HttpResponse) message;
+            if (message instanceof HttpResponseEx) {
+                HttpResponseEx httpResponse = (HttpResponseEx) message;
                 log.debug("HTTP response being sent: {}", httpResponse.getStatusCode());
                 return httpResponse;
             }
@@ -549,9 +568,125 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
         @Override
         public boolean supports(@NotNull Class<?> messageType) {
-            return com.dtc.core.http.HttpRequest.class.isAssignableFrom(messageType) ||
-                    com.dtc.core.http.HttpResponse.class.isAssignableFrom(messageType);
+            return HttpRequestEx.class.isAssignableFrom(messageType) ||
+                    HttpResponseEx.class.isAssignableFrom(messageType);
         }
+    }
+
+    // ========== 辅助方法 ==========
+
+    /**
+     * 创建网络消息事件
+     */
+    @NotNull
+    private NetworkMessageEvent createNetworkMessageEvent(@NotNull ChannelHandlerContext ctx,
+            @NotNull FullHttpRequest nettyRequest) {
+        // 生成客户端ID
+        String clientId = "client-" + System.currentTimeMillis();
+
+        // 计算消息大小
+        int messageSize = nettyRequest.content() != null ? nettyRequest.content().readableBytes() : 0;
+
+        return NetworkMessageEvent.builder()
+                .protocolType("http")
+                .clientId(clientId)
+                .message(nettyRequest)
+                .channelContext(ctx)
+                .sourceAddress(ctx.channel().remoteAddress().toString())
+                .messageSize(messageSize)
+                .messageType("HTTP_REQUEST")
+                .isRequest(true)
+                .priority(1) // HTTP请求优先级
+                .build();
+    }
+
+    /**
+     * 发送错误响应
+     */
+    private void sendErrorResponse(@NotNull ChannelHandlerContext ctx, @NotNull String errorMessage) {
+        try {
+            HttpResponseEx errorResponse = responseHandler.createErrorResponse(500, "Internal Server Error",
+                    errorMessage);
+            ctx.writeAndFlush(errorResponse);
+        } catch (Exception e) {
+            log.error("❌ Failed to send error response to client: {}", ctx.channel().remoteAddress(), e);
+        }
+    }
+
+    /**
+     * 将 Netty FullHttpRequest 转换为 HttpRequestEx
+     */
+    @NotNull
+    private HttpRequestEx convertToHttpRequestEx(@NotNull io.netty.handler.codec.http.FullHttpRequest nettyRequest) {
+        // 提取请求信息
+        String method = nettyRequest.method().name();
+        String uri = nettyRequest.uri();
+        String path = extractPathFromUri(uri);
+
+        // 提取头部信息
+        Map<String, String> headers = new HashMap<>();
+        for (Map.Entry<String, String> entry : nettyRequest.headers()) {
+            headers.put(entry.getKey().toLowerCase(), entry.getValue());
+        }
+
+        // 提取查询参数
+        Map<String, String> queryParams = extractQueryParameters(uri);
+
+        // 获取请求体
+        String body = null;
+        if (nettyRequest.content() != null && nettyRequest.content().readableBytes() > 0) {
+            byte[] bodyBytes = new byte[nettyRequest.content().readableBytes()];
+            nettyRequest.content().getBytes(0, bodyBytes);
+            body = new String(bodyBytes, java.nio.charset.StandardCharsets.UTF_8);
+        }
+
+        // 获取内容类型
+        String contentType = nettyRequest.headers().get("Content-Type");
+
+        // 生成客户端ID
+        String clientId = "client-" + System.currentTimeMillis();
+
+        return new HttpRequestEx.Builder()
+                .method(method)
+                .path(path)
+                .uri(uri)
+                .version(nettyRequest.protocolVersion())
+                .headers(headers)
+                .queryParameters(queryParams)
+                .body(body)
+                .contentType(contentType)
+                .clientId(clientId)
+                .timestamp(System.currentTimeMillis())
+                .build();
+    }
+
+    /**
+     * 从URI中提取路径
+     */
+    @NotNull
+    private String extractPathFromUri(@NotNull String uri) {
+        int queryIndex = uri.indexOf('?');
+        return queryIndex >= 0 ? uri.substring(0, queryIndex) : uri;
+    }
+
+    /**
+     * 从URI中提取查询参数
+     */
+    @NotNull
+    private Map<String, String> extractQueryParameters(@NotNull String uri) {
+        Map<String, String> queryParams = new HashMap<>();
+        int queryIndex = uri.indexOf('?');
+        if (queryIndex >= 0 && queryIndex < uri.length() - 1) {
+            String queryString = uri.substring(queryIndex + 1);
+            String[] pairs = queryString.split("&");
+            for (String pair : pairs) {
+                String[] keyValue = pair.split("=", 2);
+                if (keyValue.length == 2) {
+                    queryParams.put(keyValue[0], keyValue[1]);
+                }
+            }
+        }
+        return queryParams;
     }
 
     // ========== GracefulShutdownExtension 实现 ==========
@@ -559,7 +694,7 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
     @Override
     public void prepareForShutdown() throws Exception {
         log.info("Preparing HTTP extension for shutdown...");
-        shutdownPrepared.set(true);
+        shutdownPrepared = true;
 
         // 停止接收新的 HTTP 请求
         // 这里可以移除路由、关闭端口等
@@ -568,19 +703,20 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public boolean canShutdownSafely() {
-        return activeRequestCount.get() == 0;
+        return statisticsCollector.getActiveRequestCount() == 0;
     }
 
     @Override
-    public int getActiveRequestCount() {
-        return (int) activeRequestCount.get();
+    public long getActiveRequestCount() {
+        return super.getActiveRequestCount();
     }
 
     @Override
     public boolean waitForRequestsToComplete(long timeoutMs) {
         long startTime = System.currentTimeMillis();
 
-        while (activeRequestCount.get() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
+        while (statisticsCollector.getActiveRequestCount() > 0
+                && (System.currentTimeMillis() - startTime) < timeoutMs) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -589,65 +725,8 @@ public class HttpExtension implements ExtensionMain, ProtocolExtension, NetworkE
             }
         }
 
-        return activeRequestCount.get() == 0;
+        return statisticsCollector.getActiveRequestCount() == 0;
     }
 
-    // ========== RequestStatisticsExtension 实现 ==========
-
-    @Override
-    public int getPendingRequestCount() {
-        return getActiveRequestCount();
-    }
-
-    @Override
-    public long getTotalProcessedRequests() {
-        return totalProcessedRequests.get();
-    }
-
-    @Override
-    public long getErrorRequestCount() {
-        return errorRequestCount.get();
-    }
-
-    @Override
-    public double getAverageProcessingTime() {
-        long total = totalProcessedRequests.get();
-        if (total == 0) {
-            return 0.0;
-        }
-        return (double) totalProcessingTime.get() / total;
-    }
-
-    @Override
-    public void resetStatistics() {
-        totalProcessedRequests.set(0);
-        errorRequestCount.set(0);
-        activeRequestCount.set(0);
-        totalProcessingTime.set(0);
-        log.info("HTTP extension statistics reset");
-    }
-
-    /**
-     * 记录请求开始处理
-     */
-    public void recordRequestStart() {
-        activeRequestCount.incrementAndGet();
-    }
-
-    /**
-     * 记录请求处理完成
-     */
-    public void recordRequestComplete(long processingTimeMs) {
-        activeRequestCount.decrementAndGet();
-        totalProcessedRequests.incrementAndGet();
-        totalProcessingTime.addAndGet(processingTimeMs);
-    }
-
-    /**
-     * 记录请求处理错误
-     */
-    public void recordRequestError() {
-        activeRequestCount.decrementAndGet();
-        errorRequestCount.incrementAndGet();
-    }
+    // ========== 统计功能已移至StatisticsAware基类 ==========
 }

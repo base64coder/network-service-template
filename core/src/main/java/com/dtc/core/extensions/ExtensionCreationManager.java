@@ -10,7 +10,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * 扩展创建管理器
@@ -439,8 +442,8 @@ public class ExtensionCreationManager {
             }
 
             @Override
-            public java.nio.file.Path getExtensionFolderPath() {
-                return java.nio.file.Paths.get("extensions", getId());
+            public Path getExtensionFolderPath() {
+                return Paths.get("extensions", getId());
             }
 
             @Override
@@ -489,7 +492,7 @@ public class ExtensionCreationManager {
      * 验证实例
      */
     private void validateInstance(@Nullable Object instance, @NotNull String className) {
-        if (instance == null) {
+        if(Objects.isNull(instance)) {
             throw new RuntimeException("Constructor returned null instance for: " + className);
         }
     }
@@ -498,7 +501,7 @@ public class ExtensionCreationManager {
      * 验证输入参数
      */
     private void validateInput(@Nullable Object input, @NotNull String message) {
-        if (input == null) {
+        if (Objects.isNull(input)) {
             throw new IllegalArgumentException(message);
         }
     }

@@ -5,6 +5,7 @@ import com.dtc.api.MessageHandler;
 import com.dtc.api.ProtocolExtension;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
+import com.dtc.api.ServiceConfig;
 import com.dtc.api.parameter.ExtensionStartInput;
 import com.dtc.api.parameter.ExtensionStartOutput;
 import com.dtc.api.parameter.ExtensionStopInput;
@@ -12,14 +13,21 @@ import com.dtc.api.parameter.ExtensionStopOutput;
 import com.dtc.core.extensions.NetworkExtension;
 import com.dtc.core.extensions.model.ExtensionMetadata;
 import com.dtc.core.extensions.GracefulShutdownExtension;
-import com.dtc.core.extensions.RequestStatisticsExtension;
+import com.dtc.core.mqtt.MqttServer;
+import com.dtc.core.mqtt.MqttMessageHandler;
+import com.dtc.core.mqtt.MqttConnectionManager;
+import com.dtc.core.statistics.StatisticsAware;
+import com.dtc.core.messaging.NetworkMessageEvent;
+import com.dtc.core.messaging.NetworkMessageQueue;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * MQTT协议扩展示例
@@ -27,20 +35,35 @@ import java.util.concurrent.atomic.AtomicLong;
  * 
  * @author Network Service Template
  */
-public class MqttExtension implements ExtensionMain, ProtocolExtension, NetworkExtension,
-        GracefulShutdownExtension, RequestStatisticsExtension {
+@Singleton
+public class MqttExtension extends StatisticsAware implements ExtensionMain, ProtocolExtension, NetworkExtension,
+        GracefulShutdownExtension {
 
     private static final Logger log = LoggerFactory.getLogger(MqttExtension.class);
+
+    private final MqttServer mqttServer;
+    private final MqttMessageHandler messageHandler;
+    private final MqttConnectionManager connectionManager;
+    private final NetworkMessageQueue messageQueue;
 
     private volatile boolean started = false;
     private volatile boolean enabled = true;
     private volatile boolean shutdownPrepared = false;
 
     // 请求统计
-    private final AtomicLong totalProcessedRequests = new AtomicLong(0);
-    private final AtomicLong errorRequestCount = new AtomicLong(0);
-    private final AtomicLong activeRequestCount = new AtomicLong(0);
-    private final AtomicLong totalProcessingTime = new AtomicLong(0);
+
+    @Inject
+    public MqttExtension(@NotNull MqttServer mqttServer,
+            @NotNull MqttMessageHandler messageHandler,
+            @NotNull MqttConnectionManager connectionManager,
+            @NotNull NetworkMessageQueue messageQueue,
+            @NotNull com.dtc.core.statistics.StatisticsCollector statisticsCollector) {
+        super(statisticsCollector);
+        this.mqttServer = mqttServer;
+        this.messageHandler = messageHandler;
+        this.connectionManager = connectionManager;
+        this.messageQueue = messageQueue;
+    }
 
     @Override
     public void extensionStart(@NotNull ExtensionStartInput input, @NotNull ExtensionStartOutput output) {
@@ -77,7 +100,7 @@ public class MqttExtension implements ExtensionMain, ProtocolExtension, NetworkE
     @Override
     @NotNull
     public String getProtocolName() {
-        return "MQTT";
+        return ServiceConfig.MQTT.getServiceName();
     }
 
     @Override
@@ -88,7 +111,7 @@ public class MqttExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public int getDefaultPort() {
-        return 1883;
+        return ServiceConfig.MQTT.getDefaultPort();
     }
 
     @Override
@@ -109,10 +132,30 @@ public class MqttExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-        log.debug("MQTT message received: {}", message.getClass().getSimpleName());
+        log.debug("📨 MQTT message received from client: {}", ctx.channel().remoteAddress());
 
-        // 处理MQTT消息
-        // 这里可以实现MQTT PUBLISH、SUBSCRIBE等消息的处理逻辑
+        try {
+            // 处理 MQTT 消息 - 使用 Disruptor 异步处理
+            if (message != null) {
+                // 创建网络消息事件
+                NetworkMessageEvent event = createNetworkMessageEvent(ctx, message);
+
+                // 发布到 Disruptor 队列进行异步处理
+                boolean published = messageQueue.publish(event);
+                if (published) {
+                    log.debug("✅ MQTT message published to Disruptor queue: {}", event.getEventId());
+                } else {
+                    log.error("❌ Failed to publish MQTT message to Disruptor queue");
+                    // 如果发布失败，发送错误响应
+                    sendErrorResponse(ctx, "Service temporarily unavailable");
+                }
+            } else {
+                log.warn("⚠️ Received null message in MQTT extension");
+            }
+        } catch (Exception e) {
+            log.error("❌ Error handling MQTT message from client: {}", ctx.channel().remoteAddress(), e);
+            sendErrorResponse(ctx, "Internal server error");
+        }
     }
 
     @Override
@@ -306,19 +349,19 @@ public class MqttExtension implements ExtensionMain, ProtocolExtension, NetworkE
 
     @Override
     public boolean canShutdownSafely() {
-        return activeRequestCount.get() == 0;
+        return getActiveRequestCount() == 0;
     }
 
     @Override
-    public int getActiveRequestCount() {
-        return (int) activeRequestCount.get();
+    public long getActiveRequestCount() {
+        return super.getActiveRequestCount();
     }
 
     @Override
     public boolean waitForRequestsToComplete(long timeoutMs) {
         long startTime = System.currentTimeMillis();
 
-        while (activeRequestCount.get() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
+        while (getActiveRequestCount() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -327,65 +370,52 @@ public class MqttExtension implements ExtensionMain, ProtocolExtension, NetworkE
             }
         }
 
-        return activeRequestCount.get() == 0;
+        return getActiveRequestCount() == 0;
     }
 
-    // ========== RequestStatisticsExtension 实现 ==========
+    // ========== 辅助方法 ==========
 
-    @Override
-    public int getPendingRequestCount() {
-        return getActiveRequestCount();
-    }
+    /**
+     * 创建网络消息事件
+     */
+    @NotNull
+    private NetworkMessageEvent createNetworkMessageEvent(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
+        // 生成客户端ID
+        String clientId = "client-" + System.currentTimeMillis();
 
-    @Override
-    public long getTotalProcessedRequests() {
-        return totalProcessedRequests.get();
-    }
-
-    @Override
-    public long getErrorRequestCount() {
-        return errorRequestCount.get();
-    }
-
-    @Override
-    public double getAverageProcessingTime() {
-        long total = totalProcessedRequests.get();
-        if (total == 0) {
-            return 0.0;
+        // 计算消息大小
+        int messageSize = 0;
+        if (message instanceof io.netty.buffer.ByteBuf) {
+            messageSize = ((io.netty.buffer.ByteBuf) message).readableBytes();
+        } else if (message instanceof byte[]) {
+            messageSize = ((byte[]) message).length;
         }
-        return (double) totalProcessingTime.get() / total;
-    }
 
-    @Override
-    public void resetStatistics() {
-        totalProcessedRequests.set(0);
-        errorRequestCount.set(0);
-        activeRequestCount.set(0);
-        totalProcessingTime.set(0);
-        log.info("MQTT extension statistics reset");
-    }
-
-    /**
-     * 记录请求开始处理
-     */
-    public void recordRequestStart() {
-        activeRequestCount.incrementAndGet();
+        return NetworkMessageEvent.builder()
+                .protocolType("mqtt")
+                .clientId(clientId)
+                .message(message)
+                .channelContext(ctx)
+                .sourceAddress(ctx.channel().remoteAddress().toString())
+                .messageSize(messageSize)
+                .messageType("MQTT_MESSAGE")
+                .isRequest(true)
+                .priority(3) // MQTT消息优先级
+                .build();
     }
 
     /**
-     * 记录请求处理完成
+     * 发送错误响应
      */
-    public void recordRequestComplete(long processingTimeMs) {
-        activeRequestCount.decrementAndGet();
-        totalProcessedRequests.incrementAndGet();
-        totalProcessingTime.addAndGet(processingTimeMs);
+    private void sendErrorResponse(@NotNull ChannelHandlerContext ctx, @NotNull String errorMessage) {
+        try {
+            // MQTT错误响应处理
+            log.error("MQTT error response: {}", errorMessage);
+            // 这里可以实现具体的MQTT错误响应逻辑
+        } catch (Exception e) {
+            log.error("❌ Failed to send error response to MQTT client: {}", ctx.channel().remoteAddress(), e);
+        }
     }
 
-    /**
-     * 记录请求处理错误
-     */
-    public void recordRequestError() {
-        activeRequestCount.decrementAndGet();
-        errorRequestCount.incrementAndGet();
-    }
+    // ========== 统计功能已移至StatisticsAware基类 ==========
 }

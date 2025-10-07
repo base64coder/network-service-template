@@ -2,8 +2,8 @@ package com.dtc.core.http.middleware;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import com.dtc.core.http.HttpRequest;
-import com.dtc.core.http.HttpResponse;
+import com.dtc.core.http.HttpRequestEx;
+import com.dtc.core.http.HttpResponseEx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public class LoggingMiddleware implements HttpMiddleware {
 
     @Override
     @Nullable
-    public HttpResponse beforeRequest(@NotNull HttpRequest request) {
+    public HttpResponseEx beforeRequest(@NotNull HttpRequestEx request) {
         log.info("📥 HTTP Request: {} {} from client {}", request.getMethod(), request.getPath(),
                 request.getClientId());
 
@@ -41,7 +41,7 @@ public class LoggingMiddleware implements HttpMiddleware {
 
     @Override
     @Nullable
-    public HttpResponse afterRequest(@NotNull HttpRequest request, @NotNull HttpResponse response) {
+    public HttpResponseEx afterRequest(@NotNull HttpRequestEx request, @NotNull HttpResponseEx response) {
         log.info("📤 HTTP Response: {} {} -> {} ({}ms)", request.getMethod(), request.getPath(),
                 response.getStatusCode(), System.currentTimeMillis() - request.getTimestamp());
 

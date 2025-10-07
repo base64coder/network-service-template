@@ -1,6 +1,6 @@
 package com.dtc.core.http.handler;
 
-import com.dtc.core.http.HttpResponse;
+import com.dtc.core.http.HttpResponseEx;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -13,12 +13,12 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Network Service Template
  */
-public class HttpResponseEncoder extends MessageToByteEncoder<HttpResponse> {
+public class HttpResponseEncoder extends MessageToByteEncoder<HttpResponseEx> {
 
     private static final Logger log = LoggerFactory.getLogger(HttpResponseEncoder.class);
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, HttpResponse response, ByteBuf out) {
+    protected void encode(ChannelHandlerContext ctx, HttpResponseEx response, ByteBuf out) {
         try {
             // 创建 Netty HTTP 响应
             FullHttpResponse httpResponse = createNettyHttpResponse(response);
@@ -35,7 +35,7 @@ public class HttpResponseEncoder extends MessageToByteEncoder<HttpResponse> {
     /**
      * 创建 Netty HTTP 响应
      */
-    private FullHttpResponse createNettyHttpResponse(HttpResponse response) {
+    private FullHttpResponse createNettyHttpResponse(HttpResponseEx response) {
         // 创建响应状态
         HttpResponseStatus status = HttpResponseStatus.valueOf(response.getStatusCode());
 

@@ -7,8 +7,8 @@ import com.dtc.core.bootstrap.ioc.GuiceContainerFactory;
 import com.dtc.core.config.ServerConfiguration;
 import com.dtc.core.extensions.ExtensionBootstrap;
 import com.dtc.core.extensions.ExtensionManager;
-import com.dtc.core.messaging.MessageProcessor;
 import com.dtc.core.messaging.NetworkMessageHandler;
+import com.dtc.core.messaging.NetworkMessageQueue;
 import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ public class NetworkService {
     private final @NotNull ExtensionManager extensionManager;
     private final @NotNull Injector injector;
     private final @NotNull ServerStatusDisplay statusDisplay;
-    private final @NotNull MessageProcessor messageProcessor;
+    private final @NotNull NetworkMessageQueue messageQueue;
     private final @NotNull NetworkMessageHandler messageHandler;
 
     private volatile boolean started = false;
@@ -50,7 +50,7 @@ public class NetworkService {
         this.extensionBootstrap = injector.getInstance(ExtensionBootstrap.class);
         this.networkLauncher = injector.getInstance(NetworkServiceLauncher.class);
         this.extensionManager = injector.getInstance(ExtensionManager.class);
-        this.messageProcessor = injector.getInstance(MessageProcessor.class);
+        this.messageQueue = injector.getInstance(NetworkMessageQueue.class);
         this.messageHandler = injector.getInstance(NetworkMessageHandler.class);
         this.statusDisplay = new ServerStatusDisplay(configuration);
     }
@@ -71,8 +71,8 @@ public class NetworkService {
         return extensionBootstrap.startExtensionSystem().thenCompose(v -> networkLauncher.startServer()).thenRun(() -> {
             started = true;
 
-            // 启动消息处理器
-            messageProcessor.start();
+            // 启动消息队列
+            messageQueue.start();
 
             // 启动状态显示器
             statusDisplay.startStatusDisplay();
@@ -98,8 +98,8 @@ public class NetworkService {
         log.info("Stopping Network Service...");
 
         return networkLauncher.stopServer().thenCompose(v -> extensionBootstrap.stopExtensionSystem()).thenRun(() -> {
-            // 停止消息处理器
-            messageProcessor.shutdown();
+            // 停止消息队列
+            messageQueue.stop();
 
             // 停止状态显示器
             statusDisplay.stopStatusDisplay();

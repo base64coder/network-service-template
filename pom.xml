@@ -25,11 +25,13 @@
         <slf4j.version>1.7.36</slf4j.version>
         <logback.version>1.2.11</logback.version>
         <guice.version>5.1.0</guice.version>
-        <jackson.version>2.13.3</jackson.version>
-        <protobuf.version>3.12.2</protobuf.version>
+        <jackson.version>2.13.4.2</jackson.version>
+        <protobuf.version>4.28.2</protobuf.version>
         <disruptor.version>3.3.2</disruptor.version>
         <junit.version>4.13.2</junit.version>
         <mockito.version>4.7.0</mockito.version>
+        <grpc.version>1.53.0</grpc.version>
+        <bytebuddy.version>1.14.5</bytebuddy.version>
     </properties>
     <dependencies>
         <dependency>
@@ -126,6 +128,29 @@
                 <version>${disruptor.version}</version>
             </dependency>
 
+            <!-- ByteBuddy for dynamic proxy creation -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${bytebuddy.version}</version>
+            </dependency>
+            <!-- gRPC 依赖 -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
             <!-- 测试依赖 -->
             <dependency>
                 <groupId>junit</groupId>
@@ -138,6 +163,11 @@
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>5.8.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

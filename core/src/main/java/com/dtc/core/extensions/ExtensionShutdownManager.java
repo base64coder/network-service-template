@@ -181,9 +181,10 @@ public class ExtensionShutdownManager {
             String extensionId = extension.getId();
             log.debug("Waiting for pending requests to complete for extension: {}", extensionId);
 
-            if (extension instanceof RequestStatisticsExtension) {
-                RequestStatisticsExtension statsExtension = (RequestStatisticsExtension) extension;
-                int pendingRequests = statsExtension.getPendingRequestCount();
+            // 检查扩展是否支持统计功能（通过StatisticsAware基类）
+            if (extension instanceof com.dtc.core.statistics.StatisticsAware) {
+                com.dtc.core.statistics.StatisticsAware statsExtension = (com.dtc.core.statistics.StatisticsAware) extension;
+                long pendingRequests = statsExtension.getPendingRequestCount();
 
                 if (pendingRequests == 0) {
                     log.debug("No pending requests for extension: {}", extensionId);
@@ -265,7 +266,7 @@ public class ExtensionShutdownManager {
         }
 
         boolean canShutdownSafely = true;
-        int activeRequests = 0;
+        long activeRequests = 0;
         int activeConnections = 0;
 
         if (extension instanceof GracefulShutdownExtension) {
@@ -274,8 +275,9 @@ public class ExtensionShutdownManager {
             activeRequests = gracefulExtension.getActiveRequestCount();
         }
 
-        if (extension instanceof RequestStatisticsExtension) {
-            RequestStatisticsExtension statsExtension = (RequestStatisticsExtension) extension;
+        // 检查扩展是否支持统计功能（通过StatisticsAware基类）
+        if (extension instanceof com.dtc.core.statistics.StatisticsAware) {
+            com.dtc.core.statistics.StatisticsAware statsExtension = (com.dtc.core.statistics.StatisticsAware) extension;
             activeRequests = statsExtension.getActiveRequestCount();
         }
 
@@ -301,11 +303,11 @@ public class ExtensionShutdownManager {
         private final String extensionId;
         private final boolean canShutdownSafely;
         private final String status;
-        private final int activeRequests;
+        private final long activeRequests;
         private final int activeConnections;
 
         public ShutdownStatus(String extensionId, boolean canShutdownSafely, String status,
-                int activeRequests, int activeConnections) {
+                long activeRequests, int activeConnections) {
             this.extensionId = extensionId;
             this.canShutdownSafely = canShutdownSafely;
             this.status = status;
@@ -325,7 +327,7 @@ public class ExtensionShutdownManager {
             return status;
         }
 
-        public int getActiveRequests() {
+        public long getActiveRequests() {
             return activeRequests;
         }
 

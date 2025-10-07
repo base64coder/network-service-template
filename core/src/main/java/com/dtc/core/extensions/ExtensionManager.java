@@ -113,6 +113,13 @@ public class ExtensionManager {
 
         return CompletableFuture.runAsync(() -> {
             try {
+                // 添加调试日志
+                log.info("🔍 About to start extension: {} of type: {}",
+                        extensionId, extension.getClass().getName());
+                log.info("🔍 Extension instance: {}", extension);
+                log.info("🔍 Extension start method exists: {}",
+                        extension.getClass().getMethod("start") != null);
+
                 extension.start();
                 log.info("Started extension: {}", extensionId);
             } catch (Exception e) {

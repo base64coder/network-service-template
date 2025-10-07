@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package com.dtc.core.tcp.proto;
+
+option java_package = "com.dtc.core.tcp.proto";
+option java_outer_classname = "TcpServiceProto";
+
+// TCP 服务定义
+service TcpService {
+    // 处理 TCP 消息
+    rpc ProcessMessage(TcpRequest) returns (TcpResponse);
+    
+    // 流式处理 TCP 消息
+    rpc ProcessMessageStream(stream TcpRequest) returns (stream TcpResponse);
+}
+
+// TCP 请求消息
+message TcpRequest {
+    string message = 1;
+    int64 timestamp = 2;
+    string client_id = 3;
+    map<string, string> metadata = 4;
+}
+
+// TCP 响应消息
+message TcpResponse {
+    string message = 1;
+    int64 timestamp = 2;
+    string status = 3;
+    map<string, string> metadata = 4;
+}
+
+// TCP 连接事件
+message TcpConnectionEvent {
+    string client_id = 1;
+    string event_type = 2; // CONNECT, DISCONNECT, ERROR
+    int64 timestamp = 3;
+    string details = 4;
+}
+
+// TCP 心跳消息
+message TcpHeartbeat {
+    string client_id = 1;
+    int64 timestamp = 2;
+    int32 sequence = 3;
+}

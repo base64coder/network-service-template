@@ -5,6 +5,7 @@ import com.dtc.api.MessageHandler;
 import com.dtc.api.ProtocolExtension;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
+import com.dtc.api.ServiceConfig;
 import com.dtc.api.parameter.ExtensionStartInput;
 import com.dtc.api.parameter.ExtensionStartOutput;
 import com.dtc.api.parameter.ExtensionStopInput;
@@ -12,16 +13,24 @@ import com.dtc.api.parameter.ExtensionStopOutput;
 import com.dtc.core.extensions.NetworkExtension;
 import com.dtc.core.extensions.model.ExtensionMetadata;
 import com.dtc.core.extensions.GracefulShutdownExtension;
-import com.dtc.core.extensions.RequestStatisticsExtension;
+import com.dtc.core.tcp.TcpServer;
+import com.dtc.core.tcp.TcpMessageHandler;
+import com.dtc.core.tcp.TcpConnectionManager;
+import com.dtc.core.tcp.TcpProtocolHandler;
+import com.dtc.core.statistics.StatisticsAware;
+import com.dtc.core.messaging.NetworkMessageEvent;
+import com.dtc.core.messaging.NetworkMessageQueue;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * TCP协议扩展示例
@@ -29,23 +38,39 @@ import java.util.concurrent.atomic.AtomicLong;
  * 
  * @author Network Service Template
  */
-public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkExtension,
-        GracefulShutdownExtension, RequestStatisticsExtension {
+@Singleton
+public class TcpExtension extends StatisticsAware implements ExtensionMain, ProtocolExtension, NetworkExtension,
+        GracefulShutdownExtension {
 
     private static final Logger log = LoggerFactory.getLogger(TcpExtension.class);
+
+    private final TcpServer tcpServer;
+    private final TcpMessageHandler messageHandler;
+    private final TcpConnectionManager connectionManager;
+    private final TcpProtocolHandler protocolHandler;
+    private final NetworkMessageQueue messageQueue;
 
     private volatile boolean started = false;
     private volatile boolean enabled = true;
     private volatile boolean shutdownPrepared = false;
 
-    // 请求统计
-    private final AtomicLong totalProcessedRequests = new AtomicLong(0);
-    private final AtomicLong errorRequestCount = new AtomicLong(0);
-    private final AtomicLong activeRequestCount = new AtomicLong(0);
-    private final AtomicLong totalProcessingTime = new AtomicLong(0);
-
     // 连接管理
     private final ConcurrentHashMap<String, ChannelHandlerContext> activeConnections = new ConcurrentHashMap<>();
+
+    @Inject
+    public TcpExtension(@NotNull TcpServer tcpServer,
+            @NotNull TcpMessageHandler messageHandler,
+            @NotNull TcpConnectionManager connectionManager,
+            @NotNull TcpProtocolHandler protocolHandler,
+            @NotNull NetworkMessageQueue messageQueue,
+            @NotNull com.dtc.core.statistics.StatisticsCollector statisticsCollector) {
+        super(statisticsCollector);
+        this.tcpServer = tcpServer;
+        this.messageHandler = messageHandler;
+        this.connectionManager = connectionManager;
+        this.protocolHandler = protocolHandler;
+        this.messageQueue = messageQueue;
+    }
 
     @Override
     public void extensionStart(@NotNull ExtensionStartInput input, @NotNull ExtensionStartOutput output) {
@@ -82,7 +107,7 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
     @Override
     @NotNull
     public String getProtocolName() {
-        return "TCP";
+        return ServiceConfig.TCP.getServiceName();
     }
 
     @Override
@@ -93,7 +118,7 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
 
     @Override
     public int getDefaultPort() {
-        return 9999;
+        return ServiceConfig.TCP.getDefaultPort();
     }
 
     @Override
@@ -102,11 +127,10 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
 
         // 添加连接到活跃连接管理
         activeConnections.put(clientId, ctx);
+        connectionManager.addConnection(clientId, ctx);
 
-        // 处理TCP连接
-        // 这里可以实现TCP连接建立的处理逻辑
-        // 例如：发送欢迎消息、初始化会话等
-        sendWelcomeMessage(ctx, clientId);
+        // 使用协议处理器处理连接
+        protocolHandler.handleConnect(ctx, clientId);
     }
 
     @Override
@@ -115,38 +139,37 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
 
         // 从活跃连接中移除
         activeConnections.remove(clientId);
+        connectionManager.removeConnection(clientId);
 
-        // 处理TCP断开连接
-        // 这里可以实现TCP连接断开的处理逻辑
-        // 例如：清理会话、记录日志等
-        cleanupClientSession(clientId);
+        // 使用协议处理器处理断开连接
+        protocolHandler.handleDisconnect(ctx, clientId);
     }
 
     @Override
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-        log.debug("TCP message received: {} bytes",
-                message instanceof ByteBuf ? ((ByteBuf) message).readableBytes() : "unknown");
-
-        // 记录请求开始处理
-        recordRequestStart();
-        long startTime = System.currentTimeMillis();
+        log.debug("📨 TCP message received from client: {}", ctx.channel().remoteAddress());
 
         try {
-            // 处理TCP消息
-            if (message instanceof ByteBuf) {
-                handleTcpMessage(ctx, (ByteBuf) message);
+            // 处理 TCP 消息 - 使用 Disruptor 异步处理
+            if (message != null) {
+                // 创建网络消息事件
+                NetworkMessageEvent event = createNetworkMessageEvent(ctx, message);
+
+                // 发布到 Disruptor 队列进行异步处理
+                boolean published = messageQueue.publish(event);
+                if (published) {
+                    log.debug("✅ TCP message published to Disruptor queue: {}", event.getEventId());
+                } else {
+                    log.error("❌ Failed to publish TCP message to Disruptor queue");
+                    // 如果发布失败，发送错误响应
+                    sendErrorResponse(ctx, "Service temporarily unavailable");
+                }
             } else {
-                log.warn("Received unexpected message type: {}", message.getClass().getSimpleName());
+                log.warn("⚠️ Received null message in TCP extension");
             }
-
-            // 记录请求处理完成
-            long processingTime = System.currentTimeMillis() - startTime;
-            recordRequestComplete(processingTime);
-
         } catch (Exception e) {
-            // 记录请求处理错误
-            recordRequestError();
-            log.error("Error processing TCP message", e);
+            log.error("❌ Error handling TCP message from client: {}", ctx.channel().remoteAddress(), e);
+            sendErrorResponse(ctx, "Internal server error");
         }
     }
 
@@ -154,10 +177,8 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
     public void onException(@NotNull ChannelHandlerContext ctx, @NotNull Throwable cause) {
         log.error("TCP protocol error from client: {}", ctx.channel().remoteAddress(), cause);
 
-        // 处理TCP协议异常
-        // 这里可以实现异常处理和连接关闭逻辑
-        // 例如：记录错误日志、发送错误响应等
-        handleTcpException(ctx, cause);
+        // 使用协议处理器处理异常
+        protocolHandler.handleException(ctx, cause);
     }
 
     @Override
@@ -434,19 +455,19 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
 
     @Override
     public boolean canShutdownSafely() {
-        return activeRequestCount.get() == 0 && activeConnections.isEmpty();
+        return getActiveRequestCount() == 0 && activeConnections.isEmpty();
     }
 
     @Override
-    public int getActiveRequestCount() {
-        return (int) activeRequestCount.get();
+    public long getActiveRequestCount() {
+        return super.getActiveRequestCount();
     }
 
     @Override
     public boolean waitForRequestsToComplete(long timeoutMs) {
         long startTime = System.currentTimeMillis();
 
-        while (activeRequestCount.get() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
+        while (getActiveRequestCount() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -455,67 +476,10 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
             }
         }
 
-        return activeRequestCount.get() == 0;
+        return getActiveRequestCount() == 0;
     }
 
-    // ========== RequestStatisticsExtension 实现 ==========
-
-    @Override
-    public int getPendingRequestCount() {
-        return getActiveRequestCount();
-    }
-
-    @Override
-    public long getTotalProcessedRequests() {
-        return totalProcessedRequests.get();
-    }
-
-    @Override
-    public long getErrorRequestCount() {
-        return errorRequestCount.get();
-    }
-
-    @Override
-    public double getAverageProcessingTime() {
-        long total = totalProcessedRequests.get();
-        if (total == 0) {
-            return 0.0;
-        }
-        return (double) totalProcessingTime.get() / total;
-    }
-
-    @Override
-    public void resetStatistics() {
-        totalProcessedRequests.set(0);
-        errorRequestCount.set(0);
-        activeRequestCount.set(0);
-        totalProcessingTime.set(0);
-        log.info("TCP extension statistics reset");
-    }
-
-    /**
-     * 记录请求开始处理
-     */
-    public void recordRequestStart() {
-        activeRequestCount.incrementAndGet();
-    }
-
-    /**
-     * 记录请求处理完成
-     */
-    public void recordRequestComplete(long processingTimeMs) {
-        activeRequestCount.decrementAndGet();
-        totalProcessedRequests.incrementAndGet();
-        totalProcessingTime.addAndGet(processingTimeMs);
-    }
-
-    /**
-     * 记录请求处理错误
-     */
-    public void recordRequestError() {
-        activeRequestCount.decrementAndGet();
-        errorRequestCount.incrementAndGet();
-    }
+    // ========== 统计功能已移至StatisticsAware基类 ==========
 
     /**
      * 获取活跃连接数量
@@ -527,7 +491,7 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
     /**
      * 获取所有活跃连接
      */
-    public ConcurrentHashMap<String, ChannelHandlerContext> getActiveConnections() {
+    public ConcurrentHashMap<String, ChannelHandlerContext> getActiveConnectionsMap() {
         return new ConcurrentHashMap<>(activeConnections);
     }
 
@@ -567,6 +531,52 @@ public class TcpExtension implements ExtensionMain, ProtocolExtension, NetworkEx
             log.debug("Sent shutdown notification to client: {}", clientId);
         } catch (Exception e) {
             log.warn("Failed to send shutdown notification to client: {}", clientId, e);
+        }
+    }
+
+    // ========== 辅助方法 ==========
+
+    /**
+     * 创建网络消息事件
+     */
+    @NotNull
+    private NetworkMessageEvent createNetworkMessageEvent(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
+        // 生成客户端ID
+        String clientId = "client-" + System.currentTimeMillis();
+
+        // 计算消息大小
+        int messageSize = 0;
+        if (message instanceof ByteBuf) {
+            messageSize = ((ByteBuf) message).readableBytes();
+        } else if (message instanceof byte[]) {
+            messageSize = ((byte[]) message).length;
+        }
+
+        return NetworkMessageEvent.builder()
+                .protocolType("tcp")
+                .clientId(clientId)
+                .message(message)
+                .channelContext(ctx)
+                .sourceAddress(ctx.channel().remoteAddress().toString())
+                .messageSize(messageSize)
+                .messageType("TCP_MESSAGE")
+                .isRequest(true)
+                .priority(4) // TCP消息优先级
+                .build();
+    }
+
+    /**
+     * 发送错误响应
+     */
+    private void sendErrorResponse(@NotNull ChannelHandlerContext ctx, @NotNull String errorMessage) {
+        try {
+            // TCP错误响应处理
+            String errorMsg = "ERROR: " + errorMessage;
+            ByteBuf buffer = ctx.alloc().buffer();
+            buffer.writeBytes(errorMsg.getBytes());
+            ctx.writeAndFlush(buffer);
+        } catch (Exception e) {
+            log.error("❌ Failed to send error response to TCP client: {}", ctx.channel().remoteAddress(), e);
         }
     }
 }

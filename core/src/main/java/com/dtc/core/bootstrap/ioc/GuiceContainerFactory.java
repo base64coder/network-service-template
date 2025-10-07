@@ -49,6 +49,8 @@ public class GuiceContainerFactory {
                     new NetworkServiceMainModule(),
                     /* 扩展系统模块 */
                     new ExtensionModule(),
+                    /* 扩展依赖模块 */
+                    new ExtensionDependencyModule(),
                     /* 指标监控模块 */
                     new MetricsModule(),
                     /* 安全模块 */

@@ -1,6 +1,8 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.dtc.core.messaging.MessageProcessor;
+import com.dtc.core.messaging.NetworkMessageQueue;
+import com.dtc.core.messaging.NetworkMessageConsumer;
+import com.dtc.core.messaging.NetworkMessageEventFactory;
 import com.google.inject.AbstractModule;
 
 /**
@@ -12,7 +14,9 @@ public class QueueModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        // 绑定消息处理器
-        bind(MessageProcessor.class).asEagerSingleton();
+        // 绑定网络消息队列相关组件
+        bind(NetworkMessageEventFactory.class).asEagerSingleton();
+        bind(NetworkMessageConsumer.class).asEagerSingleton();
+        bind(NetworkMessageQueue.class).asEagerSingleton();
     }
 }

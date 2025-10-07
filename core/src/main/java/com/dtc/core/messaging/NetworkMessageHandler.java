@@ -2,6 +2,7 @@ package com.dtc.core.messaging;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.core.serialization.ProtobufSerializer;
+import com.dtc.core.messaging.NetworkMessageQueue;
 import com.google.protobuf.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,14 +22,14 @@ public class NetworkMessageHandler {
     private static final Logger log = LoggerFactory.getLogger(NetworkMessageHandler.class);
 
     private final @NotNull ProtobufSerializer serializer;
-    private final @NotNull MessageProcessor messageProcessor;
+    private final @NotNull NetworkMessageQueue messageQueue;
     private final @NotNull AtomicLong receivedCount = new AtomicLong(0);
     private final @NotNull AtomicLong forwardedCount = new AtomicLong(0);
 
     @Inject
-    public NetworkMessageHandler(@NotNull ProtobufSerializer serializer, @NotNull MessageProcessor messageProcessor) {
+    public NetworkMessageHandler(@NotNull ProtobufSerializer serializer, @NotNull NetworkMessageQueue messageQueue) {
         this.serializer = serializer;
-        this.messageProcessor = messageProcessor;
+        this.messageQueue = messageQueue;
     }
 
     /**
@@ -44,8 +45,15 @@ public class NetworkMessageHandler {
             log.debug("Handling message: {} (size: {} bytes)", message.getClass().getSimpleName(),
                     message.getSerializedSize());
 
-            // 使用消息处理器处理消息
-            boolean success = messageProcessor.processMessage(message);
+            // 创建网络消息事件并发布到队列
+            NetworkMessageEvent event = NetworkMessageEvent.builder()
+                    .protocolType("tcp") // 默认协议类型
+                    .message(message)
+                    .messageType(message.getClass().getSimpleName())
+                    .messageSize(message.getSerializedSize())
+                    .build();
+
+            boolean success = messageQueue.publish(event);
 
             if (success) {
                 forwardedCount.incrementAndGet();
@@ -73,8 +81,15 @@ public class NetworkMessageHandler {
 
             log.debug("Handling raw data: {} bytes", data.length);
 
-            // 使用消息处理器处理原始数据
-            boolean success = messageProcessor.processRawData(data);
+            // 创建网络消息事件并发布到队列
+            NetworkMessageEvent event = NetworkMessageEvent.builder()
+                    .protocolType("custom") // 原始数据默认为custom协议
+                    .message(data)
+                    .messageType("RawData")
+                    .messageSize(data.length)
+                    .build();
+
+            boolean success = messageQueue.publish(event);
 
             if (success) {
                 forwardedCount.incrementAndGet();
@@ -95,7 +110,7 @@ public class NetworkMessageHandler {
      */
     @NotNull
     public HandlerStats getStats() {
-        return new HandlerStats(receivedCount.get(), forwardedCount.get(), messageProcessor.getStats());
+        return new HandlerStats(receivedCount.get(), forwardedCount.get());
     }
 
     /**
@@ -104,12 +119,10 @@ public class NetworkMessageHandler {
     public static class HandlerStats {
         private final long receivedCount;
         private final long forwardedCount;
-        private final MessageProcessor.ProcessingStats processingStats;
 
-        public HandlerStats(long receivedCount, long forwardedCount, MessageProcessor.ProcessingStats processingStats) {
+        public HandlerStats(long receivedCount, long forwardedCount) {
             this.receivedCount = receivedCount;
             this.forwardedCount = forwardedCount;
-            this.processingStats = processingStats;
         }
 
         public long getReceivedCount() {
@@ -120,14 +133,9 @@ public class NetworkMessageHandler {
             return forwardedCount;
         }
 
-        public MessageProcessor.ProcessingStats getProcessingStats() {
-            return processingStats;
-        }
-
         @Override
         public String toString() {
-            return String.format("HandlerStats{received=%d, forwarded=%d, processing=%s}", receivedCount,
-                    forwardedCount, processingStats);
+            return String.format("HandlerStats{received=%d, forwarded=%d}", receivedCount, forwardedCount);
         }
     }
 }

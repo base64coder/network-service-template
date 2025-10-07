@@ -1,6 +1,10 @@
 package com.dtc.core.extensions;
 
 import com.dtc.api.annotations.NotNull;
+import com.dtc.core.custom.CustomCodecFactory;
+import com.dtc.core.custom.CustomConnectionManager;
+import com.dtc.core.custom.CustomMessageHandler;
+import com.dtc.core.custom.CustomServer;
 import com.dtc.core.extensions.model.ExtensionEvent;
 import com.dtc.core.extensions.model.ExtensionMetadata;
 import org.slf4j.Logger;
@@ -8,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import com.google.inject.Injector;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -33,14 +38,17 @@ public class ExtensionLifecycleHandler {
     private final ExtensionManager extensionManager;
     private final ExtensionShutdownManager shutdownManager;
     private final ExtensionCreationManager creationManager;
+    private final Injector injector;
 
     @Inject
     public ExtensionLifecycleHandler(@NotNull ExtensionManager extensionManager,
             @NotNull ExtensionShutdownManager shutdownManager,
-            @NotNull ExtensionCreationManager creationManager) {
+            @NotNull ExtensionCreationManager creationManager,
+            @NotNull Injector injector) {
         this.extensionManager = extensionManager;
         this.shutdownManager = shutdownManager;
         this.creationManager = creationManager;
+        this.injector = injector;
     }
 
     public CompletableFuture<Void> handleExtensionEvents(@NotNull Collection<ExtensionEvent> events) {
@@ -620,14 +628,26 @@ public class ExtensionLifecycleHandler {
         validateInput(extensionId, "Extension ID cannot be null");
 
         try {
-            log.debug("Creating extension for class: {} with ID: {}", mainClass, extensionId);
+            log.info("🔍 Creating extension for class: {} with ID: {}", mainClass, extensionId);
+            log.info("🔍 ClassLoader: {}", classLoader.getClass().getName());
+            log.info("🔍 ClassLoader URLs: {}", java.util.Arrays.toString(((URLClassLoader) classLoader).getURLs()));
 
             // 加载扩展类
             Class<?> extensionClass = Class.forName(mainClass, true, classLoader);
+            log.info("🔍 Loaded class: {} from classLoader: {}", extensionClass.getName(),
+                    extensionClass.getClassLoader());
 
             // 使用统一的创建管理器创建扩展实例
-            return (NetworkExtension) creationManager.createEnhancedExtension(
-                    extensionClass, classLoader, extensionId);
+            NetworkExtension extension = (NetworkExtension) creationManager.createEnhancedExtension(
+                    extensionClass, classLoader, extensionId, getDependencyArgs(extensionId));
+
+            // 添加调试日志
+            log.info("🔍 Created extension instance: {} of type: {}",
+                    extension.getClass().getName(), extension.getClass().getSimpleName());
+            log.info("🔍 Extension implements NetworkExtension: {}", extension instanceof NetworkExtension);
+            log.info("🔍 Extension is HttpExtension: {}", extension.getClass().getName().contains("HttpExtension"));
+
+            return extension;
 
         } catch (ClassNotFoundException e) {
             String errorMsg = String.format("Extension class not found: %s for extension: %s", mainClass, extensionId);
@@ -638,6 +658,206 @@ public class ExtensionLifecycleHandler {
                     mainClass, extensionId);
             log.error(errorMsg, e);
             throw new RuntimeException(errorMsg, e);
+        }
+    }
+
+    /**
+     * 获取扩展的依赖参数
+     */
+    @NotNull
+    private Object[] getDependencyArgs(@NotNull String extensionId) {
+        try {
+            // 根据扩展ID返回相应的依赖参数
+            if ("http-extension".equals(extensionId)) {
+                return getHttpExtensionDependencies();
+            } else if ("mqtt-extension".equals(extensionId)) {
+                return getMqttExtensionDependencies();
+            } else if ("tcp-extension".equals(extensionId)) {
+                return getTcpExtensionDependencies();
+            } else if ("websocket-extension".equals(extensionId)) {
+                return getWebSocketExtensionDependencies();
+            } else if ("custom-extension".equals(extensionId)) {
+                return getCustomExtensionDependencies();
+            }
+            // 默认返回空参数
+            return new Object[0];
+        } catch (Exception e) {
+            log.warn("Failed to get dependencies for extension: {}, using empty args", extensionId, e);
+            return new Object[0];
+        }
+    }
+
+    /**
+     * 获取 HTTP 扩展的依赖参数
+     */
+    @NotNull
+    private Object[] getHttpExtensionDependencies() {
+        try {
+            log.info("🔧 Attempting to get HTTP extension dependencies from Guice container...");
+
+            // 从 Guice 容器中获取依赖
+            Object[] dependencies = new Object[7];
+
+            try {
+                dependencies[0] = injector.getInstance(com.dtc.core.http.HttpServer.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.http.HttpRequestHandler.class);
+                dependencies[2] = injector.getInstance(com.dtc.core.http.HttpResponseHandler.class);
+                dependencies[3] = injector.getInstance(com.dtc.core.http.HttpRouteManager.class);
+                dependencies[4] = injector.getInstance(com.dtc.core.http.HttpMiddlewareManager.class);
+                dependencies[5] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
+                dependencies[6] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
+
+                log.info("✅ Successfully obtained {} HTTP extension dependencies from Guice container",
+                        dependencies.length);
+                return dependencies;
+
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to get HTTP dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                return new Object[0];
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to get HTTP extension dependencies", e);
+            return new Object[0];
+        }
+    }
+
+    /**
+     * 获取 MQTT 扩展的依赖参数
+     */
+    @NotNull
+    private Object[] getMqttExtensionDependencies() {
+        try {
+            log.info("🔧 Attempting to get MQTT extension dependencies from Guice container...");
+
+            // 从 Guice 容器中获取 MQTT 扩展的依赖
+            Object[] dependencies = new Object[5];
+
+            try {
+                dependencies[0] = injector.getInstance(com.dtc.core.mqtt.MqttServer.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.mqtt.MqttMessageHandler.class);
+                dependencies[2] = injector.getInstance(com.dtc.core.mqtt.MqttConnectionManager.class);
+                dependencies[3] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
+                dependencies[4] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
+
+                log.info("✅ Successfully obtained {} MQTT extension dependencies from Guice container",
+                        dependencies.length);
+                return dependencies;
+
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to get MQTT dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                return new Object[0];
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to get MQTT extension dependencies", e);
+            return new Object[0];
+        }
+    }
+
+    /**
+     * 获取 TCP 扩展的依赖参数
+     */
+    @NotNull
+    private Object[] getTcpExtensionDependencies() {
+        try {
+            log.info("🔧 Attempting to get TCP extension dependencies from Guice container...");
+
+            // 从 Guice 容器中获取 TCP 扩展的依赖
+            Object[] dependencies = new Object[6];
+
+            try {
+                dependencies[0] = injector.getInstance(com.dtc.core.tcp.TcpServer.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.tcp.TcpMessageHandler.class);
+                dependencies[2] = injector.getInstance(com.dtc.core.tcp.TcpConnectionManager.class);
+                dependencies[3] = injector.getInstance(com.dtc.core.tcp.TcpProtocolHandler.class);
+                dependencies[4] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
+                dependencies[5] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
+
+                log.info("✅ Successfully obtained {} TCP extension dependencies from Guice container",
+                        dependencies.length);
+                return dependencies;
+
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to get TCP dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                return new Object[0];
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to get TCP extension dependencies", e);
+            return new Object[0];
+        }
+    }
+
+    /**
+     * 获取 WebSocket 扩展的依赖参数
+     */
+    @NotNull
+    private Object[] getWebSocketExtensionDependencies() {
+        try {
+            log.info("🔧 Attempting to get WebSocket extension dependencies from Guice container...");
+
+            // 从 Guice 容器中获取 WebSocket 扩展的依赖
+            Object[] dependencies = new Object[5];
+
+            try {
+                dependencies[0] = injector.getInstance(com.dtc.core.websocket.WebSocketServer.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.websocket.WebSocketMessageHandler.class);
+                dependencies[2] = injector.getInstance(com.dtc.core.websocket.WebSocketConnectionManager.class);
+                dependencies[3] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
+                dependencies[4] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
+
+                log.info("✅ Successfully obtained {} WebSocket extension dependencies from Guice container",
+                        dependencies.length);
+                return dependencies;
+
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to get WebSocket dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                return new Object[0];
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to get WebSocket extension dependencies", e);
+            return new Object[0];
+        }
+    }
+
+    /**
+     * 获取 Custom 扩展的依赖参数
+     */
+    @NotNull
+    private Object[] getCustomExtensionDependencies() {
+        try {
+            log.info("🔧 Attempting to get Custom extension dependencies from Guice container...");
+
+            // 从 Guice 容器中获取 Custom 扩展的依赖
+            Object[] dependencies = new Object[6];
+
+            try {
+                dependencies[0] = injector.getInstance(CustomServer.class);
+                dependencies[1] = injector.getInstance(CustomMessageHandler.class);
+                dependencies[2] = injector.getInstance(CustomConnectionManager.class);
+                dependencies[3] = injector.getInstance(CustomCodecFactory.class);
+                dependencies[4] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
+                dependencies[5] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
+
+                log.info("✅ Successfully obtained {} Custom extension dependencies from Guice container",
+                        dependencies.length);
+                return dependencies;
+
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to get Custom dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                return new Object[0];
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to get Custom extension dependencies", e);
+            return new Object[0];
         }
     }
 }

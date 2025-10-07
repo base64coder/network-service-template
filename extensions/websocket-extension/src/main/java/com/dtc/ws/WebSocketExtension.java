@@ -5,6 +5,7 @@ import com.dtc.api.MessageHandler;
 import com.dtc.api.ProtocolExtension;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
+import com.dtc.api.ServiceConfig;
 import com.dtc.api.parameter.ExtensionStartInput;
 import com.dtc.api.parameter.ExtensionStartOutput;
 import com.dtc.api.parameter.ExtensionStopInput;
@@ -12,17 +13,24 @@ import com.dtc.api.parameter.ExtensionStopOutput;
 import com.dtc.core.extensions.NetworkExtension;
 import com.dtc.core.extensions.model.ExtensionMetadata;
 import com.dtc.core.extensions.GracefulShutdownExtension;
-import com.dtc.core.extensions.RequestStatisticsExtension;
+import com.dtc.core.websocket.WebSocketServer;
+import com.dtc.core.websocket.WebSocketMessageHandler;
+import com.dtc.core.websocket.WebSocketConnectionManager;
+import com.dtc.core.statistics.StatisticsAware;
+import com.dtc.core.messaging.NetworkMessageEvent;
+import com.dtc.core.messaging.NetworkMessageQueue;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * WebSocket协议扩展示例
@@ -30,23 +38,36 @@ import java.util.concurrent.atomic.AtomicLong;
  * 
  * @author Network Service Template
  */
-public class WebSocketExtension implements ExtensionMain, ProtocolExtension, NetworkExtension,
-        GracefulShutdownExtension, RequestStatisticsExtension {
+@Singleton
+public class WebSocketExtension extends StatisticsAware implements ExtensionMain, ProtocolExtension, NetworkExtension,
+        GracefulShutdownExtension {
 
     private static final Logger log = LoggerFactory.getLogger(WebSocketExtension.class);
+
+    private final WebSocketServer webSocketServer;
+    private final WebSocketMessageHandler messageHandler;
+    private final WebSocketConnectionManager connectionManager;
+    private final NetworkMessageQueue messageQueue;
 
     private volatile boolean started = false;
     private volatile boolean enabled = true;
     private volatile boolean shutdownPrepared = false;
 
-    // 请求统计
-    private final AtomicLong totalProcessedRequests = new AtomicLong(0);
-    private final AtomicLong errorRequestCount = new AtomicLong(0);
-    private final AtomicLong activeRequestCount = new AtomicLong(0);
-    private final AtomicLong totalProcessingTime = new AtomicLong(0);
-
     // 连接管理
     private final ConcurrentHashMap<String, ChannelHandlerContext> activeConnections = new ConcurrentHashMap<>();
+
+    @Inject
+    public WebSocketExtension(@NotNull WebSocketServer webSocketServer,
+            @NotNull WebSocketMessageHandler messageHandler,
+            @NotNull WebSocketConnectionManager connectionManager,
+            @NotNull NetworkMessageQueue messageQueue,
+            @NotNull com.dtc.core.statistics.StatisticsCollector statisticsCollector) {
+        super(statisticsCollector);
+        this.webSocketServer = webSocketServer;
+        this.messageHandler = messageHandler;
+        this.connectionManager = connectionManager;
+        this.messageQueue = messageQueue;
+    }
 
     @Override
     public void extensionStart(@NotNull ExtensionStartInput input, @NotNull ExtensionStartOutput output) {
@@ -83,7 +104,7 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension, Net
     @Override
     @NotNull
     public String getProtocolName() {
-        return "WebSocket";
+        return ServiceConfig.WEBSOCKET.getServiceName();
     }
 
     @Override
@@ -94,7 +115,7 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension, Net
 
     @Override
     public int getDefaultPort() {
-        return 8080;
+        return ServiceConfig.WEBSOCKET.getDefaultPort();
     }
 
     @Override
@@ -121,26 +142,32 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension, Net
 
     @Override
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-        log.debug("WebSocket message received: {}", message.getClass().getSimpleName());
-
-        // 记录请求开始处理
-        recordRequestStart();
-        long startTime = System.currentTimeMillis();
+        log.debug("📨 WebSocket message received from client: {}", ctx.channel().remoteAddress());
 
         try {
-            // 处理WebSocket消息
+            // 处理 WebSocket 消息 - 使用 Disruptor 异步处理
             if (message instanceof WebSocketFrame) {
-                handleWebSocketFrame(ctx, (WebSocketFrame) message);
+                WebSocketFrame webSocketFrame = (WebSocketFrame) message;
+
+                // 创建网络消息事件
+                NetworkMessageEvent event = createNetworkMessageEvent(ctx, webSocketFrame);
+
+                // 发布到 Disruptor 队列进行异步处理
+                boolean published = messageQueue.publish(event);
+                if (published) {
+                    log.debug("✅ WebSocket message published to Disruptor queue: {}", event.getEventId());
+                } else {
+                    log.error("❌ Failed to publish WebSocket message to Disruptor queue");
+                    // 如果发布失败，发送错误响应
+                    sendErrorResponse(ctx, "Service temporarily unavailable");
+                }
+            } else {
+                log.warn("⚠️ Received unexpected message type in WebSocket extension: {}",
+                        message.getClass().getSimpleName());
             }
-
-            // 记录请求处理完成
-            long processingTime = System.currentTimeMillis() - startTime;
-            recordRequestComplete(processingTime);
-
         } catch (Exception e) {
-            // 记录请求处理错误
-            recordRequestError();
-            log.error("Error processing WebSocket message", e);
+            log.error("❌ Error handling WebSocket message from client: {}", ctx.channel().remoteAddress(), e);
+            sendErrorResponse(ctx, "Internal server error");
         }
     }
 
@@ -371,19 +398,19 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension, Net
 
     @Override
     public boolean canShutdownSafely() {
-        return activeRequestCount.get() == 0 && activeConnections.isEmpty();
+        return getActiveRequestCount() == 0 && activeConnections.isEmpty();
     }
 
     @Override
-    public int getActiveRequestCount() {
-        return (int) activeRequestCount.get();
+    public long getActiveRequestCount() {
+        return super.getActiveRequestCount();
     }
 
     @Override
     public boolean waitForRequestsToComplete(long timeoutMs) {
         long startTime = System.currentTimeMillis();
 
-        while (activeRequestCount.get() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
+        while (getActiveRequestCount() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -392,67 +419,10 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension, Net
             }
         }
 
-        return activeRequestCount.get() == 0;
+        return getActiveRequestCount() == 0;
     }
 
-    // ========== RequestStatisticsExtension 实现 ==========
-
-    @Override
-    public int getPendingRequestCount() {
-        return getActiveRequestCount();
-    }
-
-    @Override
-    public long getTotalProcessedRequests() {
-        return totalProcessedRequests.get();
-    }
-
-    @Override
-    public long getErrorRequestCount() {
-        return errorRequestCount.get();
-    }
-
-    @Override
-    public double getAverageProcessingTime() {
-        long total = totalProcessedRequests.get();
-        if (total == 0) {
-            return 0.0;
-        }
-        return (double) totalProcessingTime.get() / total;
-    }
-
-    @Override
-    public void resetStatistics() {
-        totalProcessedRequests.set(0);
-        errorRequestCount.set(0);
-        activeRequestCount.set(0);
-        totalProcessingTime.set(0);
-        log.info("WebSocket extension statistics reset");
-    }
-
-    /**
-     * 记录请求开始处理
-     */
-    public void recordRequestStart() {
-        activeRequestCount.incrementAndGet();
-    }
-
-    /**
-     * 记录请求处理完成
-     */
-    public void recordRequestComplete(long processingTimeMs) {
-        activeRequestCount.decrementAndGet();
-        totalProcessedRequests.incrementAndGet();
-        totalProcessingTime.addAndGet(processingTimeMs);
-    }
-
-    /**
-     * 记录请求处理错误
-     */
-    public void recordRequestError() {
-        activeRequestCount.decrementAndGet();
-        errorRequestCount.incrementAndGet();
-    }
+    // ========== 统计功能已移至StatisticsAware基类 ==========
 
     /**
      * 获取活跃连接数量
@@ -464,7 +434,7 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension, Net
     /**
      * 获取所有活跃连接
      */
-    public ConcurrentHashMap<String, ChannelHandlerContext> getActiveConnections() {
+    public ConcurrentHashMap<String, ChannelHandlerContext> getActiveConnectionsMap() {
         return new ConcurrentHashMap<>(activeConnections);
     }
 
@@ -504,6 +474,45 @@ public class WebSocketExtension implements ExtensionMain, ProtocolExtension, Net
             log.debug("Sent WebSocket close frame to client: {}", clientId);
         } catch (Exception e) {
             log.warn("Failed to send WebSocket close frame to client: {}", clientId, e);
+        }
+    }
+
+    // ========== 辅助方法 ==========
+
+    /**
+     * 创建网络消息事件
+     */
+    @NotNull
+    private NetworkMessageEvent createNetworkMessageEvent(@NotNull ChannelHandlerContext ctx,
+            @NotNull WebSocketFrame webSocketFrame) {
+        // 生成客户端ID
+        String clientId = "client-" + System.currentTimeMillis();
+
+        // 计算消息大小
+        int messageSize = webSocketFrame.content() != null ? webSocketFrame.content().readableBytes() : 0;
+
+        return NetworkMessageEvent.builder()
+                .protocolType("websocket")
+                .clientId(clientId)
+                .message(webSocketFrame)
+                .channelContext(ctx)
+                .sourceAddress(ctx.channel().remoteAddress().toString())
+                .messageSize(messageSize)
+                .messageType("WEBSOCKET_FRAME")
+                .isRequest(true)
+                .priority(2) // WebSocket消息优先级
+                .build();
+    }
+
+    /**
+     * 发送错误响应
+     */
+    private void sendErrorResponse(@NotNull ChannelHandlerContext ctx, @NotNull String errorMessage) {
+        try {
+            TextWebSocketFrame errorFrame = new TextWebSocketFrame("ERROR: " + errorMessage);
+            ctx.writeAndFlush(errorFrame);
+        } catch (Exception e) {
+            log.error("❌ Failed to send error response to WebSocket client: {}", ctx.channel().remoteAddress(), e);
         }
     }
 }

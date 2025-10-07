@@ -2,8 +2,8 @@ package com.dtc.core.http.middleware;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import com.dtc.core.http.HttpRequest;
-import com.dtc.core.http.HttpResponse;
+import com.dtc.core.http.HttpRequestEx;
+import com.dtc.core.http.HttpResponseEx;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,7 +35,7 @@ public class RateLimitMiddleware implements HttpMiddleware {
 
     @Override
     @Nullable
-    public HttpResponse beforeRequest(@NotNull HttpRequest request) {
+    public HttpResponseEx beforeRequest(@NotNull HttpRequestEx request) {
         String clientId = request.getClientId();
         long currentTime = System.currentTimeMillis();
 
@@ -60,7 +60,7 @@ public class RateLimitMiddleware implements HttpMiddleware {
 
     @Override
     @Nullable
-    public HttpResponse afterRequest(@NotNull HttpRequest request, @NotNull HttpResponse response) {
+    public HttpResponseEx afterRequest(@NotNull HttpRequestEx request, @NotNull HttpResponseEx response) {
         // 可以在这里添加响应后的限流处理逻辑
         return null;
     }
@@ -69,8 +69,8 @@ public class RateLimitMiddleware implements HttpMiddleware {
      * 创建限流响应
      */
     @NotNull
-    private HttpResponse createRateLimitResponse() {
-        return new HttpResponse.Builder().statusCode(429).statusMessage("Too Many Requests").jsonContent()
+    private HttpResponseEx createRateLimitResponse() {
+        return new HttpResponseEx.Builder().statusCode(429).statusMessage("Too Many Requests").jsonContent()
                 .body("{\"error\":\"Rate Limit Exceeded\",\"message\":\"Too many requests\"}")
                 .addHeader("Retry-After", String.valueOf(windowMs / 1000)).build();
     }

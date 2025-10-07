@@ -1,8 +1,8 @@
 package com.dtc.core.http.route;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.http.HttpRequest;
-import com.dtc.core.http.HttpResponse;
+import com.dtc.core.http.HttpRequestEx;
+import com.dtc.core.http.HttpResponseEx;
 
 /**
  * HTTP 路由处理器接口 定义处理 HTTP 请求的方法
@@ -19,5 +19,5 @@ public interface HttpRouteHandler {
      * @return HTTP 响应
      */
     @NotNull
-    HttpResponse handle(@NotNull HttpRequest request);
+    HttpResponseEx handle(@NotNull HttpRequestEx request);
 }

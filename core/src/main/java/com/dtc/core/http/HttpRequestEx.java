@@ -2,7 +2,6 @@ package com.dtc.core.http;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 
 import java.util.Map;
@@ -10,10 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * HTTP 请求模型 封装 HTTP 请求的所有信息
+ * 使用 HttpRequestEx 避免与其他库的 HttpRequest 类名冲突
  * 
  * @author Network Service Template
  */
-public class HttpRequest {
+public class HttpRequestEx {
 
     private final String method;
     private final String path;
@@ -27,7 +27,7 @@ public class HttpRequest {
     private final String clientId;
     private final long timestamp;
 
-    private HttpRequest(Builder builder) {
+    public HttpRequestEx(Builder builder) {
         this.method = builder.method;
         this.path = builder.path;
         this.uri = builder.uri;
@@ -166,7 +166,8 @@ public class HttpRequest {
 
     @Override
     public String toString() {
-        return String.format("HttpRequest{method='%s', path='%s', clientId='%s', timestamp=%d}", method, path, clientId,
+        return String.format("HttpRequestEx{method='%s', path='%s', clientId='%s', timestamp=%d}", method, path,
+                clientId,
                 timestamp);
     }
 
@@ -257,11 +258,11 @@ public class HttpRequest {
         }
 
         @NotNull
-        public HttpRequest build() {
+        public HttpRequestEx build() {
             if (timestamp == 0) {
                 timestamp = System.currentTimeMillis();
             }
-            return new HttpRequest(this);
+            return new HttpRequestEx(this);
         }
     }
 }

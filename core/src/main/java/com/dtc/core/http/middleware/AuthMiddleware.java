@@ -2,8 +2,8 @@ package com.dtc.core.http.middleware;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import com.dtc.core.http.HttpRequest;
-import com.dtc.core.http.HttpResponse;
+import com.dtc.core.http.HttpRequestEx;
+import com.dtc.core.http.HttpResponseEx;
 
 /**
  * 认证中间件 处理 HTTP 请求的认证和授权
@@ -31,7 +31,7 @@ public class AuthMiddleware implements HttpMiddleware {
 
     @Override
     @Nullable
-    public HttpResponse beforeRequest(@NotNull HttpRequest request) {
+    public HttpResponseEx beforeRequest(@NotNull HttpRequestEx request) {
         String path = request.getPath();
 
         // 检查是否为公开路径
@@ -60,7 +60,7 @@ public class AuthMiddleware implements HttpMiddleware {
 
     @Override
     @Nullable
-    public HttpResponse afterRequest(@NotNull HttpRequest request, @NotNull HttpResponse response) {
+    public HttpResponseEx afterRequest(@NotNull HttpRequestEx request, @NotNull HttpResponseEx response) {
         // 可以在这里添加响应后的认证处理逻辑
         return null;
     }
@@ -110,8 +110,8 @@ public class AuthMiddleware implements HttpMiddleware {
      * 创建未授权响应
      */
     @NotNull
-    private HttpResponse createUnauthorizedResponse(@NotNull String message) {
-        return new HttpResponse.Builder().statusCode(401).statusMessage("Unauthorized").jsonContent()
+    private HttpResponseEx createUnauthorizedResponse(@NotNull String message) {
+        return new HttpResponseEx.Builder().statusCode(401).statusMessage("Unauthorized").jsonContent()
                 .body("{\"error\":\"Unauthorized\",\"message\":\"" + message + "\"}").build();
     }
 
@@ -119,8 +119,8 @@ public class AuthMiddleware implements HttpMiddleware {
      * 创建禁止访问响应
      */
     @NotNull
-    private HttpResponse createForbiddenResponse(@NotNull String message) {
-        return new HttpResponse.Builder().statusCode(403).statusMessage("Forbidden").jsonContent()
+    private HttpResponseEx createForbiddenResponse(@NotNull String message) {
+        return new HttpResponseEx.Builder().statusCode(403).statusMessage("Forbidden").jsonContent()
                 .body("{\"error\":\"Forbidden\",\"message\":\"" + message + "\"}").build();
     }
 }

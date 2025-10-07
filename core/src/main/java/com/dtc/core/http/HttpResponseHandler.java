@@ -36,7 +36,7 @@ public class HttpResponseHandler {
      * @param clientId 客户端 ID
      * @param response HTTP 响应
      */
-    public void sendResponse(@NotNull String clientId, @NotNull HttpResponse response) {
+    public void sendResponse(@NotNull String clientId, @NotNull HttpResponseEx response) {
         try {
             sentResponses.incrementAndGet();
 
@@ -58,32 +58,32 @@ public class HttpResponseHandler {
      * 创建成功响应
      */
     @NotNull
-    public HttpResponse createSuccessResponse(@Nullable Object data) {
-        return new HttpResponse.Builder().ok().jsonContent().body(serializeToJson(data)).build();
+    public HttpResponseEx createSuccessResponse(@Nullable Object data) {
+        return new HttpResponseEx.Builder().ok().jsonContent().body(serializeToJson(data)).build();
     }
 
     /**
      * 创建创建成功响应
      */
     @NotNull
-    public HttpResponse createCreatedResponse(@Nullable Object data) {
-        return new HttpResponse.Builder().created().jsonContent().body(serializeToJson(data)).build();
+    public HttpResponseEx createCreatedResponse(@Nullable Object data) {
+        return new HttpResponseEx.Builder().created().jsonContent().body(serializeToJson(data)).build();
     }
 
     /**
      * 创建无内容响应
      */
     @NotNull
-    public HttpResponse createNoContentResponse() {
-        return new HttpResponse.Builder().noContent().build();
+    public HttpResponseEx createNoContentResponse() {
+        return new HttpResponseEx.Builder().noContent().build();
     }
 
     /**
      * 创建错误响应
      */
     @NotNull
-    public HttpResponse createErrorResponse(int statusCode, @NotNull String error, @Nullable String message) {
-        return new HttpResponse.Builder().statusCode(statusCode).statusMessage(error).jsonContent()
+    public HttpResponseEx createErrorResponse(int statusCode, @NotNull String error, @Nullable String message) {
+        return new HttpResponseEx.Builder().statusCode(statusCode).statusMessage(error).jsonContent()
                 .body(createErrorJson(error, message)).build();
     }
 
@@ -91,7 +91,7 @@ public class HttpResponseHandler {
      * 创建 400 错误响应
      */
     @NotNull
-    public HttpResponse createBadRequestResponse(@Nullable String message) {
+    public HttpResponseEx createBadRequestResponse(@Nullable String message) {
         return createErrorResponse(400, "Bad Request", message);
     }
 
@@ -99,7 +99,7 @@ public class HttpResponseHandler {
      * 创建 401 错误响应
      */
     @NotNull
-    public HttpResponse createUnauthorizedResponse(@Nullable String message) {
+    public HttpResponseEx createUnauthorizedResponse(@Nullable String message) {
         return createErrorResponse(401, "Unauthorized", message);
     }
 
@@ -107,7 +107,7 @@ public class HttpResponseHandler {
      * 创建 403 错误响应
      */
     @NotNull
-    public HttpResponse createForbiddenResponse(@Nullable String message) {
+    public HttpResponseEx createForbiddenResponse(@Nullable String message) {
         return createErrorResponse(403, "Forbidden", message);
     }
 
@@ -115,7 +115,7 @@ public class HttpResponseHandler {
      * 创建 404 错误响应
      */
     @NotNull
-    public HttpResponse createNotFoundResponse(@Nullable String message) {
+    public HttpResponseEx createNotFoundResponse(@Nullable String message) {
         return createErrorResponse(404, "Not Found", message);
     }
 
@@ -123,7 +123,7 @@ public class HttpResponseHandler {
      * 创建 405 错误响应
      */
     @NotNull
-    public HttpResponse createMethodNotAllowedResponse(@Nullable String message) {
+    public HttpResponseEx createMethodNotAllowedResponse(@Nullable String message) {
         return createErrorResponse(405, "Method Not Allowed", message);
     }
 
@@ -131,7 +131,7 @@ public class HttpResponseHandler {
      * 创建 409 错误响应
      */
     @NotNull
-    public HttpResponse createConflictResponse(@Nullable String message) {
+    public HttpResponseEx createConflictResponse(@Nullable String message) {
         return createErrorResponse(409, "Conflict", message);
     }
 
@@ -139,7 +139,7 @@ public class HttpResponseHandler {
      * 创建 500 错误响应
      */
     @NotNull
-    public HttpResponse createInternalServerErrorResponse(@Nullable String message) {
+    public HttpResponseEx createInternalServerErrorResponse(@Nullable String message) {
         return createErrorResponse(500, "Internal Server Error", message);
     }
 
@@ -147,40 +147,40 @@ public class HttpResponseHandler {
      * 创建 JSON 响应
      */
     @NotNull
-    public HttpResponse createJsonResponse(int statusCode, @Nullable Object data) {
-        return new HttpResponse.Builder().statusCode(statusCode).jsonContent().body(serializeToJson(data)).build();
+    public HttpResponseEx createJsonResponse(int statusCode, @Nullable Object data) {
+        return new HttpResponseEx.Builder().statusCode(statusCode).jsonContent().body(serializeToJson(data)).build();
     }
 
     /**
      * 创建文本响应
      */
     @NotNull
-    public HttpResponse createTextResponse(int statusCode, @NotNull String text) {
-        return new HttpResponse.Builder().statusCode(statusCode).textContent().body(text).build();
+    public HttpResponseEx createTextResponse(int statusCode, @NotNull String text) {
+        return new HttpResponseEx.Builder().statusCode(statusCode).textContent().body(text).build();
     }
 
     /**
      * 创建 HTML 响应
      */
     @NotNull
-    public HttpResponse createHtmlResponse(int statusCode, @NotNull String html) {
-        return new HttpResponse.Builder().statusCode(statusCode).htmlContent().body(html).build();
+    public HttpResponseEx createHtmlResponse(int statusCode, @NotNull String html) {
+        return new HttpResponseEx.Builder().statusCode(statusCode).htmlContent().body(html).build();
     }
 
     /**
      * 创建 XML 响应
      */
     @NotNull
-    public HttpResponse createXmlResponse(int statusCode, @NotNull String xml) {
-        return new HttpResponse.Builder().statusCode(statusCode).xmlContent().body(xml).build();
+    public HttpResponseEx createXmlResponse(int statusCode, @NotNull String xml) {
+        return new HttpResponseEx.Builder().statusCode(statusCode).xmlContent().body(xml).build();
     }
 
     /**
      * 创建重定向响应
      */
     @NotNull
-    public HttpResponse createRedirectResponse(@NotNull String location) {
-        return new HttpResponse.Builder().statusCode(302).statusMessage("Found").addHeader("Location", location)
+    public HttpResponseEx createRedirectResponse(@NotNull String location) {
+        return new HttpResponseEx.Builder().statusCode(302).statusMessage("Found").addHeader("Location", location)
                 .build();
     }
 
@@ -188,8 +188,8 @@ public class HttpResponseHandler {
      * 创建永久重定向响应
      */
     @NotNull
-    public HttpResponse createPermanentRedirectResponse(@NotNull String location) {
-        return new HttpResponse.Builder().statusCode(301).statusMessage("Moved Permanently")
+    public HttpResponseEx createPermanentRedirectResponse(@NotNull String location) {
+        return new HttpResponseEx.Builder().statusCode(301).statusMessage("Moved Permanently")
                 .addHeader("Location", location).build();
     }
 
@@ -230,8 +230,8 @@ public class HttpResponseHandler {
      * 添加 CORS 头部
      */
     @NotNull
-    public HttpResponse addCorsHeaders(@NotNull HttpResponse response) {
-        return new HttpResponse.Builder().statusCode(response.getStatusCode())
+    public HttpResponseEx addCorsHeaders(@NotNull HttpResponseEx response) {
+        return new HttpResponseEx.Builder().statusCode(response.getStatusCode())
                 .statusMessage(response.getStatusMessage()).headers(response.getHeaders())
                 .addHeader("Access-Control-Allow-Origin", "*")
                 .addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -243,8 +243,8 @@ public class HttpResponseHandler {
      * 添加缓存头部
      */
     @NotNull
-    public HttpResponse addCacheHeaders(@NotNull HttpResponse response, int maxAge) {
-        return new HttpResponse.Builder().statusCode(response.getStatusCode())
+    public HttpResponseEx addCacheHeaders(@NotNull HttpResponseEx response, int maxAge) {
+        return new HttpResponseEx.Builder().statusCode(response.getStatusCode())
                 .statusMessage(response.getStatusMessage()).headers(response.getHeaders())
                 .addHeader("Cache-Control", "public, max-age=" + maxAge)
                 .addHeader("Expires", new java.util.Date(System.currentTimeMillis() + maxAge * 1000L).toString())
@@ -255,8 +255,8 @@ public class HttpResponseHandler {
      * 添加安全头部
      */
     @NotNull
-    public HttpResponse addSecurityHeaders(@NotNull HttpResponse response) {
-        return new HttpResponse.Builder().statusCode(response.getStatusCode())
+    public HttpResponseEx addSecurityHeaders(@NotNull HttpResponseEx response) {
+        return new HttpResponseEx.Builder().statusCode(response.getStatusCode())
                 .statusMessage(response.getStatusMessage()).headers(response.getHeaders())
                 .addHeader("X-Content-Type-Options", "nosniff").addHeader("X-Frame-Options", "DENY")
                 .addHeader("X-XSS-Protection", "1; mode=block")

@@ -3,59 +3,76 @@ package com.dtc.custom;
 import com.dtc.api.ExtensionMain;
 import com.dtc.api.MessageHandler;
 import com.dtc.api.ProtocolExtension;
-import com.dtc.core.extensions.NetworkExtension;
-import com.dtc.core.extensions.GracefulShutdownExtension;
-import com.dtc.core.extensions.RequestStatisticsExtension;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
+import com.dtc.api.ServiceConfig;
 import com.dtc.api.parameter.ExtensionStartInput;
 import com.dtc.api.parameter.ExtensionStartOutput;
 import com.dtc.api.parameter.ExtensionStopInput;
 import com.dtc.api.parameter.ExtensionStopOutput;
-import com.dtc.core.netty.codec.CodecFactory;
-import com.dtc.core.netty.codec.MessageDecoder;
-import com.dtc.core.netty.codec.MessageEncoder;
+import com.dtc.core.custom.CustomCodecFactory;
+import com.dtc.core.custom.CustomConnectionManager;
+import com.dtc.core.custom.CustomServer;
+import com.dtc.core.custom.CustomMessageHandler;
+import com.dtc.core.statistics.StatisticsAware;
+import com.dtc.core.messaging.NetworkMessageEvent;
+import com.dtc.core.messaging.NetworkMessageQueue;
+import com.dtc.core.extensions.GracefulShutdownExtension;
+import com.dtc.core.extensions.NetworkExtension;
+import com.dtc.core.extensions.model.ExtensionMetadata;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 自定义协议扩展示例
  * 展示如何通过扩展实现自定义编解码器
- * 
+ *
  * @author Network Service Template
  */
 @Singleton
-public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension, NetworkExtension,
-        GracefulShutdownExtension, RequestStatisticsExtension {
+public class CustomProtocolExtension extends StatisticsAware
+        implements ExtensionMain, ProtocolExtension, NetworkExtension,
+        GracefulShutdownExtension {
 
     private static final Logger log = LoggerFactory.getLogger(CustomProtocolExtension.class);
 
-    private final @NotNull CodecFactory codecFactory;
-    private volatile boolean started = false;
-    private final AtomicLong messageCount = new AtomicLong(0);
-    private volatile boolean shutdownPrepared = false;
+    @SuppressWarnings("unused") // 保留用于依赖注入，但由NettyServer统一管理
+    private final CustomServer customServer;
+    @SuppressWarnings("unused") // 保留用于依赖注入，但由NettyServer统一管理
+    private final CustomMessageHandler customMessageHandler;
+    @SuppressWarnings("unused") // 保留用于依赖注入，但由NettyServer统一管理
+    private final CustomConnectionManager connectionManager;
+    private final CustomCodecFactory customCodec;
+    private final NetworkMessageQueue messageQueue;
 
-    // 请求统计
-    private final AtomicLong totalProcessedRequests = new AtomicLong(0);
-    private final AtomicLong errorRequestCount = new AtomicLong(0);
-    private final AtomicLong activeRequestCount = new AtomicLong(0);
-    private final AtomicLong totalProcessingTime = new AtomicLong(0);
+    private volatile boolean started = false;
+    @SuppressWarnings("unused") // 保留用于优雅关闭功能
+    private volatile boolean shutdownPrepared = false;
 
     // 连接管理
     private final ConcurrentHashMap<String, ChannelHandlerContext> activeConnections = new ConcurrentHashMap<>();
 
     @Inject
-    public CustomProtocolExtension(@NotNull CodecFactory codecFactory) {
-        this.codecFactory = codecFactory;
+    public CustomProtocolExtension(@NotNull CustomServer customServer,
+            @NotNull CustomMessageHandler customMessageHandler,
+            @NotNull CustomConnectionManager connectionManager,
+            @NotNull CustomCodecFactory customCodec,
+            @NotNull NetworkMessageQueue messageQueue,
+            @NotNull com.dtc.core.statistics.StatisticsCollector statisticsCollector) {
+        super(statisticsCollector);
+        this.customServer = customServer;
+        this.customMessageHandler = customMessageHandler;
+        this.connectionManager = connectionManager;
+        this.customCodec = customCodec;
+        this.messageQueue = messageQueue;
     }
 
     /**
@@ -63,7 +80,8 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
      */
     @NotNull
     public ChannelHandler createCustomDecoder() {
-        return new CustomMessageDecoder();
+        // 使用注入的编解码器创建解码器
+        return new CustomMessageDecoder(customCodec);
     }
 
     /**
@@ -71,84 +89,8 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
      */
     @NotNull
     public ChannelHandler createCustomEncoder() {
-        return new CustomMessageEncoder();
-    }
-
-    /**
-     * 自定义消息解码器
-     */
-    public static class CustomMessageDecoder extends MessageDecoder {
-
-        @Override
-        protected boolean isDecodable(@NotNull ByteBuf in) {
-            // 检查是否有足够的数据进行解码
-            return in.readableBytes() >= 4; // 至少需要4字节的头部
-        }
-
-        @Override
-        protected Object doDecode(@NotNull ChannelHandlerContext ctx, @NotNull ByteBuf in) {
-            try {
-                // 读取消息长度
-                int messageLength = in.readInt();
-
-                // 检查消息长度
-                if (messageLength <= 0 || messageLength > 64 * 1024) {
-                    log.warn("Invalid message length: {}", messageLength);
-                    return null;
-                }
-
-                // 检查是否有完整的消息
-                if (in.readableBytes() < messageLength) {
-                    return null; // 需要更多数据
-                }
-
-                // 读取消息内容
-                byte[] messageData = new byte[messageLength];
-                in.readBytes(messageData);
-
-                // 解析自定义协议
-                String message = new String(messageData, StandardCharsets.UTF_8);
-                log.debug("Decoded custom message: {}", message);
-
-                return message;
-
-            } catch (Exception e) {
-                log.error("Failed to decode custom message", e);
-                return null;
-            }
-        }
-    }
-
-    /**
-     * 自定义消息编码器
-     */
-    public static class CustomMessageEncoder extends MessageEncoder {
-
-        @Override
-        protected void doEncode(@NotNull ChannelHandlerContext ctx, @NotNull Object msg, @NotNull ByteBuf out) {
-            try {
-                String message;
-                if (msg instanceof String) {
-                    message = (String) msg;
-                } else {
-                    message = msg.toString();
-                }
-
-                byte[] messageData = message.getBytes(StandardCharsets.UTF_8);
-
-                // 写入消息长度
-                out.writeInt(messageData.length);
-
-                // 写入消息内容
-                out.writeBytes(messageData);
-
-                log.debug("Encoded custom message: {} bytes", messageData.length);
-
-            } catch (Exception e) {
-                log.error("Failed to encode custom message", e);
-                throw new RuntimeException("Custom message encoding failed", e);
-            }
-        }
+        // 使用注入的编解码器创建编码器
+        return new CustomMessageEncoder(customCodec);
     }
 
     // ========== ExtensionMain 接口实现 ==========
@@ -190,7 +132,7 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
     @Override
     @NotNull
     public String getProtocolName() {
-        return "CustomProtocol";
+        return ServiceConfig.CUSTOM.getServiceName();
     }
 
     @Override
@@ -201,7 +143,7 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
 
     @Override
     public int getDefaultPort() {
-        return 9999;
+        return ServiceConfig.CUSTOM.getDefaultPort();
     }
 
     @Override
@@ -222,28 +164,29 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
 
     @Override
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-        messageCount.incrementAndGet();
-        log.debug("Received custom protocol message: {}", message);
-
-        // 记录请求开始处理
-        recordRequestStart();
-        long startTime = System.currentTimeMillis();
+        log.debug("📨 Custom protocol message received from client: {}", ctx.channel().remoteAddress());
 
         try {
-            // 处理自定义协议消息
-            if (message instanceof String) {
-                String msg = (String) message;
-                log.info("Processing custom message: {}", msg);
+            // 处理自定义协议消息 - 使用 Disruptor 异步处理
+            if (message != null) {
+                // 创建网络消息事件
+                NetworkMessageEvent event = createNetworkMessageEvent(ctx, message);
+
+                // 发布到 Disruptor 队列进行异步处理
+                boolean published = messageQueue.publish(event);
+                if (published) {
+                    log.debug("✅ Custom protocol message published to Disruptor queue: {}", event.getEventId());
+                } else {
+                    log.error("❌ Failed to publish Custom protocol message to Disruptor queue");
+                    // 如果发布失败，发送错误响应
+                    sendErrorResponse(ctx, "Service temporarily unavailable");
+                }
+            } else {
+                log.warn("⚠️ Received null message in Custom protocol extension");
             }
-
-            // 记录请求处理完成
-            long processingTime = System.currentTimeMillis() - startTime;
-            recordRequestComplete(processingTime);
-
         } catch (Exception e) {
-            // 记录请求处理错误
-            recordRequestError();
-            log.error("Error processing custom protocol message", e);
+            log.error("❌ Error handling Custom protocol message from client: {}", ctx.channel().remoteAddress(), e);
+            sendErrorResponse(ctx, "Internal server error");
         }
     }
 
@@ -255,7 +198,7 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
     @Override
     @Nullable
     public MessageHandler getMessageHandler() {
-        return new CustomMessageHandler();
+        return new CustomProtocolMessageHandler();
     }
 
     // ========== NetworkExtension 接口实现 ==========
@@ -296,8 +239,8 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
 
     @Override
     @NotNull
-    public com.dtc.core.extensions.model.ExtensionMetadata getMetadata() {
-        return com.dtc.core.extensions.model.ExtensionMetadata.builder()
+    public ExtensionMetadata getMetadata() {
+        return ExtensionMetadata.builder()
                 .id("custom-extension")
                 .name("Custom Protocol Extension")
                 .version("1.0.0")
@@ -374,7 +317,7 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
     /**
      * 自定义消息处理器
      */
-    private class CustomMessageHandler implements MessageHandler {
+    private class CustomProtocolMessageHandler implements MessageHandler {
 
         @Override
         @Nullable
@@ -416,19 +359,19 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
 
     @Override
     public boolean canShutdownSafely() {
-        return activeRequestCount.get() == 0 && activeConnections.isEmpty();
+        return getActiveRequestCount() == 0 && activeConnections.isEmpty();
     }
 
     @Override
-    public int getActiveRequestCount() {
-        return (int) activeRequestCount.get();
+    public long getActiveRequestCount() {
+        return super.getActiveRequestCount();
     }
 
     @Override
     public boolean waitForRequestsToComplete(long timeoutMs) {
         long startTime = System.currentTimeMillis();
 
-        while (activeRequestCount.get() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
+        while (getActiveRequestCount() > 0 && (System.currentTimeMillis() - startTime) < timeoutMs) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -437,67 +380,10 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
             }
         }
 
-        return activeRequestCount.get() == 0;
+        return getActiveRequestCount() == 0;
     }
 
-    // ========== RequestStatisticsExtension 实现 ==========
-
-    @Override
-    public int getPendingRequestCount() {
-        return getActiveRequestCount();
-    }
-
-    @Override
-    public long getTotalProcessedRequests() {
-        return totalProcessedRequests.get();
-    }
-
-    @Override
-    public long getErrorRequestCount() {
-        return errorRequestCount.get();
-    }
-
-    @Override
-    public double getAverageProcessingTime() {
-        long total = totalProcessedRequests.get();
-        if (total == 0) {
-            return 0.0;
-        }
-        return (double) totalProcessingTime.get() / total;
-    }
-
-    @Override
-    public void resetStatistics() {
-        totalProcessedRequests.set(0);
-        errorRequestCount.set(0);
-        activeRequestCount.set(0);
-        totalProcessingTime.set(0);
-        log.info("Custom Protocol extension statistics reset");
-    }
-
-    /**
-     * 记录请求开始处理
-     */
-    public void recordRequestStart() {
-        activeRequestCount.incrementAndGet();
-    }
-
-    /**
-     * 记录请求处理完成
-     */
-    public void recordRequestComplete(long processingTimeMs) {
-        activeRequestCount.decrementAndGet();
-        totalProcessedRequests.incrementAndGet();
-        totalProcessingTime.addAndGet(processingTimeMs);
-    }
-
-    /**
-     * 记录请求处理错误
-     */
-    public void recordRequestError() {
-        activeRequestCount.decrementAndGet();
-        errorRequestCount.incrementAndGet();
-    }
+    // ========== 统计功能已移至StatisticsAware基类 ==========
 
     /**
      * 获取活跃连接数量
@@ -509,7 +395,7 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
     /**
      * 获取所有活跃连接
      */
-    public ConcurrentHashMap<String, ChannelHandlerContext> getActiveConnections() {
+    public ConcurrentHashMap<String, ChannelHandlerContext> getActiveConnectionsMap() {
         return new ConcurrentHashMap<>(activeConnections);
     }
 
@@ -549,6 +435,96 @@ public class CustomProtocolExtension implements ExtensionMain, ProtocolExtension
             log.debug("Sent shutdown notification to client: {}", clientId);
         } catch (Exception e) {
             log.warn("Failed to send shutdown notification to client: {}", clientId, e);
+        }
+    }
+
+    // ========== 自定义编解码器 ==========
+
+    /**
+     * 自定义消息解码器
+     */
+    public static class CustomMessageDecoder extends io.netty.handler.codec.MessageToMessageDecoder<ByteBuf> {
+        @SuppressWarnings("unused")
+        private static final Logger log = LoggerFactory.getLogger(CustomMessageDecoder.class);
+        private final CustomCodecFactory customCodec;
+
+        public CustomMessageDecoder(@NotNull CustomCodecFactory customCodec) {
+            this.customCodec = customCodec;
+        }
+
+        @Override
+        protected void decode(ChannelHandlerContext ctx, ByteBuf in, java.util.List<Object> out) throws Exception {
+            customCodec.decode(ctx, in, out);
+        }
+    }
+
+    /**
+     * 自定义消息编码器
+     */
+    public static class CustomMessageEncoder extends io.netty.handler.codec.MessageToByteEncoder<Object> {
+        @SuppressWarnings("unused")
+        private static final Logger log = LoggerFactory.getLogger(CustomMessageEncoder.class);
+        private final CustomCodecFactory customCodec;
+
+        public CustomMessageEncoder(@NotNull CustomCodecFactory customCodec) {
+            this.customCodec = customCodec;
+        }
+
+        @Override
+        protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
+            customCodec.encode(ctx, msg, out);
+        }
+    }
+
+    // ========== 辅助方法 ==========
+
+    /**
+     * 创建网络消息事件
+     */
+    @NotNull
+    private NetworkMessageEvent createNetworkMessageEvent(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
+        // 生成客户端ID
+        String clientId = "client-" + System.currentTimeMillis();
+
+        // 计算消息大小
+        int messageSize = 0;
+        if (message instanceof ByteBuf) {
+            messageSize = ((ByteBuf) message).readableBytes();
+        } else if (message instanceof byte[]) {
+            messageSize = ((byte[]) message).length;
+        } else if (message instanceof String) {
+            messageSize = ((String) message).getBytes(StandardCharsets.UTF_8).length;
+        }
+
+        return NetworkMessageEvent.builder()
+                .protocolType("custom")
+                .clientId(clientId)
+                .message(message)
+                .channelContext(ctx)
+                .sourceAddress(ctx.channel().remoteAddress().toString())
+                .messageSize(messageSize)
+                .messageType("CUSTOM_MESSAGE")
+                .isRequest(true)
+                .priority(5) // 自定义协议消息优先级
+                .build();
+    }
+
+    /**
+     * 发送错误响应
+     */
+    private void sendErrorResponse(@NotNull ChannelHandlerContext ctx, @NotNull String errorMessage) {
+        try {
+            // 自定义协议错误响应处理
+            String errorMsg = "ERROR: " + errorMessage;
+            byte[] errorBytes = errorMsg.getBytes(StandardCharsets.UTF_8);
+
+            ByteBuf response = ctx.alloc().buffer(errorBytes.length);
+            response.writeBytes(errorBytes);
+            ctx.writeAndFlush(response);
+
+        } catch (Exception e) {
+            log.error("❌ Failed to send error response to Custom protocol client: {}", ctx.channel().remoteAddress(),
+                    e);
         }
     }
 }

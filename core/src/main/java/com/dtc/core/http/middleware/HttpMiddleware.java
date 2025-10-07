@@ -2,8 +2,8 @@ package com.dtc.core.http.middleware;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import com.dtc.core.http.HttpRequest;
-import com.dtc.core.http.HttpResponse;
+import com.dtc.core.http.HttpRequestEx;
+import com.dtc.core.http.HttpResponseEx;
 
 /**
  * HTTP 中间件接口 定义 HTTP 中间件的标准接口
@@ -19,7 +19,7 @@ public interface HttpMiddleware {
      * @return 如果返回非空响应，则直接返回该响应，不继续处理请求
      */
     @Nullable
-    default HttpResponse beforeRequest(@NotNull HttpRequest request) {
+    default HttpResponseEx beforeRequest(@NotNull HttpRequestEx request) {
         return null;
     }
 
@@ -31,7 +31,7 @@ public interface HttpMiddleware {
      * @return 处理后的响应，如果返回 null 则使用原响应
      */
     @Nullable
-    default HttpResponse afterRequest(@NotNull HttpRequest request, @NotNull HttpResponse response) {
+    default HttpResponseEx afterRequest(@NotNull HttpRequestEx request, @NotNull HttpResponseEx response) {
         return null;
     }
 

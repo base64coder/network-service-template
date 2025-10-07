@@ -1,7 +1,5 @@
 package com.dtc.core.extensions;
 
-import com.dtc.api.annotations.NotNull;
-
 /**
  * 支持优雅关闭的扩展接口
  * 提供扩展停止前的准备和清理功能
@@ -30,7 +28,7 @@ public interface GracefulShutdownExtension {
      * 
      * @return 正在处理的请求数量
      */
-    int getActiveRequestCount();
+    long getActiveRequestCount();
 
     /**
      * 等待所有请求处理完成

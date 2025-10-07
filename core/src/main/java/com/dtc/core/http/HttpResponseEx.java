@@ -9,10 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * HTTP 响应模型 封装 HTTP 响应的所有信息
+ * 使用 HttpResponseEx 避免与其他库的 HttpResponse 类名冲突
  * 
  * @author Network Service Template
  */
-public class HttpResponse {
+public class HttpResponseEx {
 
     private final int statusCode;
     private final String statusMessage;
@@ -21,7 +22,7 @@ public class HttpResponse {
     private final String contentType;
     private final long timestamp;
 
-    private HttpResponse(Builder builder) {
+    private HttpResponseEx(Builder builder) {
         this.statusCode = builder.statusCode;
         this.statusMessage = builder.statusMessage;
         this.headers = new ConcurrentHashMap<>(builder.headers);
@@ -95,7 +96,7 @@ public class HttpResponse {
 
     @Override
     public String toString() {
-        return String.format("HttpResponse{statusCode=%d, statusMessage='%s', contentType='%s', timestamp=%d}",
+        return String.format("HttpResponseEx{statusCode=%d, statusMessage='%s', contentType='%s', timestamp=%d}",
                 statusCode, statusMessage, contentType, timestamp);
     }
 
@@ -213,11 +214,11 @@ public class HttpResponse {
         }
 
         @NotNull
-        public HttpResponse build() {
+        public HttpResponseEx build() {
             if (timestamp == 0) {
                 timestamp = System.currentTimeMillis();
             }
-            return new HttpResponse(this);
+            return new HttpResponseEx(this);
         }
     }
 }

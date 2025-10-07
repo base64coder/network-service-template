@@ -12,18 +12,20 @@
         <dependency>core</dependency>
     </dependencies>
     <configuration>
-        <port>8080</port>
-        <max-connections>1000</max-connections>
-        <request-timeout>30000</request-timeout>
-        <cors-enabled>true</cors-enabled>
-        <cors-origins>*</cors-origins>
-        <cors-methods>GET, POST, PUT, DELETE, OPTIONS</cors-methods>
-        <cors-headers>Content-Type, Authorization</cors-headers>
-        <rate-limit-enabled>true</rate-limit-enabled>
-        <rate-limit-max-requests>100</rate-limit-max-requests>
-        <rate-limit-window-ms>60000</rate-limit-window-ms>
-        <auth-enabled>true</auth-enabled>
-        <public-paths>/,/health,/status,/api/info</public-paths>
-        <admin-paths>/api/admin</admin-paths>
+        <property name="enabled" value="true" />
+        <property name="port" value="8080" />
+        <property name="protocol-name" value="HTTP" />
+        <property name="max-connections" value="1000" />
+        <property name="request-timeout" value="30000" />
+        <property name="cors-enabled" value="true" />
+        <property name="cors-origins" value="*" />
+        <property name="cors-methods" value="GET, POST, PUT, DELETE, OPTIONS" />
+        <property name="cors-headers" value="Content-Type, Authorization" />
+        <property name="rate-limit-enabled" value="true" />
+        <property name="rate-limit-max-requests" value="100" />
+        <property name="rate-limit-window-ms" value="60000" />
+        <property name="auth-enabled" value="true" />
+        <property name="public-paths" value="/,/health,/status,/api/info" />
+        <property name="admin-paths" value="/api/admin" />
     </configuration>
 </extension>
