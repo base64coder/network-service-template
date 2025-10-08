@@ -47,10 +47,21 @@
         <module>core</module>
         <module>distribution</module>
         <module>extensions</module>
+        <module>framework</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.dtc</groupId>
+                <artifactId>api</artifactId>
+                <version>${api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dtc</groupId>
+                <artifactId>core</artifactId>
+                <version>${core.version}</version>
+            </dependency>
             <!-- Netty -->
             <dependency>
                 <groupId>io.netty</groupId>
@@ -64,6 +75,12 @@
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
+                <version>${guice.version}</version>
+            </dependency>
+            <!-- Guice扩展 -->
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-multibindings</artifactId>
                 <version>${guice.version}</version>
             </dependency>
 
