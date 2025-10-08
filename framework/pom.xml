@@ -9,99 +9,69 @@
     </parent>
 
     <artifactId>framework</artifactId>
-    <name>Network Framework</name>
+    <name>framework</name>
     <packaging>pom</packaging>
-    <description>网络服务框架 - 借鉴Spring框架设计的IoC容器和Web框架</description>
+    <description>自研IoC框架父模块</description>
 
     <modules>
-        <module>framework-core</module>
-        <module>framework-context</module>
-        <module>framework-web</module>
-<!--        <module>framework-aop</module>-->
-<!--        <module>framework-data</module>-->
-<!--        <module>framework-security</module>-->
-<!--        <module>framework-test</module>-->
-        <module>framework-examples</module>
+        <module>ioc-core</module>
+        <module>ioc-annotations</module>
     </modules>
 
     <properties>
-        <framework.version>1.0-SNAPSHOT</framework.version>
-        <spring.version>6.0.13</spring.version>
-        <spring.boot.version>3.1.5</spring.boot.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <!-- 内部模块依赖 -->
-            <dependency>
-                <groupId>com.dtc</groupId>
-                <artifactId>framework-core</artifactId>
-                <version>${framework.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dtc</groupId>
-                <artifactId>framework-context</artifactId>
-                <version>${framework.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dtc</groupId>
-                <artifactId>framework-web</artifactId>
-                <version>${framework.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dtc</groupId>
-                <artifactId>framework-aop</artifactId>
-                <version>${framework.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dtc</groupId>
-                <artifactId>framework-data</artifactId>
-                <version>${framework.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dtc</groupId>
-                <artifactId>framework-security</artifactId>
-                <version>${framework.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dtc</groupId>
-                <artifactId>framework-test</artifactId>
-                <version>${framework.version}</version>
-            </dependency>
-
-            <!-- Spring Framework 依赖 -->
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-core</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-context</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-webmvc</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-aop</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-beans</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <dependencies>
+        <!-- 日志依赖 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+        
+        <!-- 注解处理 -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>23.1.0</version>
+        </dependency>
+        
+        <!-- 反射工具 -->
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.4</version>
+        </dependency>
+        
+        <!-- 字节码操作 -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.14.5</version>
+        </dependency>
+        
+        <!-- 测试依赖 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>4.11.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dtc</groupId>
+            <artifactId>api</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -113,6 +83,12 @@
                     <source>11</source>
                     <target>11</target>
                 </configuration>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
             </plugin>
         </plugins>
     </build>

@@ -22,6 +22,7 @@
         <!-- 依赖版本 -->
         <netty.version>4.1.100.Final</netty.version>
         <guice.version>5.1.0</guice.version>
+        <jetbrains-annotation.version>26.0.2</jetbrains-annotation.version>
         <junit.version>5.9.2</junit.version>
         <mockito.version>5.1.1</mockito.version>
         <slf4j.version>2.0.7</slf4j.version>
@@ -40,6 +41,7 @@
         <core.version>1.0-SNAPSHOT</core.version>
         <distribution.version>1.0-SNAPSHOT</distribution.version>
         <extensions.version>1.0-SNAPSHOT</extensions.version>
+        <ioc-annotations.version>1.0-SNAPSHOT</ioc-annotations.version>
     </properties>
 
     <modules>
@@ -70,7 +72,17 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            <!-- 注解处理 -->
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${jetbrains-annotation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dtc</groupId>
+                <artifactId>ioc-annotations</artifactId>
+                <version>${ioc-annotations.version}</version>
+            </dependency>
             <!-- Guice -->
             <dependency>
                 <groupId>com.google.inject</groupId>
