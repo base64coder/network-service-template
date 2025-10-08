@@ -2,7 +2,7 @@ package com.dtc.core;
 
 import com.dtc.core.serialization.ProtobufSerializer;
 import com.google.protobuf.ByteString;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;

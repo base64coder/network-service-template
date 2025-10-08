@@ -2,7 +2,8 @@ package com.dtc.core;
 
 import com.dtc.core.bootstrap.StartupBanner;
 import com.dtc.core.config.ServerConfiguration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 /**
  * 启动横幅测试
@@ -10,7 +11,8 @@ import org.junit.Test;
 public class StartupBannerTest {
 
     @Test
-    public void testDisplayBanner() {
+    @DisplayName("测试启动横幅显示")
+    void testDisplayBanner() {
         // 创建测试配置
         ServerConfiguration config = ServerConfiguration.builder().serverName("测试服务器").serverVersion("1.0.0")
                 .serverId("test-server-001").addListener("HTTP", 8080, "0.0.0.0", true, "HTTP API", "REST API 服务端口")
