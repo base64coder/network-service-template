@@ -216,7 +216,13 @@ public class MqttMessageHandler {
         try {
             // MQTT错误响应处理
             log.error("MQTT error response: {}", errorMessage);
-            // 这里可以实现具体的MQTT错误响应逻辑
+            
+            // 发送MQTT DISCONNECT消息作为错误响应
+            ByteBuf response = ctx.alloc().buffer(2);
+            response.writeByte(0xE0); // DISCONNECT消息类型
+            response.writeByte(0x00); // 剩余长度
+            ctx.writeAndFlush(response);
+            
         } catch (Exception e) {
             log.error("❌ Failed to send error response to MQTT client: {}", ctx.channel().remoteAddress(), e);
         }

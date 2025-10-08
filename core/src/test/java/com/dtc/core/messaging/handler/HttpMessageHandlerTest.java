@@ -314,6 +314,45 @@ public class HttpMessageHandlerTest {
         }
 
         @Test
+        @DisplayName("测试响应对象类型转换")
+        void testResponseObjectTypeConversion() {
+                // 创建测试请求
+                FullHttpRequest nettyRequest = new DefaultFullHttpRequest(
+                                HttpVersion.HTTP_1_1,
+                                HttpMethod.GET,
+                                "/test");
+
+                // 创建网络消息事件
+                NetworkMessageEvent event = NetworkMessageEvent.builder()
+                                .protocolType("http")
+                                .message(nettyRequest)
+                                .channelContext(channelContext)
+                                .messageType("HTTP_REQUEST")
+                                .build();
+
+                // Mock请求处理器返回响应
+                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                when(mockResponse.getStatusCode()).thenReturn(200);
+                when(mockResponse.getContentType()).thenReturn("application/json");
+                when(mockResponse.getBody()).thenReturn("{\"message\":\"test\"}");
+                when(mockResponse.getHeaders()).thenReturn(new java.util.HashMap<>());
+                when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
+
+                // 测试处理消息
+                httpMessageHandler.handleMessage(event);
+
+                // 验证发送的是FullHttpResponse对象，而不是HttpResponseEx对象
+                verify(channelContext, atLeastOnce()).writeAndFlush(argThat(obj -> {
+                        if (obj instanceof io.netty.handler.codec.http.FullHttpResponse) {
+                                io.netty.handler.codec.http.FullHttpResponse response = 
+                                        (io.netty.handler.codec.http.FullHttpResponse) obj;
+                                return response.status().code() == 200;
+                        }
+                        return false;
+                }));
+        }
+
+        @Test
         @DisplayName("测试带请求体的HTTP请求")
         void testHttpRequestWithBody() {
                 // 创建带请求体的POST请求

@@ -7,6 +7,7 @@ import com.dtc.core.http.HttpResponseEx;
 import com.dtc.core.messaging.NetworkMessageEvent;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ import javax.inject.Singleton;
 /**
  * HTTP 消息处理器
  * 专门处理 HTTP 协议的消息
- * 
+ *
  * @author Network Service Template
  */
 @Singleton
@@ -55,9 +56,10 @@ public class HttpMessageHandler {
                 HttpResponseEx httpResponse = requestHandler.handleRequest(httpRequest);
                 log.debug("✅ Request handler returned response");
 
-                // 发送响应
+                // 发送响应 - 需要转换为Netty的FullHttpResponse
                 log.debug("📤 Sending response via ctx.writeAndFlush");
-                ctx.writeAndFlush(httpResponse);
+                FullHttpResponse nettyResponse = convertToNettyResponse(httpResponse);
+                ctx.writeAndFlush(nettyResponse);
                 log.debug("✅ Response sent successfully");
 
                 log.debug("✅ HTTP request processed successfully: {} {}",
@@ -158,6 +160,61 @@ public class HttpMessageHandler {
             }
         }
         return queryParams;
+    }
+
+    /**
+     * 将HttpResponseEx转换为Netty的FullHttpResponse
+     */
+    @NotNull
+    private FullHttpResponse convertToNettyResponse(@NotNull HttpResponseEx response) {
+        try {
+            io.netty.handler.codec.http.HttpResponseStatus status =
+                io.netty.handler.codec.http.HttpResponseStatus.valueOf(response.getStatusCode());
+
+            FullHttpResponse nettyResponse =
+                new io.netty.handler.codec.http.DefaultFullHttpResponse(
+                    io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
+                    status
+                );
+
+            // 设置响应头
+            if (response.getContentType() != null) {
+                nettyResponse.headers().set(io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE, response.getContentType());
+            }
+
+            // 设置响应体
+            String body = response.getBody();
+            if (body != null && !body.isEmpty()) {
+                byte[] bodyBytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                nettyResponse.content().writeBytes(bodyBytes);
+            }
+
+            // 设置内容长度
+            nettyResponse.headers().set(io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH,
+                nettyResponse.content().readableBytes());
+
+            // 设置其他响应头
+            if (response.getHeaders() != null) {
+                for (java.util.Map.Entry<String, String> entry : response.getHeaders().entrySet()) {
+                    nettyResponse.headers().set(entry.getKey(), entry.getValue());
+                }
+            }
+
+            return nettyResponse;
+
+        } catch (Exception e) {
+            log.error("Failed to convert HttpResponseEx to Netty FullHttpResponse: {}", e.getMessage(), e);
+            // 返回错误响应
+            io.netty.handler.codec.http.FullHttpResponse errorResponse =
+                new io.netty.handler.codec.http.DefaultFullHttpResponse(
+                    io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
+                    io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR
+                );
+            errorResponse.content().writeBytes("Internal Server Error".getBytes());
+            errorResponse.headers().set(io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH, 
+                errorResponse.content().readableBytes());
+            return errorResponse;
+        }
     }
 
     /**
