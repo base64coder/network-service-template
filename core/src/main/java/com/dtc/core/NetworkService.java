@@ -1,5 +1,6 @@
 package com.dtc.core;
 
+import com.dtc.api.ServiceConfig;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.core.bootstrap.NetworkServiceLauncher;
 import com.dtc.core.bootstrap.ServerStatusDisplay;
@@ -179,13 +180,26 @@ public class NetworkService {
      */
     public static void main(String[] args) {
         try {
-            // 创建服务器配置
-            ServerConfiguration config = ServerConfiguration.builder().serverName("Network Service")
-                    .serverVersion("1.0.0").dataFolder("data").configFolder("conf").extensionsFolder("extensions")
-                    .addListener("HTTP", 8080, "0.0.0.0", true, "HTTP API", "REST API 服务端口")
-                    .addListener("WebSocket", 8081, "0.0.0.0", true, "WebSocket", "WebSocket 连接端口")
-                    .addListener("TCP", 9999, "0.0.0.0", true, "TCP Server", "TCP 服务器端口")
-                    .addListener("MQTT", 1883, "0.0.0.0", true, "MQTT Broker", "MQTT 消息代理端口").build();
+            // 使用 ServiceConfig 枚举创建服务器配置
+            ServerConfiguration.Builder configBuilder = ServerConfiguration.builder()
+                    .serverName("Network Service")
+                    .serverVersion("1.0.0")
+                    .dataFolder("data")
+                    .configFolder("conf")
+                    .extensionsFolder("extensions");
+
+            // 根据 ServiceConfig 枚举动态添加监听器
+            for (ServiceConfig serviceConfig : ServiceConfig.values()) {
+                configBuilder.addListener(
+                        serviceConfig.getServiceId(),
+                        serviceConfig.getDefaultPort(),
+                        "0.0.0.0",
+                        true,
+                        serviceConfig.getServiceName(),
+                        serviceConfig.getDescription());
+            }
+
+            ServerConfiguration config = configBuilder.build();
 
             // 创建并启动服务
             NetworkService service = new NetworkService(config);

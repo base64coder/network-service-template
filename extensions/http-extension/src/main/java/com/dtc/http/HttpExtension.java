@@ -174,7 +174,8 @@ public class HttpExtension extends StatisticsAware implements ExtensionMain, Pro
 
     @Override
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-        log.debug("📨 HTTP message received from client: {}", ctx.channel().remoteAddress());
+        String clientAddress = ctx.channel() != null ? ctx.channel().remoteAddress().toString() : "unknown";
+        log.debug("📨 HTTP message received from client: {}", clientAddress);
 
         try {
             // 处理 HTTP 消息 - 使用 Disruptor 异步处理
@@ -198,14 +199,15 @@ public class HttpExtension extends StatisticsAware implements ExtensionMain, Pro
                         message.getClass().getSimpleName());
             }
         } catch (Exception e) {
-            log.error("❌ Error handling HTTP message from client: {}", ctx.channel().remoteAddress(), e);
+            log.error("❌ Error handling HTTP message from client: {}", clientAddress, e);
             sendErrorResponse(ctx, "Internal server error");
         }
     }
 
     @Override
     public void onException(@NotNull ChannelHandlerContext ctx, @NotNull Throwable cause) {
-        log.error("💥 HTTP exception for client: {}", ctx.channel().remoteAddress(), cause);
+        String clientAddress = ctx.channel() != null ? ctx.channel().remoteAddress().toString() : "unknown";
+        log.error("💥 HTTP exception for client: {}", clientAddress, cause);
 
         try {
             // 创建错误响应
@@ -213,7 +215,7 @@ public class HttpExtension extends StatisticsAware implements ExtensionMain, Pro
                     "Internal Server Error", cause.getMessage());
             ctx.writeAndFlush(errorResponse);
         } catch (Exception e) {
-            log.error("❌ Failed to send error response to client: {}", ctx.channel().remoteAddress(), e);
+            log.error("❌ Failed to send error response to client: {}", clientAddress, e);
         }
     }
 
@@ -587,12 +589,16 @@ public class HttpExtension extends StatisticsAware implements ExtensionMain, Pro
         // 计算消息大小
         int messageSize = nettyRequest.content() != null ? nettyRequest.content().readableBytes() : 0;
 
+        String sourceAddress = ctx.channel() != null && ctx.channel().remoteAddress() != null 
+                ? ctx.channel().remoteAddress().toString() 
+                : "unknown";
+        
         return NetworkMessageEvent.builder()
                 .protocolType("http")
                 .clientId(clientId)
                 .message(nettyRequest)
                 .channelContext(ctx)
-                .sourceAddress(ctx.channel().remoteAddress().toString())
+                .sourceAddress(sourceAddress)
                 .messageSize(messageSize)
                 .messageType("HTTP_REQUEST")
                 .isRequest(true)

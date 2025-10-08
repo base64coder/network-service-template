@@ -36,6 +36,10 @@
         <!-- 测试覆盖率 -->
         <jacoco.version>0.8.8</jacoco.version>
         <surefire.version>3.2.5</surefire.version>
+        <api.version>1.0-SNAPSHOT</api.version>
+        <core.version>1.0-SNAPSHOT</core.version>
+        <distribution.version>1.0-SNAPSHOT</distribution.version>
+        <extensions.version>1.0-SNAPSHOT</extensions.version>
     </properties>
 
     <modules>
