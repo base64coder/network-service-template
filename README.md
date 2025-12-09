@@ -1,6 +1,6 @@
 # Network Service Template
 
-基于HiveMQ扩展系统设计的最小化Maven工程模板，支持网络协议的热插拔扩展。
+基于Netty的扩展系统设计的最小化Maven工程模板，支持网络协议的热插拔扩展。
 
 ## 🚀 项目特性
 
@@ -9,6 +9,9 @@
 - **🌐 多协议支持** - 内置MQTT、WebSocket、TCP等协议扩展示例
 - **⚡ 高性能** - 基于Netty的高性能网络框架
 - **🛠️ 易于开发** - 简单的API接口，快速开发自定义协议扩展
+- **🍃 自研IoC容器** - 融合Spring、Guice、Dagger优势的Bean容器框架
+- **🌍 原生分布式** - 基于JRaft的服务注册发现和RPC通信
+- **🔒 分布式原语** - 支持分布式锁、分布式事务、分布式任务
 
 ## 📁 项目结构
 
@@ -17,12 +20,17 @@ network-service-template/
 ├── pom.xml                          # 父POM
 ├── api/                             # 扩展API接口
 │   ├── pom.xml
-│   └── src/main/java/com/network/api/
+│   └── src/main/java/com/dtc/api/
 ├── core/                            # 核心框架
 │   ├── pom.xml
-│   └── src/main/java/com/network/core/
+│   └── src/main/java/com/dtc/core/
+├── framework/                       # 框架模块
+│   ├── beans/                       # Bean容器（自研IoC，原ioc-core）
+│   ├── distributed/                 # 分布式核心模块
+│   ├── aop/                         # AOP模块
+│   └── annotations/                 # 注解定义
 ├── extensions/                      # 协议扩展
-│   ├── mqtt-extension/              # MQTT协议扩展
+│   ├── mqtt-extension/             # MQTT协议扩展
 │   ├── websocket-extension/         # WebSocket协议扩展
 │   └── tcp-extension/               # TCP协议扩展
 └── distribution/                    # 发行包
@@ -127,7 +135,7 @@ echo "hello" | nc localhost 9999
 
 ### 分层依赖注入设计
 
-基于HiveMQ的GuiceBootstrap设计，我们的模板采用了清晰的分层依赖注入架构：
+基于GuiceBootstrap设计，我们的模板采用了清晰的分层依赖注入架构：
 
 #### 1. **核心启动器层**
 - `NetworkService` - 网络服务主类
@@ -339,13 +347,78 @@ cp target/my-protocol-extension-1.0.0.jar /path/to/network-service/extensions/my
 </performance>
 ```
 
+## 🍃 Bean容器框架 (Beans Module)
+
+本框架实现了自研的IoC容器，融合了Spring、Guice和Dagger的设计理念：
+
+### 核心特性
+
+- **Spring风格** - 支持`@Component`、`@Service`、`@Repository`等注解，提供`ApplicationContext`和`BeanFactory`
+- **Guice风格** - 支持`AbstractModule`和`Binder`的模块化配置方式
+- **Dagger风格** - 预留AOT（编译时）依赖注入支持
+- **条件加载** - 支持`@Conditional`注解，实现条件化Bean加载
+- **生命周期管理** - 完整的Bean生命周期支持（初始化、销毁）
+- **事件机制** - 支持`ApplicationEvent`和`ApplicationListener`
+
+### 使用示例
+
+```java
+// 定义服务
+@Service
+public class UserService {
+    public void doSomething() {
+        // ...
+    }
+}
+
+// 使用ApplicationContext
+AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext("com.example");
+context.refresh();
+UserService service = context.getBean(UserService.class);
+```
+
+## 🌍 分布式功能
+
+框架提供原生的分布式能力，无需依赖外部注册中心：
+
+### 核心能力
+
+- **服务注册发现** - 基于JRaft的强一致性服务注册表
+- **RPC通信** - 基于Netty+Protobuf的高性能RPC框架
+- **分布式锁** - 基于Raft的分布式锁实现
+- **分布式事务** - 支持2PC分布式事务（规划中）
+- **分布式任务** - 支持任务分发和负载均衡（规划中）
+
+### 使用示例
+
+```java
+// 服务提供者
+@RpcService(name = "userService")
+public class UserServiceImpl implements UserService {
+    // ...
+}
+
+// 服务消费者
+public class OrderController {
+    @RpcReference(name = "userService")
+    private UserService userService;
+    
+    public void process() {
+        userService.doSomething(); // 远程调用
+    }
+}
+```
+
+详细配置和使用说明请参考 [framework/distributed/README.md](framework/distributed/README.md)
+
 ## 🎯 使用场景
 
 - **IoT设备连接** - 支持多种协议的物联网设备接入
-- **微服务通信** - 服务间异步消息传递
+- **微服务通信** - 服务间异步消息传递和RPC调用
 - **实时数据流** - 传感器数据收集和分发
 - **协议网关** - 不同协议之间的转换和路由
 - **自定义协议** - 快速实现和部署自定义网络协议
+- **分布式系统** - 构建高可用的分布式微服务集群
 
 ## 🤝 贡献指南
 
@@ -355,12 +428,3 @@ cp target/my-protocol-extension-1.0.0.jar /path/to/network-service/extensions/my
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 打开 Pull Request
 
-## 📄 许可证
-
-本项目采用 Apache 2.0 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 🙏 致谢
-
-- 基于 [HiveMQ Community Edition](https://github.com/hivemq/hivemq-community-edition) 的扩展系统设计
-- 使用 [Netty](https://netty.io/) 作为网络框架
-- 使用 [Google Guice](https://github.com/google/guice) 作为依赖注入容器
