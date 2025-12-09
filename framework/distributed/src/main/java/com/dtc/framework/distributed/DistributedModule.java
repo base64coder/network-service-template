@@ -18,10 +18,13 @@ public class DistributedModule extends AbstractModule {
         bind(RegistryFactory.class).to(RaftRegistryFactory.class).in(Singleton.class);
         bind(RpcProviderRegistry.class).in(Singleton.class);
         bind(ClusterManager.class).in(Singleton.class);
+        bind(com.dtc.framework.distributed.rpc.RpcServer.class).in(Singleton.class);
+        bind(com.dtc.framework.distributed.rpc.RpcClient.class).in(Singleton.class);
         
         // Register BeanPostProcessor
         Multibinder<BeanPostProcessor> binder = Multibinder.newSetBinder(binder(), BeanPostProcessor.class);
         binder.addBinding().to(RpcServiceBeanPostProcessor.class);
+        binder.addBinding().to(com.dtc.framework.distributed.rpc.RpcReferenceBeanPostProcessor.class);
         
         // Register StartupHook
         Multibinder<StartupHook> hookBinder = Multibinder.newSetBinder(binder(), StartupHook.class);

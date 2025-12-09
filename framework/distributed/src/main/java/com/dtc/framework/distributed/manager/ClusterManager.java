@@ -6,6 +6,7 @@ import com.dtc.core.cluster.registry.RegistryFactory;
 import com.dtc.core.cluster.registry.ServiceInstance;
 import com.dtc.core.cluster.registry.ServiceRegistry;
 import com.dtc.framework.distributed.rpc.RpcProviderRegistry;
+import com.dtc.framework.distributed.rpc.RpcServer;
 import com.dtc.api.rpc.RpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,13 +29,15 @@ public class ClusterManager implements StartupHook {
     
     private final RegistryFactory registryFactory;
     private final RpcProviderRegistry providerRegistry;
+    private final RpcServer rpcServer;
     private ServiceRegistry serviceRegistry;
     private boolean isStarted = false;
     
     @Inject
-    public ClusterManager(RegistryFactory registryFactory, RpcProviderRegistry providerRegistry) {
+    public ClusterManager(RegistryFactory registryFactory, RpcProviderRegistry providerRegistry, RpcServer rpcServer) {
         this.registryFactory = registryFactory;
         this.providerRegistry = providerRegistry;
+        this.rpcServer = rpcServer;
     }
     
     public void start(RegistryConfig config) {
@@ -45,11 +48,15 @@ public class ClusterManager implements StartupHook {
         log.info("Starting ClusterManager with type: {}", config.getType());
         
         try {
+            // 0. Start RPC Server
+            int rpcPort = Integer.parseInt(config.getProperties().getOrDefault("rpc.port", "8090"));
+            this.rpcServer.start(rpcPort);
+
             // 1. 启动注册中心客户端
             this.serviceRegistry = registryFactory.createRegistry(config);
             
             // 2. 注册已扫描到的 RPC 服务
-            registerLocalServices(config);
+            registerLocalServices(config, rpcPort);
             
             isStarted = true;
         } catch (Exception e) {
@@ -61,6 +68,7 @@ public class ClusterManager implements StartupHook {
         if (!isStarted) {
             return;
         }
+        rpcServer.stop();
         // TODO: 注销服务，关闭 Registry
         isStarted = false;
     }
@@ -73,6 +81,7 @@ public class ClusterManager implements StartupHook {
         config.setAddress(System.getProperty("cluster.registry.address", "127.0.0.1:8888"));
         config.setGroup(System.getProperty("cluster.registry.group", "default_group"));
         config.addProperty("dataPath", System.getProperty("cluster.data.path", "raft_data"));
+        config.addProperty("rpc.port", System.getProperty("cluster.rpc.port", "8090"));
         
         start(config);
     }
@@ -82,9 +91,8 @@ public class ClusterManager implements StartupHook {
         stop();
     }
     
-    private void registerLocalServices(RegistryConfig config) {
+    private void registerLocalServices(RegistryConfig config, int rpcPort) {
         String host = getLocalHost();
-        int port = 8080; // TODO: Get actual port
         
         Map<String, Object> beans = providerRegistry.getServiceBeans();
         for (Map.Entry<String, Object> entry : beans.entrySet()) {
@@ -95,7 +103,7 @@ public class ClusterManager implements StartupHook {
             instance.setServiceId(UUID.randomUUID().toString());
             instance.setServiceName(serviceName);
             instance.setHost(host);
-            instance.setPort(port);
+            instance.setPort(rpcPort);
             
             Map<String, String> meta = new HashMap<>();
             meta.put("version", metadata.version());
@@ -107,7 +115,7 @@ public class ClusterManager implements StartupHook {
                 if (e != null) {
                     log.error("Failed to register service: " + serviceName, e);
                 } else {
-                    log.info("Service registered: {}", serviceName);
+                    log.info("Service registered: {} at {}:{}", serviceName, host, rpcPort);
                 }
             });
         }

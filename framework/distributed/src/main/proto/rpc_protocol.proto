@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package com.dtc.framework.distributed.rpc.proto;
+
+option java_multiple_files = true;
+option java_package = "com.dtc.framework.distributed.rpc.proto";
+
+message RpcRequest {
+  string requestId = 1;
+  string serviceName = 2;
+  string methodName = 3;
+  string parameterTypes = 4; // JSON array of class names
+  bytes arguments = 5;       // Serialized arguments
+  int64 timeout = 6;
+  map<string, string> attachments = 7;
+}
+
+message RpcResponse {
+  string requestId = 1;
+  int32 status = 2; // 0: OK, 1: Error
+  string errorMessage = 3;
+  bytes result = 4; // Serialized result
+}
+
+service RpcProtocol {
+  rpc Call(RpcRequest) returns (RpcResponse);
+}
+
