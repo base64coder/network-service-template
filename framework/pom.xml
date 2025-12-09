@@ -17,15 +17,9 @@
         <module>annotations</module>
         <module>aop</module>
         <module>aop-aspects</module>
-        <!-- ioc-core 模块已废弃，统一使用 Google Guice -->
-        <!-- <module>ioc-core</module> -->
-        <!-- 旧的注解模块已废弃，统一使用 annotations 模块 -->
-        <!-- <module>ioc-annotations</module> -->
-        <!-- <module>web-annotations</module> -->
-        <!-- <module>persistence-annotations</module> -->
-        <!-- 旧的 AOP 模块已重命名 -->
-        <!-- <module>spring-aop</module> -->
-        <!-- <module>spring-aspects</module> -->
+        <module>beans</module>
+        <module>ioc-annotation-processor</module>
+        <module>distributed</module>
     </modules>
 
     <properties>

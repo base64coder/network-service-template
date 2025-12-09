@@ -6,7 +6,7 @@ import com.dtc.framework.distributed.manager.ClusterManager;
 import com.dtc.framework.distributed.raft.registry.RaftRegistryFactory;
 import com.dtc.framework.distributed.rpc.RpcProviderRegistry;
 import com.dtc.framework.distributed.rpc.RpcServiceBeanPostProcessor;
-import com.dtc.ioc.core.BeanPostProcessor;
+import com.dtc.framework.beans.BeanPostProcessor;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;

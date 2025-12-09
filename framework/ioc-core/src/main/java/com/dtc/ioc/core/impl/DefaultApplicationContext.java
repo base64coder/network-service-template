@@ -24,6 +24,7 @@ public class DefaultApplicationContext implements ApplicationContext {
     private final BeanFactory beanFactory;
     private final BeanScanner beanScanner;
     private final BeanDefinitionReader beanDefinitionReader;
+    private final com.dtc.ioc.core.condition.ConditionEvaluator conditionEvaluator;
     private boolean active = false;
     private String[] scanBasePackages;
     
@@ -31,6 +32,9 @@ public class DefaultApplicationContext implements ApplicationContext {
         this.scanBasePackages = scanBasePackages;
         this.beanContainer = new DefaultBeanContainer();
         this.beanDefinitionReader = new BeanDefinitionReader();
+        DefaultEnvironment environment = new DefaultEnvironment(); // Assuming DefaultEnvironment exists
+        this.conditionEvaluator = new com.dtc.ioc.core.condition.ConditionEvaluator(beanDefinitionReader, environment);
+        
         DependencyInjector dependencyInjector = new DefaultDependencyInjector(beanContainer);
         this.beanFactory = new DefaultBeanFactory(beanContainer, dependencyInjector);
         this.beanScanner = new BeanScanner();
@@ -90,6 +94,12 @@ public class DefaultApplicationContext implements ApplicationContext {
             List<Class<?>> components = beanScanner.scanComponents(basePackage);
             
             for (Class<?> componentClass : components) {
+                // Check @Conditional
+                if (conditionEvaluator.shouldSkip(componentClass)) {
+                    log.debug("Skipping component {} due to condition mismatch", componentClass.getName());
+                    continue;
+                }
+
                 BeanDefinition definition = beanDefinitionReader.readBeanDefinition(componentClass);
                 if (definition != null) {
                     ((DefaultBeanFactory) beanFactory).registerBeanDefinition(

@@ -1,7 +1,7 @@
 package com.dtc.framework.distributed.rpc;
 
 import com.dtc.api.rpc.RpcService;
-import com.dtc.ioc.core.BeanPostProcessor;
+import com.dtc.framework.beans.BeanPostProcessor;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

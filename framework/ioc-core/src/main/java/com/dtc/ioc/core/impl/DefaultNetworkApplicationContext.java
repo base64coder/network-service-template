@@ -2,7 +2,7 @@ package com.dtc.ioc.core.impl;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import com.dtc.ioc.core.;
+import com.dtc.ioc.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,40 +15,41 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
-     * é»è®¤ç½ç»åºç¨ä¸ä¸æå®ç°
-åé´Spring ApplicationContextåGuice Injectorçä¼ç¹
-@author Network Service Template
-/
+ * Default Network Application Context Implementation
+ * Combines advantages of Spring ApplicationContext and Guice Injector
+ * 
+ * @author Network Service Template
+ */
 public class DefaultNetworkApplicationContext implements NetworkApplicationContext {
     
     private static final Logger log = LoggerFactory.getLogger(DefaultNetworkApplicationContext.class);
     
-    // Beanå·¥å
+    // Bean Factory
     private final ConfigurableBeanFactory beanFactory;
     
-    // ç¯å¢éç½®
+    // Environment Configuration
     private final Environment environment;
     
-    // åºç¨çå¬å¨åè¡¨
+    // Application Listeners List
     private final List<ApplicationListener<?>> applicationListeners = new CopyOnWriteArrayList<>();
     
-    // Beanåå¤çå¨åè¡¨
+    // Bean Post Processors List
     private final List<BeanPostProcessor> beanPostProcessors = new CopyOnWriteArrayList<>();
     
-    // Beanå·¥ååå¤çå¨åè¡¨
+    // Bean Factory Post Processors List
     private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new CopyOnWriteArrayList<>();
     
-    // åºç¨äºä»¶å¤æ­å¨
+    // Application Event Multicaster
     private final ApplicationEventMulticaster eventMulticaster;
     
-    // å®¹å¨ç¶æ
+    // Container State
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final AtomicBoolean refreshed = new AtomicBoolean(false);
     
-    // å¯å¨å³é­çæ§å¨
+    // Startup/Shutdown Monitor
     private final Object startupShutdownMonitor = new Object();
     
-    // å¯å¨æ¶é´
+    // Startup Time
     private long startupDate;
     
     public DefaultNetworkApplicationContext() {
@@ -65,7 +66,7 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
             throw new IllegalStateException("Application context is not active");
         }
         
-        // æ¥æ¾å¹éçBeanå®ä¹
+        // Find matching Bean definition
         for (BeanDefinition definition : beanFactory.getBeanDefinitions().values()) {
             if (beanType.isAssignableFrom(definition.getBeanClass())) {
                 return (T) getBean(definition.getBeanName());
@@ -100,13 +101,13 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
     public void registerBean(String beanName, Class<?> beanClass) {
         DefaultBeanDefinition definition = new DefaultBeanDefinition(beanName, beanClass);
         beanFactory.registerBeanDefinition(beanName, definition);
-        log.debug("ð Registered bean definition: {} -> {}", beanName, beanClass.getName());
+        log.debug("Registered bean definition: {} -> {}", beanName, beanClass.getName());
     }
     
     @Override
     public void registerBean(String beanName, Object beanInstance) {
         beanFactory.registerSingleton(beanName, beanInstance);
-        log.debug("ð Registered bean instance: {} -> {}", beanName, beanInstance.getClass().getName());
+        log.debug("Registered bean instance: {} -> {}", beanName, beanInstance.getClass().getName());
     }
     
     @Override
@@ -118,127 +119,127 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
             }
 
             try {
-                log.info("ð Refreshing Network Application Context...");
+                log.info("Refreshing Network Application Context...");
                 this.startupDate = System.currentTimeMillis();
 
-                // 1. åå¤ç¯å¢
+                // 1. Prepare Environment
                 prepareEnvironment();
 
-                // 2. åå¤BeanFactory
+                // 2. Prepare BeanFactory
                 prepareBeanFactory(beanFactory);
 
-                // 3. æ§è¡BeanFactoryPostProcessor
+                // 3. Invoke BeanFactoryPostProcessor
                 invokeBeanFactoryPostProcessors(beanFactory);
 
-                // 4. æ³¨åBeanPostProcessor
+                // 4. Register BeanPostProcessor
                 registerBeanPostProcessors(beanFactory);
 
-                // 5. åå§åäºä»¶å¤æ­å¨
+                // 5. Initialize Application Event Multicaster
                 initApplicationEventMulticaster();
 
-                // 6. æ³¨åçå¬å¨
+                // 6. Register Listeners
                 registerListeners();
 
-                // 7. å®ä¾åææéæå è½½çåä¾Bean
+                // 7. Instantiate all non-lazy singleton beans
                 finishBeanFactoryInitialization(beanFactory);
 
-                // 8. å¯å¨çå½å¨æç®¡ç
+                // 8. Start Lifecycle Management
                 startLifecycleManagement();
 
                 active.set(true);
                 refreshed.set(true);
 
-                // 9. åå¸ContextRefreshedEvent
+                // 9. Publish ContextRefreshedEvent
                 publishEvent(new ContextRefreshedEvent(this));
 
-                log.info("â Network Application Context refreshed successfully in {} ms",
+                log.info("Network Application Context refreshed successfully in {} ms",
                         (System.currentTimeMillis() - startupDate));
 
             } catch (Exception e) {
-                log.error("â Failed to refresh Network Application Context", e);
+                log.error("Failed to refresh Network Application Context", e);
                 throw new RuntimeException("Failed to refresh application context", e);
             }
         }
     }
     
     private void prepareEnvironment() {
-        log.info("ð§ Preparing environment...");
-        // å¯ä»¥å¨è¿éå è½½éç½®æä»¶ãè®¾ç½®æ´»å¨éç½®æä»¶ç­
-        log.info("â Environment prepared successfully");
+        log.info("Preparing environment...");
+        // Can load configuration files, set active profiles here
+        log.info("Environment prepared successfully");
     }
 
     private void prepareBeanFactory(ConfigurableBeanFactory beanFactory) {
-        log.info("ð§ Preparing BeanFactory...");
+        log.info("Preparing BeanFactory...");
         beanFactory.setBeanClassLoader(Thread.currentThread().getContextClassLoader());
         beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver());
-        // æ³¨ååç½®çBeanPostProcessor
+        // Register built-in BeanPostProcessors
         for (BeanPostProcessor bpp : beanPostProcessors) {
             beanFactory.addBeanPostProcessor(bpp);
         }
-        log.info("â BeanFactory prepared successfully");
+        log.info("BeanFactory prepared successfully");
     }
 
     private void invokeBeanFactoryPostProcessors(ConfigurableBeanFactory beanFactory) {
-        log.info("ð§ Invoking BeanFactoryPostProcessors...");
+        log.info("Invoking BeanFactoryPostProcessors...");
         for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
             postProcessor.postProcessBeanFactory(beanFactory);
         }
-        log.info("â BeanFactoryPostProcessors invoked successfully");
+        log.info("BeanFactoryPostProcessors invoked successfully");
     }
 
     private void registerBeanPostProcessors(ConfigurableBeanFactory beanFactory) {
-        log.info("ð§ Registering BeanPostProcessors...");
-        // æ³¨åéè¿addBeanPostProcessoræ·»å çå¤çå¨
+        log.info("Registering BeanPostProcessors...");
+        // Register processors added via addBeanPostProcessor
         for (BeanPostProcessor bpp : beanPostProcessors) {
             beanFactory.addBeanPostProcessor(bpp);
         }
-        // æ¥æ¾å¹¶æ³¨åéè¿Beanå®ä¹çBeanPostProcessor
+        // Find and register BeanPostProcessors from bean definitions
         for (String beanName : beanFactory.getBeanDefinitionNames()) {
             BeanDefinition definition = beanFactory.getBeanDefinition(beanName);
             if (BeanPostProcessor.class.isAssignableFrom(definition.getBeanClass())) {
                 try {
                     BeanPostProcessor bpp = (BeanPostProcessor) getBean(beanName);
                     beanFactory.addBeanPostProcessor(bpp);
-                    log.debug("ð Registered BeanPostProcessor from bean definition: {}", beanName);
+                    log.debug("Registered BeanPostProcessor from bean definition: {}", beanName);
                 } catch (Exception e) {
-                    log.error("â Failed to register BeanPostProcessor from bean definition: {}", beanName, e);
+                    log.error("Failed to register BeanPostProcessor from bean definition: {}", beanName, e);
                 }
             }
         }
-        log.info("â BeanPostProcessors registered successfully");
+        log.info("BeanPostProcessors registered successfully");
     }
 
     private void initApplicationEventMulticaster() {
-        log.info("ð§ Initializing ApplicationEventMulticaster...");
-        // å¯ä»¥å¨è¿ééç½®äºä»¶å¤æ­å¨ï¼ä¾å¦è®¾ç½®ä»»å¡æ§è¡å¨
-        log.info("â ApplicationEventMulticaster initialized successfully");
+        log.info("Initializing ApplicationEventMulticaster...");
+        // Can configure event multicaster here, e.g., set task executor
+        log.info("ApplicationEventMulticaster initialized successfully");
     }
 
     private void registerListeners() {
-        log.info("ð§ Registering ApplicationListeners...");
+        log.info("Registering ApplicationListeners...");
         for (ApplicationListener<?> listener : applicationListeners) {
             eventMulticaster.addApplicationListener(listener);
         }
-        // æ¥æ¾å¹¶æ³¨åéè¿Beanå®ä¹çApplicationListener
+        // Find and register ApplicationListeners from bean definitions
         for (String beanName : beanFactory.getBeanDefinitionNames()) {
             BeanDefinition definition = beanFactory.getBeanDefinition(beanName);
             if (ApplicationListener.class.isAssignableFrom(definition.getBeanClass())) {
                 try {
                     ApplicationListener<?> listener = (ApplicationListener<?>) getBean(beanName);
                     eventMulticaster.addApplicationListener(listener);
-                    log.debug("ð Registered ApplicationListener from bean definition: {}", beanName);
+                    log.debug("Registered ApplicationListener from bean definition: {}", beanName);
                 } catch (Exception e) {
-                    log.error("â Failed to register ApplicationListener from bean definition: {}", beanName, e);
+                    log.error("Failed to register ApplicationListener from bean definition: {}", beanName, e);
                 }
             }
         }
-        log.info("â ApplicationListeners registered successfully");
+        log.info("ApplicationListeners registered successfully");
     }
 
     private void finishBeanFactoryInitialization(ConfigurableBeanFactory beanFactory) {
-        log.info("ð§ Finishing BeanFactory initialization (pre-instantiating singletons)...");
+        log.info("Finishing BeanFactory initialization (pre-instantiating singletons)...");
         beanFactory.preInstantiateSingletons();
-        log.info("â BeanFactory initialization finished successfully");
+        log.info("BeanFactory initialization finished successfully");
     }
 
     @Override
@@ -249,20 +250,20 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
             }
 
             try {
-                log.info("ð Closing Network Application Context...");
+                log.info("Closing Network Application Context...");
 
-                // 1. åå¸ContextClosedEvent
+                // 1. Publish ContextClosedEvent
                 publishEvent(new ContextClosedEvent(this));
 
-                // 2. éæ¯ææBean
+                // 2. Destroy all Beans
                 destroyAllBeans();
 
-                // 3. åæ­¢çå½å¨æç®¡ç
+                // 3. Stop Lifecycle Management
                 stopLifecycleManagement();
 
-                // 4. æ¸çèµæº
-                beanFactory.destroySingletons(); // æ¸çBeanå·¥åä¸­çåä¾
-                beanFactory.clearBeanDefinitions(); // æ¸çBeanå®ä¹
+                // 4. Clean up resources
+                beanFactory.destroySingletons(); // Clear singletons in BeanFactory
+                beanFactory.clearBeanDefinitions(); // Clear bean definitions
                 applicationListeners.clear();
                 beanPostProcessors.clear();
                 beanFactoryPostProcessors.clear();
@@ -271,17 +272,17 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
                 active.set(false);
                 refreshed.set(false);
 
-                log.info("â Network Application Context closed successfully");
+                log.info("Network Application Context closed successfully");
 
             } catch (Exception e) {
-                log.error("â Error closing Network Application Context", e);
+                log.error("Error closing Network Application Context", e);
             }
         }
     }
 
     private void stopLifecycleManagement() {
-        log.info("ð Stopping lifecycle management...");
-        log.info("â Lifecycle management stopped successfully");
+        log.info("Stopping lifecycle management...");
+        log.info("Lifecycle management stopped successfully");
     }
 
     @Override
@@ -337,13 +338,13 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
     @Override
     public void addApplicationListener(ApplicationListener<?> listener) {
         applicationListeners.add(listener);
-        eventMulticaster.addApplicationListener(listener); // ç«å³æ³¨åå°å¤æ­å¨
+        eventMulticaster.addApplicationListener(listener); // Immediately register to multicaster
     }
 
     @Override
     public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
         beanPostProcessors.add(beanPostProcessor);
-        beanFactory.addBeanPostProcessor(beanPostProcessor); // ç«å³æ³¨åå°Beanå·¥å
+        beanFactory.addBeanPostProcessor(beanPostProcessor); // Immediately register to BeanFactory
     }
 
     @Override
@@ -352,19 +353,19 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
     }
 
     /**
-     * å¯å¨çå½å¨æç®¡ç
-/
+     * Start lifecycle management
+     */
     private void startLifecycleManagement() {
-        log.info("ð Starting lifecycle management...");
-        log.info("â Lifecycle management started successfully");
+        log.info("Starting lifecycle management...");
+        log.info("Lifecycle management started successfully");
     }
 
     /**
-     * éæ¯ææBean
-/
+     * Destroy all Beans
+     */
     private void destroyAllBeans() {
-        log.info("ð Destroying all beans...");
-        // Beanå·¥åä¼å¤çBeançéæ¯
-        log.info("â All beans destroyed successfully");
+        log.info("Destroying all beans...");
+        // BeanFactory will handle bean destruction
+        log.info("All beans destroyed successfully");
     }
 }

@@ -47,8 +47,9 @@
 
         <!-- 依赖注入 -->
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
+            <groupId>com.dtc</groupId>
+            <artifactId>beans</artifactId>
+            <version>${project.version}</version>
         </dependency>
         
         <!-- JDBC支持 -->

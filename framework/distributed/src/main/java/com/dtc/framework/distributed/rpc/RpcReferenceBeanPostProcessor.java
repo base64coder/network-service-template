@@ -5,7 +5,7 @@ import com.dtc.core.cluster.registry.ServiceDiscovery;
 import com.dtc.core.cluster.registry.ServiceInstance;
 import com.dtc.framework.distributed.rpc.proto.RpcRequest;
 import com.dtc.framework.distributed.rpc.proto.RpcResponse;
-import com.dtc.ioc.core.BeanPostProcessor;
+import com.dtc.framework.beans.BeanPostProcessor;
 import com.google.protobuf.ByteString;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;

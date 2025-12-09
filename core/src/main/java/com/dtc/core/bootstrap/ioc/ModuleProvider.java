@@ -1,6 +1,6 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.google.inject.Module;
+import com.dtc.framework.beans.IoCModule; // Use our own interface
 import java.util.Collection;
 
 /**
@@ -12,6 +12,6 @@ public interface ModuleProvider {
      * 获取模块集合
      * @return 模块列表
      */
-    Collection<Module> getModules();
+    Collection<IoCModule> getModules();
 }
 

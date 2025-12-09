@@ -5,42 +5,42 @@ import com.dtc.api.annotations.Nullable;
 
 import java.util.Optional;
 
-/ææææ
-ææ æ©å±å¯å¨è¾åºåæ°
-ææ 
-ææ @author Network Service Template
-ææ/
+/**
+ * Extension Start Output Parameters
+ * 
+ * @author Network Service Template
+ */
 public interface ExtensionStartOutput {
 
-    /ææææ
-ææ è®¾ç½®å¯å¨å¤±è´¥åå 
-ææ 
-ææ @param reason å¤±è´¥åå 
-ææ/
+    /**
+     * Set Startup Failure Reason
+     * 
+     * @param reason Failure Reason
+     */
     void preventStartup(@NotNull String reason);
 
-    /ææææ
-ææ è·åå¯å¨å¤±è´¥åå 
-ææ 
-ææ @return å¤±è´¥åå ï¼å¦æå¯å¨æååè¿åç©º
-ææ/
+    /**
+     * Get Startup Failure Reason
+     * 
+     * @return Failure Reason, returns empty if startup succeeded
+     */
     @NotNull
     Optional<String> getReason();
 
-    /ææææ
-ææ è®¾ç½®æ©å±éç½®
-ææ 
-ææ @param key   éç½®é®
-ææ @param value éç½®å¼
-ææ/
+    /**
+     * Set Extension Configuration
+     * 
+     * @param key   Configuration Key
+     * @param value Configuration Value
+     */
     void setConfiguration(@NotNull String key, @NotNull String value);
 
-    /ææææ
-ææ è·åæ©å±éç½®
-ææ 
-ææ @param key éç½®é®
-ææ @return éç½®å¼
-ææ/
+    /**
+     * Get Extension Configuration
+     * 
+     * @param key Configuration Key
+     * @return Configuration Value
+     */
     @Nullable
     String getConfiguration(@NotNull String key);
 }
