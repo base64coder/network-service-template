@@ -1,9 +1,9 @@
 package com.dtc.core.messaging.handler;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.http.HttpRequestEx;
-import com.dtc.core.http.HttpRequestHandler;
-import com.dtc.core.http.HttpResponseEx;
+import com.dtc.core.network.http.HttpRequestEx;
+import com.dtc.core.network.http.HttpRequestHandler;
+import com.dtc.core.network.http.HttpResponseEx;
 import com.dtc.core.messaging.NetworkMessageEvent;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -16,8 +16,8 @@ import javax.inject.Singleton;
 
 /**
  * HTTP 消息处理器
- * 专门处理 HTTP 协议的消息
- *
+ * 负责处理 HTTP 协议类型的消息
+ * 
  * @author Network Service Template
  */
 @Singleton
@@ -36,7 +36,7 @@ public class HttpMessageHandler {
      * 处理 HTTP 消息
      */
     public void handleMessage(@NotNull NetworkMessageEvent event) {
-        log.debug("🌐 Processing HTTP message: {}", event.getEventId());
+        log.debug("🔍 Processing HTTP message: {}", event.getEventId());
 
         try {
             Object message = event.getMessage();
@@ -44,20 +44,20 @@ public class HttpMessageHandler {
 
             if (message instanceof FullHttpRequest) {
                 FullHttpRequest nettyRequest = (FullHttpRequest) message;
-                log.debug("📥 Converting FullHttpRequest to HttpRequestEx");
+                log.debug("🔄 Converting FullHttpRequest to HttpRequestEx");
 
-                // 将 Netty FullHttpRequest 转换为 HttpRequestEx
+                // 转换 Netty FullHttpRequest 为 HttpRequestEx
                 HttpRequestEx httpRequest = convertToHttpRequestEx(nettyRequest);
                 log.debug("✅ Successfully converted to HttpRequestEx: {} {}",
                         httpRequest.getMethod(), httpRequest.getPath());
 
-                // 使用请求处理器处理请求（这里包含路由逻辑）
+                // 使用HttpRequestHandler处理请求，通过路由管理器进行路由分发
                 log.debug("🔄 Calling requestHandler.handleRequest");
                 HttpResponseEx httpResponse = requestHandler.handleRequest(httpRequest);
                 log.debug("✅ Request handler returned response");
 
-                // 发送响应 - 需要转换为Netty的FullHttpResponse
-                log.debug("📤 Sending response via ctx.writeAndFlush");
+                // 发送响应 - 将HttpResponseEx转换回Netty的FullHttpResponse
+                log.debug("🔄 Sending response via ctx.writeAndFlush");
                 FullHttpResponse nettyResponse = convertToNettyResponse(httpResponse);
                 ctx.writeAndFlush(nettyResponse);
                 log.debug("✅ Response sent successfully");
@@ -66,7 +66,7 @@ public class HttpMessageHandler {
                         httpRequest.getMethod(), httpRequest.getPath());
 
             } else {
-                log.warn("⚠️ Unexpected message type in HTTP handler: {}",
+                log.warn("⚠️  Unexpected message type in HTTP handler: {}",
                         message != null ? message.getClass().getSimpleName() : "null");
             }
 
@@ -77,26 +77,26 @@ public class HttpMessageHandler {
     }
 
     /**
-     * 将 Netty FullHttpRequest 转换为 HttpRequestEx
+     * 转换 Netty FullHttpRequest 为 HttpRequestEx
      */
     @NotNull
     private HttpRequestEx convertToHttpRequestEx(@NotNull FullHttpRequest nettyRequest) {
         try {
-            // 提取请求信息
+            // 读取HTTP方法
             String method = nettyRequest.method().name();
             String uri = nettyRequest.uri();
             String path = extractPathFromUri(uri);
 
-            // 提取头部信息
+            // 读取HTTP头部
             java.util.Map<String, String> headers = new java.util.HashMap<>();
             for (java.util.Map.Entry<String, String> entry : nettyRequest.headers()) {
                 headers.put(entry.getKey().toLowerCase(), entry.getValue());
             }
 
-            // 提取查询参数
+            // 读取查询参数
             java.util.Map<String, String> queryParams = extractQueryParameters(uri);
 
-            // 获取请求体
+            // 读取请求体
             String body = null;
             if (nettyRequest.content() != null && nettyRequest.content().readableBytes() > 0) {
                 try {
@@ -109,7 +109,7 @@ public class HttpMessageHandler {
                 }
             }
 
-            // 获取内容类型
+            // 读取内容类型
             String contentType = nettyRequest.headers().get("Content-Type");
 
             // 生成客户端ID
@@ -163,7 +163,7 @@ public class HttpMessageHandler {
     }
 
     /**
-     * 将HttpResponseEx转换为Netty的FullHttpResponse
+     * 将HttpResponseEx转换回Netty的FullHttpResponse
      */
     @NotNull
     private FullHttpResponse convertToNettyResponse(@NotNull HttpResponseEx response) {
@@ -177,7 +177,7 @@ public class HttpMessageHandler {
                     status
                 );
 
-            // 设置响应头
+            // 设置响应头部
             if (response.getContentType() != null) {
                 nettyResponse.headers().set(io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE, response.getContentType());
             }
@@ -189,11 +189,11 @@ public class HttpMessageHandler {
                 nettyResponse.content().writeBytes(bodyBytes);
             }
 
-            // 设置内容长度
+            // 设置内容长度头部
             nettyResponse.headers().set(io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH,
                 nettyResponse.content().readableBytes());
 
-            // 设置其他响应头
+            // 设置其他响应头部
             if (response.getHeaders() != null) {
                 for (java.util.Map.Entry<String, String> entry : response.getHeaders().entrySet()) {
                     nettyResponse.headers().set(entry.getKey(), entry.getValue());
@@ -221,13 +221,13 @@ public class HttpMessageHandler {
      * 处理错误
      */
     private void handleError(@NotNull NetworkMessageEvent event, @NotNull Exception error) {
-        log.error("💥 Error handling HTTP message: {}", event.getEventId(), error);
+        log.error("🔴 Error handling HTTP message: {}", event.getEventId(), error);
 
         try {
             ChannelHandlerContext ctx = event.getChannelContext();
             if (ctx != null && ctx.channel().isActive()) {
                 // 发送HTTP错误响应
-                // 这里可以注入HttpResponseHandler来创建错误响应
+                // 可以通过HttpResponseHandler发送错误响应
                 log.error("HTTP error response sent to client: {}", ctx.channel().remoteAddress());
             }
         } catch (Exception e) {

@@ -4,8 +4,7 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 
 /**
- * 扩展元数据 包含扩展的基本信息
- * 
+ * éµâçéå©æé¹?éå­æéµâçé¨å«çéî¿ä¿é­? * 
  * @author Network Service Template
  */
 public class ExtensionMetadata {

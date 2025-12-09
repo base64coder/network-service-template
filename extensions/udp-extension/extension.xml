@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+    <id>udp-extension</id>
+    <name>UDP Protocol Extension</name>
+    <version>1.0.0</version>
+    <author>Network Service Template</author>
+    <description>UDP protocol extension for real-time communication, IoT, and game servers</description>
+    <priority>65</priority>
+    <start-priority>700</start-priority>
+    <main-class>com.dtc.udp.UdpExtension</main-class>
+    <dependencies>
+        <dependency>core</dependency>
+    </dependencies>
+    <configuration>
+        <property name="enabled" value="true" />
+        <property name="port" value="9997" />
+        <property name="protocol-name" value="UDP" />
+        <property name="max-packet-size" value="65507" />
+        <property name="broadcast-enabled" value="true" />
+    </configuration>
+</extension>
+

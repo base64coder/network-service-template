@@ -12,7 +12,7 @@ import java.lang.reflect.Method;
 
 /**
  * 扩展方法拦截器
- * 用于处理扩展实例的方法调用
+ * 用于拦截和增强扩展实例的方法调用
  */
 public class ExtensionMethodInterceptor {
     private final Class<?> extensionClass;
@@ -30,12 +30,12 @@ public class ExtensionMethodInterceptor {
             String methodName = method.getName();
             log.debug("Intercepting method call: {} on extension: {}", methodName, extensionClass.getName());
 
-            // 对于构造函数，不进行拦截
+            // 处理构造函数调用，不进行拦截
             if ("<init>".equals(methodName)) {
                 return null;
             }
 
-            // 对于关键方法，返回有意义的默认值
+            // 处理常用方法，返回默认值
             if ("getId".equals(methodName)) {
                 return extensionId != null ? extensionId
                         : extensionClass.getSimpleName().toLowerCase().replace("extension", "");
@@ -49,7 +49,7 @@ public class ExtensionMethodInterceptor {
                 return Thread.currentThread().getContextClassLoader();
             }
 
-            // 对于其他方法，返回默认值
+            // 处理其他方法，返回默认值
             return getDefaultReturnValue(method.getReturnType());
 
         } catch (Exception e) {

@@ -10,11 +10,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 模块管理器
- * 负责管理IoC模块的加载和配置
- * 
- * @author Network Service Template
- */
+     * æ¨¡åç®¡çå¨
+è´è´£ç®¡çIoCæ¨¡åçå è½½åéç½®
+@author Network Service Template
+/
 public class ModuleManager {
     
     private static final Logger log = LoggerFactory.getLogger(ModuleManager.class);
@@ -23,49 +22,47 @@ public class ModuleManager {
     private final Map<String, IoCModule> moduleMap = new HashMap<>();
     
     /**
-     * 添加模块
-     * 
-     * @param module IoC模块
-     */
+     * æ·»å æ¨¡å
+@param module IoCæ¨¡å
+/
     public void addModule(@NotNull IoCModule module) {
         if (moduleMap.containsKey(module.getModuleName())) {
-            log.warn("⚠️ Module already exists: {}", module.getModuleName());
+            log.warn("â ï¸ Module already exists: {}", module.getModuleName());
             return;
         }
         
         modules.add(module);
         moduleMap.put(module.getModuleName(), module);
-        log.debug("📝 Added module: {} v{}", module.getModuleName(), module.getModuleVersion());
+        log.debug("ð Added module: {} v{}", module.getModuleName(), module.getModuleVersion());
     }
     
     /**
-     * 配置所有模块
-     * 
-     * @param context 应用上下文
-     */
+     * éç½®æææ¨¡å
+@param context åºç¨ä¸ä¸æ
+/
     public void configureModules(@NotNull NetworkApplicationContext context) {
-        log.info("🔧 Configuring {} modules...", modules.size());
+        log.info("ð§ Configuring {} modules...", modules.size());
         
-        // 按依赖顺序排序模块
+        // æä¾èµé¡ºåºæåºæ¨¡å
         List<IoCModule> sortedModules = sortModulesByDependencies();
         
         for (IoCModule module : sortedModules) {
             try {
-                log.debug("🔧 Configuring module: {}", module.getModuleName());
+                log.debug("ð§ Configuring module: {}", module.getModuleName());
                 module.configure(context);
-                log.debug("✅ Module configured successfully: {}", module.getModuleName());
+                log.debug("â Module configured successfully: {}", module.getModuleName());
             } catch (Exception e) {
-                log.error("❌ Failed to configure module: {}", module.getModuleName(), e);
+                log.error("â Failed to configure module: {}", module.getModuleName(), e);
                 throw new RuntimeException("Failed to configure module: " + module.getModuleName(), e);
             }
         }
         
-        log.info("✅ All modules configured successfully");
+        log.info("â All modules configured successfully");
     }
     
     /**
-     * 按依赖关系排序模块
-     */
+     * æä¾èµå³ç³»æåºæ¨¡å
+/
     @NotNull
     private List<IoCModule> sortModulesByDependencies() {
         List<IoCModule> sorted = new ArrayList<>();
@@ -84,7 +81,7 @@ public class ModuleManager {
             }
             
             if (!progress) {
-                // 检测循环依赖
+                // æ£æµå¾ªç¯ä¾èµ
                 StringBuilder cycle = new StringBuilder();
                 for (IoCModule module : remaining) {
                     cycle.append(module.getModuleName()).append(" -> ");
@@ -97,8 +94,8 @@ public class ModuleManager {
     }
     
     /**
-     * 检查模块的所有依赖是否已解析
-     */
+     * æ£æ¥æ¨¡åçææä¾èµæ¯å¦å·²è§£æ
+/
     private boolean allDependenciesResolved(IoCModule module, List<IoCModule> resolved) {
         String[] dependencies = module.getDependencies();
         for (String dependency : dependencies) {
@@ -117,10 +114,9 @@ public class ModuleManager {
     }
     
     /**
-     * 获取模块信息
-     * 
-     * @return 模块信息列表
-     */
+     * è·åæ¨¡åä¿¡æ¯
+@return æ¨¡åä¿¡æ¯åè¡¨
+/
     @NotNull
     public List<ModuleInfo> getModuleInfo() {
         List<ModuleInfo> infoList = new ArrayList<>();
@@ -137,37 +133,34 @@ public class ModuleManager {
     }
     
     /**
-     * 获取模块数量
-     * 
-     * @return 模块数量
-     */
+     * è·åæ¨¡åæ°é
+@return æ¨¡åæ°é
+/
     public int getModuleCount() {
         return modules.size();
     }
     
     /**
-     * 检查模块是否存在
-     * 
-     * @param moduleName 模块名称
-     * @return 是否存在
-     */
+     * æ£æ¥æ¨¡åæ¯å¦å­å¨
+@param moduleName æ¨¡ååç§°
+@return æ¯å¦å­å¨
+/
     public boolean hasModule(String moduleName) {
         return moduleMap.containsKey(moduleName);
     }
     
     /**
-     * 获取模块
-     * 
-     * @param moduleName 模块名称
-     * @return 模块实例
-     */
+     * è·åæ¨¡å
+@param moduleName æ¨¡ååç§°
+@return æ¨¡åå®ä¾
+/
     public IoCModule getModule(String moduleName) {
         return moduleMap.get(moduleName);
     }
     
     /**
-     * 模块信息类
-     */
+     * æ¨¡åä¿¡æ¯ç±»
+/
     public static class ModuleInfo {
         private final String name;
         private final String version;

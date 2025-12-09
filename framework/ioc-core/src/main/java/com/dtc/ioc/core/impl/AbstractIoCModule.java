@@ -5,11 +5,10 @@ import com.dtc.ioc.core.IoCModule;
 import com.dtc.ioc.core.NetworkApplicationContext;
 
 /**
- * IoC模块抽象基类
- * 提供模块化配置的基础实现
- * 
- * @author Network Service Template
- */
+     * IoCæ¨¡åæ½è±¡åºç±»
+æä¾æ¨¡ååéç½®çåºç¡å®ç°
+@author Network Service Template
+/
 public abstract class AbstractIoCModule implements IoCModule {
     
     @Override
@@ -37,12 +36,11 @@ public abstract class AbstractIoCModule implements IoCModule {
     }
     
     /**
-     * 绑定接口到实现类
-     * 
-     * @param context 应用上下文
-     * @param interfaceClass 接口类
-     * @param implementationClass 实现类
-     */
+     * ç»å®æ¥å£å°å®ç°ç±»
+@param context åºç¨ä¸ä¸æ
+@param interfaceClass æ¥å£ç±»
+@param implementationClass å®ç°ç±»
+/
     protected <T> void bind(NetworkApplicationContext context, 
                            Class<T> interfaceClass, 
                            Class<? extends T> implementationClass) {
@@ -50,12 +48,11 @@ public abstract class AbstractIoCModule implements IoCModule {
     }
     
     /**
-     * 绑定接口到实现类（指定名称）
-     * 
-     * @param context 应用上下文
-     * @param name Bean名称
-     * @param implementationClass 实现类
-     */
+     * ç»å®æ¥å£å°å®ç°ç±»ï¼æå®åç§°ï¼
+@param context åºç¨ä¸ä¸æ
+@param name Beanåç§°
+@param implementationClass å®ç°ç±»
+/
     protected void bind(NetworkApplicationContext context, 
                        String name, 
                        Class<?> implementationClass) {
@@ -63,12 +60,11 @@ public abstract class AbstractIoCModule implements IoCModule {
     }
     
     /**
-     * 绑定单例实例
-     * 
-     * @param context 应用上下文
-     * @param name Bean名称
-     * @param instance 实例
-     */
+     * ç»å®åä¾å®ä¾
+@param context åºç¨ä¸ä¸æ
+@param name Beanåç§°
+@param instance å®ä¾
+/
     protected void bindInstance(NetworkApplicationContext context, 
                                String name, 
                                Object instance) {
@@ -76,12 +72,11 @@ public abstract class AbstractIoCModule implements IoCModule {
     }
     
     /**
-     * 绑定接口到单例实例
-     * 
-     * @param context 应用上下文
-     * @param interfaceClass 接口类
-     * @param instance 实例
-     */
+     * ç»å®æ¥å£å°åä¾å®ä¾
+@param context åºç¨ä¸ä¸æ
+@param interfaceClass æ¥å£ç±»
+@param instance å®ä¾
+/
     protected <T> void bindInstance(NetworkApplicationContext context, 
                                    Class<T> interfaceClass, 
                                    T instance) {

@@ -10,7 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 扩展管理器 负责管理扩展的生命周期
+ * 扩展管理器
+ * 负责管理和维护扩展的注册、启动和停止
  * 
  * @author Network Service Template
  */
@@ -46,7 +47,7 @@ public class ExtensionManager {
 
             extensions.put(extensionId, extension);
 
-            // 安全地获取类加载器
+            // 尝试获取并注册类加载器
             ClassLoader classLoader = extension.getExtensionClassloader();
             if (classLoader != null) {
                 extensionClassLoaders.put(extensionId, classLoader);
@@ -113,7 +114,7 @@ public class ExtensionManager {
 
         return CompletableFuture.runAsync(() -> {
             try {
-                // 添加调试日志
+                // 记录启动信息
                 log.info("🔍 About to start extension: {} of type: {}",
                         extensionId, extension.getClass().getName());
                 log.info("🔍 Extension instance: {}", extension);

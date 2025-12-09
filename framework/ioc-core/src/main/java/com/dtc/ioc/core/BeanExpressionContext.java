@@ -4,38 +4,34 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 
 /**
- * Bean表达式上下文接口
- * 提供表达式评估的上下文信息
- * 借鉴Spring BeanExpressionContext的设计
- * 
- * @author Network Service Template
- */
+     * Beanè¡¨è¾¾å¼ä¸ä¸ææ¥å£
+æä¾è¡¨è¾¾å¼è¯ä¼°çä¸ä¸æä¿¡æ¯
+åé´Spring BeanExpressionContextçè®¾è®¡
+@author Network Service Template
+/
 public interface BeanExpressionContext {
     
     /**
-     * 获取Bean实例
-     * 
-     * @param name Bean名称
-     * @return Bean实例
-     */
+     * è·åBeanå®ä¾
+@param name Beanåç§°
+@return Beanå®ä¾
+/
     @Nullable
     Object getBean(@NotNull String name);
     
     /**
-     * 获取Bean实例（指定类型）
-     * 
-     * @param name Bean名称
-     * @param requiredType 必需类型
-     * @return Bean实例
-     */
+     * è·åBeanå®ä¾ï¼æå®ç±»åï¼
+@param name Beanåç§°
+@param requiredType å¿éç±»å
+@return Beanå®ä¾
+/
     @Nullable
     <T> T getBean(@NotNull String name, @NotNull Class<T> requiredType);
     
     /**
-     * 检查Bean是否存在
-     * 
-     * @param name Bean名称
-     * @return 是否存在
-     */
+     * æ£æ¥Beanæ¯å¦å­å¨
+@param name Beanåç§°
+@return æ¯å¦å­å¨
+/
     boolean containsBean(@NotNull String name);
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.dtc</groupId>
@@ -13,14 +13,13 @@
     <description>高性能网络服务模板</description>
 
     <properties>
-        <java.version>11</java.version>
-        <java.compiler.version>11</java.compiler.version>
-        <java.runtime.version>11</java.runtime.version>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <java.version>21</java.version>
+        <java.compiler.version>21</java.compiler.version>
+        <java.runtime.version>21</java.runtime.version>
+        <java.release.version>21</java.release.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- 依赖版本 -->
-        <netty.version>4.1.100.Final</netty.version>
+        <netty.version>4.2.7.Final</netty.version>
         <guice.version>5.1.0</guice.version>
         <jetbrains-annotation.version>26.0.2</jetbrains-annotation.version>
         <junit.version>5.9.2</junit.version>
@@ -41,7 +40,8 @@
         <core.version>1.0-SNAPSHOT</core.version>
         <distribution.version>1.0-SNAPSHOT</distribution.version>
         <extensions.version>1.0-SNAPSHOT</extensions.version>
-        <ioc-annotations.version>1.0-SNAPSHOT</ioc-annotations.version>
+        <aop.version>1.0-SNAPSHOT</aop.version>
+        <aop-aspects.version>1.0-SNAPSHOT</aop-aspects.version>
     </properties>
 
     <modules>
@@ -80,9 +80,25 @@
             </dependency>
             <dependency>
                 <groupId>com.dtc</groupId>
-                <artifactId>ioc-annotations</artifactId>
-                <version>${ioc-annotations.version}</version>
+                <artifactId>annotations</artifactId>
+                <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.dtc</groupId>
+                <artifactId>aop</artifactId>
+                <version>${aop.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dtc</groupId>
+                <artifactId>aop-aspects</artifactId>
+                <version>${aop-aspects.version}</version>
+            </dependency>
+            <!-- ioc-core 已废弃，统一使用 Google Guice -->
+            <!-- <dependency>
+                <groupId>com.dtc</groupId>
+                <artifactId>ioc-core</artifactId>
+                <version>${project.version}</version>
+            </dependency> -->
             <!-- Guice -->
             <dependency>
                 <groupId>com.google.inject</groupId>
@@ -193,8 +209,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.11.0</version>
                     <configuration>
-                        <source>11</source>
-                        <target>11</target>
+                        <source>21</source>
+                        <target>21</target>
                         <encoding>UTF-8</encoding>
                     </configuration>
                 </plugin>

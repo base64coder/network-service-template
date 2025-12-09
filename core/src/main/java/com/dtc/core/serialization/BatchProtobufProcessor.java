@@ -18,7 +18,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
- * 批量 Protobuf 处理器 提供高性能的批量序列化/反序列化功能
+ * 批量 Protobuf 处理器
+ * 提供高性能的批量序列化/反序列化功能
  * 
  * @author Network Service Template
  */
@@ -71,7 +72,7 @@ public class BatchProtobufProcessor {
         // 启动批量处理线程
         scheduler.scheduleAtFixedRate(this::processBatch, maxBatchDelayMs, maxBatchDelayMs, TimeUnit.MILLISECONDS);
 
-        // 启动队列监控线程
+        // 启动立即处理线程
         scheduler.scheduleAtFixedRate(this::processImmediateBatch, 10, 10, TimeUnit.MILLISECONDS);
 
         log.info("Batch Protobuf processor started with batchSize={}, delay={}ms, queueCapacity={}", maxBatchSize,
@@ -96,7 +97,7 @@ public class BatchProtobufProcessor {
     }
 
     /**
-     * 添加消息到批量处理队列
+     * 添加消息到批量处理器队列
      * 
      * @param message 要处理的消息
      * @return 是否成功添加
@@ -141,9 +142,9 @@ public class BatchProtobufProcessor {
     }
 
     /**
-     * 添加批量消费者
+     * 添加批量消息消费者
      * 
-     * @param consumer 消费者
+     * @param consumer 消息消费者
      */
     public void addBatchConsumer(@NotNull Consumer<Message[]> consumer) {
         synchronized (batchConsumers) {
@@ -152,9 +153,9 @@ public class BatchProtobufProcessor {
     }
 
     /**
-     * 移除批量消费者
+     * 移除批量消息消费者
      * 
-     * @param consumer 消费者
+     * @param consumer 消息消费者
      */
     public void removeBatchConsumer(@NotNull Consumer<Message[]> consumer) {
         synchronized (batchConsumers) {
@@ -179,7 +180,7 @@ public class BatchProtobufProcessor {
     }
 
     /**
-     * 立即处理批量消息（当队列满时）
+     * 立即处理批量消息（当队列达到最大批次大小时）
      */
     private void processImmediateBatch() {
         if (!running || messageQueue.size() < maxBatchSize) {
@@ -206,7 +207,7 @@ public class BatchProtobufProcessor {
             // 批量序列化
             byte[][] serializedData = serializer.serializeBatch(messages);
 
-            // 通知所有消费者
+            // 通知所有消息消费者
             synchronized (batchConsumers) {
                 for (Consumer<Message[]> consumer : batchConsumers) {
                     try {

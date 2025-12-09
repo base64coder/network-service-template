@@ -1,34 +1,34 @@
 package com.dtc.core;
 
-import com.dtc.core.bootstrap.StartupBanner;
-import com.dtc.core.config.ServerConfiguration;
+ param($m) 'import com.dtc.core.bootstrap.launcher.' + $m.Groups[1].Value ;
+import com.dtc.core.bootstrap.config.ServerConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 /**
- * 启动横幅测试
+ * éîå§©å¦¯îç®å¨´å¬­ç¯
  */
 public class StartupBannerTest {
 
     @Test
-    @DisplayName("测试启动横幅显示")
+    @DisplayName("å¨´å¬­ç¯éîå§©å¦¯îç®éå§ã")
     void testDisplayBanner() {
-        // 创建测试配置
-        ServerConfiguration config = ServerConfiguration.builder().serverName("测试服务器").serverVersion("1.0.0")
-                .serverId("test-server-001").addListener("HTTP", 8080, "0.0.0.0", true, "HTTP API", "REST API 服务端口")
-                .addListener("WebSocket", 8081, "0.0.0.0", true, "WebSocket", "WebSocket 连接端口")
-                .addListener("TCP", 9999, "0.0.0.0", true, "TCP Server", "TCP 服务器端口")
-                .addListener("MQTT", 1883, "0.0.0.0", false, "MQTT Broker", "MQTT 消息代理端口").build();
+        // éæ¶ç¼å¨´å¬­ç¯é°å¶ç
+        ServerConfiguration config = ServerConfiguration.builder().serverName("å¨´å¬­ç¯éå¶å§é£?).serverVersion("1.0.0")
+                .serverId("test-server-001").addListener("HTTP", 8080, "0.0.0.0", true, "HTTP API", "REST API éå¶å§ç»îå½")
+                .addListener("WebSocket", 8081, "0.0.0.0", true, "WebSocket", "WebSocket æ©ç´å¸´ç»îå½")
+                .addListener("TCP", 9999, "0.0.0.0", true, "TCP Server", "TCP éå¶å§é£ã§î¬é?)
+                .addListener("MQTT", 1883, "0.0.0.0", false, "MQTT Broker", "MQTT å¨å ä¼æµ ï½æç»îå½").build();
 
-        // 创建启动横幅
+        // éæ¶ç¼éîå§©å¦¯îç®
         StartupBanner banner = new StartupBanner(config);
 
-        // 显示横幅
-        System.out.println("=== 测试启动横幅显示 ===");
+        // éå§ãå¦¯îç®
+        System.out.println("=== å¨´å¬­ç¯éîå§©å¦¯îç®éå§ã ===");
         banner.displayBanner();
         banner.displayServerInfo();
         banner.displaySystemInfo();
         banner.displayStartupComplete();
-        System.out.println("=== 测试完成 ===");
+        System.out.println("=== å¨´å¬­ç¯ç¹å±¾å ===");
     }
 }

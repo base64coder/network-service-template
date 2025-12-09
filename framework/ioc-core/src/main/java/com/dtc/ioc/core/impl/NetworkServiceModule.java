@@ -4,23 +4,22 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.ioc.core.NetworkApplicationContext;
 
 /**
- * 网络服务核心模块
- * 配置网络服务的核心组件
- * 
- * @author Network Service Template
- */
+     * ç½ç»æå¡æ ¸å¿æ¨¡å
+éç½®ç½ç»æå¡çæ ¸å¿ç»ä»¶
+@author Network Service Template
+/
 public class NetworkServiceModule extends AbstractIoCModule {
     
     @Override
     public void configure(@NotNull NetworkApplicationContext context) {
-        // 注册核心服务组件
+        // æ³¨åæ ¸å¿æå¡ç»ä»¶
         bind(context, "httpRequestHandler", HttpRequestHandler.class);
         bind(context, "httpResponseHandler", HttpResponseHandler.class);
         bind(context, "httpServer", HttpServer.class);
         bind(context, "statisticsCollector", StatisticsCollector.class);
         bind(context, "networkMessageQueue", NetworkMessageQueue.class);
         
-        // 注册单例实例
+        // æ³¨ååä¾å®ä¾
         bindInstance(context, "serverConfiguration", createServerConfiguration());
     }
     
@@ -33,21 +32,21 @@ public class NetworkServiceModule extends AbstractIoCModule {
     @Override
     @NotNull
     public String getModuleDescription() {
-        return "网络服务核心模块，提供HTTP、统计、消息队列等核心功能";
+        return "ç½ç»æå¡æ ¸å¿æ¨¡åï¼æä¾HTTPãç»è®¡ãæ¶æ¯éåç­æ ¸å¿åè½";
     }
     
     @Override
     @NotNull
     public String[] getDependencies() {
-        return new String[0]; // 核心模块，无依赖
+        return new String[0]; // æ ¸å¿æ¨¡åï¼æ ä¾èµ
     }
     
     private Object createServerConfiguration() {
-        // 创建服务器配置实例
-        return new Object(); // 简化实现
+        // åå»ºæå¡å¨éç½®å®ä¾
+        return new Object(); // ç®åå®ç°
     }
     
-    // 模拟的类定义（实际项目中这些类应该存在）
+    // æ¨¡æçç±»å®ä¹ï¼å®éé¡¹ç®ä¸­è¿äºç±»åºè¯¥å­å¨ï¼
     public static class HttpRequestHandler {}
     public static class HttpResponseHandler {}
     public static class HttpServer {}

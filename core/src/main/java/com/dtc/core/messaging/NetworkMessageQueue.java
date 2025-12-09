@@ -10,7 +10,7 @@ import javax.inject.Singleton;
 
 /**
  * 网络消息队列
- * 扩展DisruptorQueue，专门处理NetworkMessageEvent
+ * 基于DisruptorQueue，负责处理NetworkMessageEvent
  * 
  * @author Network Service Template
  */
@@ -74,9 +74,9 @@ public class NetworkMessageQueue extends DisruptorQueue<NetworkMessageEvent> {
         try {
             boolean success = super.publish(event);
             if (success) {
-                log.debug("📤 Published network message: {}", event.getEventId());
+                log.debug("🔄 Published network message: {}", event.getEventId());
             } else {
-                log.warn("⚠️ Failed to publish network message: {}", event.getEventId());
+                log.warn("⚠️  Failed to publish network message: {}", event.getEventId());
             }
             return success;
         } catch (Exception e) {

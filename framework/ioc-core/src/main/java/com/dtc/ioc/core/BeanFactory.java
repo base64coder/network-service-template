@@ -4,83 +4,75 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 
 /**
- * Bean工厂接口
- * 管理Bean的创建和配置
- * 借鉴Spring BeanFactory的设计
- * 
- * @author Network Service Template
- */
+     * Beanå·¥åæ¥å£
+ç®¡çBeançåå»ºåéç½®
+åé´Spring BeanFactoryçè®¾è®¡
+@author Network Service Template
+/
 public interface BeanFactory {
     
     /**
-     * 获取Bean实例
-     * 
-     * @param name Bean名称
-     * @return Bean实例
-     */
+     * è·åBeanå®ä¾
+@param name Beanåç§°
+@return Beanå®ä¾
+/
     @Nullable
     Object getBean(String name);
     
     /**
-     * 获取Bean实例（指定类型）
-     * 
-     * @param name Bean名称
-     * @param requiredType 必需类型
-     * @return Bean实例
-     */
+     * è·åBeanå®ä¾ï¼æå®ç±»åï¼
+@param name Beanåç§°
+@param requiredType å¿éç±»å
+@return Beanå®ä¾
+/
     @Nullable
     <T> T getBean(String name, Class<T> requiredType);
     
     /**
-     * 获取Bean实例（指定类型）
-     * 
-     * @param requiredType 必需类型
-     * @return Bean实例
-     */
+     * è·åBeanå®ä¾ï¼æå®ç±»åï¼
+@param requiredType å¿éç±»å
+@return Beanå®ä¾
+/
     @Nullable
     <T> T getBean(Class<T> requiredType);
     
     /**
-     * 检查Bean是否存在
-     * 
-     * @param name Bean名称
-     * @return 是否存在
-     */
+     * æ£æ¥Beanæ¯å¦å­å¨
+@param name Beanåç§°
+@return æ¯å¦å­å¨
+/
     boolean containsBean(String name);
     
     /**
-     * 检查Bean是否为单例
-     * 
-     * @param name Bean名称
-     * @return 是否为单例
-     */
+     * æ£æ¥Beanæ¯å¦ä¸ºåä¾
+@param name Beanåç§°
+@return æ¯å¦ä¸ºåä¾
+/
     boolean isSingleton(String name);
     
     /**
-     * 获取Bean类型
-     * 
-     * @param name Bean名称
-     * @return Bean类型
-     */
+     * è·åBeanç±»å
+@param name Beanåç§°
+@return Beanç±»å
+/
     @Nullable
     Class<?> getType(String name);
     
     /**
-     * 获取Bean别名
-     * 
-     * @param name Bean名称
-     * @return 别名数组
-     */
+     * è·åBeanå«å
+@param name Beanåç§°
+@return å«åæ°ç»
+/
     @NotNull
     String[] getAliases(String name);
     
     /**
-     * 预实例化单例Bean
-     */
+     * é¢å®ä¾ååä¾Bean
+/
     void preInstantiateSingletons();
     
     /**
-     * 销毁单例Bean
-     */
+     * éæ¯åä¾Bean
+/
     void destroySingletons();
 }

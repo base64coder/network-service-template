@@ -7,7 +7,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 
 /**
  * 验证模块
- * 配置注解验证拦截器
+ * 配置验证拦截器
  * 
  * @author Network Service Template
  */
@@ -21,11 +21,11 @@ public class ValidationModule extends AbstractModule {
         // 配置拦截器
         // 拦截所有带有 @NotNull 或 @Nullable 注解的方法
         bindInterceptor(
-                Matchers.any(), // 任何类
-                Matchers.any(), // 任何方法
+                Matchers.any(), // 所有类型
+                Matchers.any(), // 所有方法
                 validationInterceptor);
 
-        // 也可以针对特定包进行拦截
+        // 可以限制拦截范围，例如只拦截特定包下的方法
         // bindInterceptor(
         // Matchers.inSubpackage("com.dtc.core"),
         // Matchers.any(),

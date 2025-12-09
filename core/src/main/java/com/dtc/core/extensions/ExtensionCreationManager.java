@@ -17,7 +17,7 @@ import java.util.Objects;
 
 /**
  * 扩展创建管理器
- * 统一管理扩展的创建、增强和生命周期
+ * 负责管理扩展的创建和增强功能
  * 
  * @author Network Service Template
  */
@@ -33,7 +33,7 @@ public class ExtensionCreationManager {
     /**
      * 创建增强的扩展实例
      * 
-     * @param extensionClass 扩展类
+     * @param extensionClass 扩展类型
      * @param classLoader    类加载器
      * @param extensionId    扩展ID
      * @param args           构造函数参数
@@ -52,7 +52,7 @@ public class ExtensionCreationManager {
             log.debug("Creating enhanced extension: {} with ID: {} using layered strategy",
                     extensionClass.getName(), extensionId);
 
-            // 使用 ByteBuddyFactory 的分层策略
+            // 使用 ByteBuddyFactory 进行增强
             T instance = ByteBuddyFactory.getOrCreateInstance(extensionClass, classLoader, extensionId, args);
 
             // 验证实例
@@ -110,7 +110,7 @@ public class ExtensionCreationManager {
                 noArgCtor.setAccessible(true);
                 return noArgCtor;
             } catch (NoSuchMethodException e) {
-                // 继续尝试其他构造函数
+                // 如果没有无参构造函数
             }
         }
 
@@ -121,19 +121,19 @@ public class ExtensionCreationManager {
         log.debug("Looking for constructor in {} with {} arguments: {}",
                 clazz.getName(), args != null ? args.length : 0, Arrays.toString(argTypes));
 
-        // 策略1: 精确匹配
+        // 策略1: 精确匹配构造函数
         Constructor<?> exactMatch = findExactMatchConstructor(clazz, argTypes);
         if (exactMatch != null) {
             return exactMatch;
         }
 
-        // 策略2: 兼容匹配
+        // 策略2: 兼容构造函数
         Constructor<?> compatibleMatch = findCompatibleConstructor(clazz, argTypes);
         if (compatibleMatch != null) {
             return compatibleMatch;
         }
 
-        // 策略3: 参数数量匹配
+        // 策略3: 参数数量匹配构造函数
         Constructor<?> countMatch = findCountMatchConstructor(clazz, args);
         if (countMatch != null) {
             return countMatch;
@@ -144,7 +144,7 @@ public class ExtensionCreationManager {
     }
 
     /**
-     * 查找精确匹配的构造函数
+     * 查找精确匹配构造函数
      */
     @Nullable
     private Constructor<?> findExactMatchConstructor(@NotNull Class<?> clazz, @NotNull Class<?>[] argTypes) {
@@ -169,7 +169,7 @@ public class ExtensionCreationManager {
     }
 
     /**
-     * 查找兼容的构造函数
+     * 查找兼容构造函数
      */
     @Nullable
     private Constructor<?> findCompatibleConstructor(@NotNull Class<?> clazz, @NotNull Class<?>[] argTypes) {
@@ -184,7 +184,7 @@ public class ExtensionCreationManager {
     }
 
     /**
-     * 查找参数数量匹配的构造函数
+     * 查找参数数量匹配构造函数
      */
     @Nullable
     private Constructor<?> findCountMatchConstructor(@NotNull Class<?> clazz, Object[] args) {
@@ -272,7 +272,7 @@ public class ExtensionCreationManager {
                 return arg.toString();
             }
 
-            // 直接转换
+            // 强制类型转换
             return expectedType.cast(arg);
         } catch (Exception e) {
             log.warn("Failed to coerce argument from {} to {}: {}",
@@ -346,7 +346,7 @@ public class ExtensionCreationManager {
                 }
             }
 
-            // 直接类型检查
+            // 类型兼容性检查
             if (expected.isAssignableFrom(actual)) {
                 continue;
             }
@@ -468,7 +468,7 @@ public class ExtensionCreationManager {
 
             @Override
             public void setEnabled(boolean enabled) {
-                // 包装器不支持禁用
+                // 包装器不支持启用/禁用
             }
 
             @Override

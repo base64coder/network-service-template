@@ -1,14 +1,20 @@
 package com.dtc.core.messaging.handler;
 
-import com.dtc.api.annotations.NotNull;
-import com.dtc.core.messaging.NetworkMessageEvent;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.nio.charset.StandardCharsets;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dtc.api.annotations.NotNull;
+import com.dtc.api.annotations.Nullable;
+import com.dtc.core.messaging.MessageHandlerRegistry;
+import com.dtc.core.messaging.NetworkMessageEvent;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
 
 /**
  * 自定义协议消息处理器
@@ -21,16 +27,18 @@ public class CustomMessageHandler {
 
     private static final Logger log = LoggerFactory.getLogger(CustomMessageHandler.class);
 
+    private final MessageHandlerRegistry messageHandlerRegistry;
+
     @Inject
-    public CustomMessageHandler() {
-        // 可以注入自定义协议相关的处理器
+    public CustomMessageHandler(@Nullable MessageHandlerRegistry messageHandlerRegistry) {
+        this.messageHandlerRegistry = messageHandlerRegistry;
     }
 
     /**
      * 处理自定义协议消息
      */
     public void handleMessage(@NotNull NetworkMessageEvent event) {
-        log.debug("⚙️ Processing Custom message: {}", event.getEventId());
+        log.debug("🔍 Processing Custom message: {}", event.getEventId());
 
         try {
             Object message = event.getMessage();
@@ -46,7 +54,7 @@ public class CustomMessageHandler {
             } else if (message instanceof String) {
                 handleStringMessage(ctx, (String) message);
             } else {
-                log.warn("⚠️ Unexpected message type in Custom handler: {}",
+                log.warn("⚠️  Unexpected message type in Custom handler: {}",
                         message != null ? message.getClass().getSimpleName() : "null");
             }
 
@@ -66,26 +74,27 @@ public class CustomMessageHandler {
 
             // 解析自定义协议消息
             CustomProtocolMessage protocolMessage = parseCustomProtocolMessage(message);
-
-            // 根据消息类型处理
-            switch (protocolMessage.getType()) {
-                case "HELLO":
-                    handleHelloMessage(ctx, protocolMessage);
-                    break;
-                case "DATA":
-                    handleDataMessage(ctx, protocolMessage);
-                    break;
-                case "COMMAND":
-                    handleCommandMessage(ctx, protocolMessage);
-                    break;
-                case "RESPONSE":
-                    handleResponseMessage(ctx, protocolMessage);
-                    break;
-                default:
-                    log.warn("⚠️ Unknown custom protocol message type: {}", protocolMessage.getType());
-                    handleUnknownMessage(ctx, protocolMessage);
-                    break;
+            
+            // 尝试使用注解驱动的处理器
+            if (messageHandlerRegistry != null) {
+                // 使用消息类型作为路由
+                MessageHandlerRegistry.HandlerMethod handler = 
+                    messageHandlerRegistry.findHandler("Custom", protocolMessage.getType());
+                
+                if (handler != null) {
+                    try {
+                        // 调用用户定义的处理器方法
+                        handler.invoke(ctx, protocolMessage.getData());
+                        return;
+                    } catch (Exception e) {
+                        log.error("Failed to invoke Custom handler", e);
+                    }
+                }
             }
+            
+            // 如果没有找到注解驱动的处理器，使用默认处理
+            log.debug("No annotation-driven handler found for Custom message type: {}, using default handler", protocolMessage.getType());
+            handleCustomProtocolMessageByType(ctx, protocolMessage);
 
         } catch (Exception e) {
             log.error("❌ Error processing Custom ByteBuf message", e);
@@ -114,11 +123,30 @@ public class CustomMessageHandler {
 
     /**
      * 处理字符串消息
+     * 优先使用注解驱动的处理器，如果没有找到则使用默认处理
      */
     private void handleStringMessage(@NotNull ChannelHandlerContext ctx, @NotNull String message) {
         try {
             log.debug("Processing Custom string message: {}", message);
 
+            // 尝试使用注解驱动的处理器
+            if (messageHandlerRegistry != null) {
+                MessageHandlerRegistry.HandlerMethod handler = 
+                    messageHandlerRegistry.findHandler("Custom", message.trim());
+                
+                if (handler != null) {
+                    try {
+                        // 调用用户定义的处理器方法
+                        handler.invoke(ctx, message);
+                        return;
+                    } catch (Exception e) {
+                        log.error("Failed to invoke Custom handler", e);
+                    }
+                }
+            }
+            
+            // 如果没有找到注解驱动的处理器，使用默认处理
+            log.debug("No annotation-driven handler found for Custom message: {}, using default handler", message);
             // 解析JSON格式的自定义消息
             CustomProtocolMessage protocolMessage = parseJsonMessage(message);
 
@@ -265,9 +293,9 @@ public class CustomMessageHandler {
     }
 
     /**
-     * 处理自定义协议消息
+     * 根据消息类型处理自定义协议消息（默认处理逻辑）
      */
-    private void handleCustomProtocolMessage(@NotNull ChannelHandlerContext ctx,
+    private void handleCustomProtocolMessageByType(@NotNull ChannelHandlerContext ctx,
             @NotNull CustomProtocolMessage message) {
         // 根据消息类型调用相应的处理方法
         switch (message.getType()) {
@@ -288,13 +316,21 @@ public class CustomMessageHandler {
                 break;
         }
     }
+    
+    /**
+     * 处理自定义协议消息（用于字符串消息）
+     */
+    private void handleCustomProtocolMessage(@NotNull ChannelHandlerContext ctx,
+            @NotNull CustomProtocolMessage message) {
+        handleCustomProtocolMessageByType(ctx, message);
+    }
 
     /**
      * 发送自定义响应
      */
     private void sendCustomResponse(@NotNull ChannelHandlerContext ctx, @NotNull String type, @NotNull String data) {
         try {
-            byte[] dataBytes = data.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
             byte typeByte = getCustomMessageTypeByte(type);
 
             ByteBuf response = ctx.alloc().buffer(4 + 1 + dataBytes.length);
@@ -364,7 +400,7 @@ public class CustomMessageHandler {
      * 处理错误
      */
     private void handleError(@NotNull NetworkMessageEvent event, @NotNull Exception error) {
-        log.error("💥 Error handling Custom message: {}", event.getEventId(), error);
+        log.error("🔴 Error handling Custom message: {}", event.getEventId(), error);
 
         try {
             ChannelHandlerContext ctx = event.getChannelContext();

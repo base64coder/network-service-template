@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * NetworkMessageHandler 单元测试
+ * NetworkMessageHandler 氓聧聲氓聟聝忙碌聥猫炉聲
  */
 public class NetworkMessageHandlerTest {
 
@@ -62,133 +62,126 @@ public class NetworkMessageHandlerTest {
     }
 
     @Test
-    @DisplayName("测试处理Protobuf消息")
+    @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠Protobuf忙露聢忙聛炉")
     void testHandleProtobufMessage() {
-        // 创建测试消息
+        // 氓聢聸氓禄潞忙碌聥猫炉聲忙露聢忙聛炉
         Message testMessage = mock(Message.class);
         when(testMessage.getSerializedSize()).thenReturn(100);
 
-        // Mock队列发布
+        // Mock茅聵聼氓聢聴氓聫聭氓赂聝
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(true);
 
-        // 测试处理消息
+        // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
         boolean result = messageHandler.handleMessage(testMessage);
 
-        // 验证结果
-        assertTrue(result, "应该成功处理Protobuf消息");
+        // 茅陋聦猫炉聛莽禄聯忙聻聹
+        assertTrue(result, "氓潞聰猫炉楼忙聢聬氓聤聼氓陇聞莽聬聠Protobuf忙露聢忙聛炉");
         verify(messageQueue).publish(any(NetworkMessageEvent.class));
     }
 
     @Test
-    @DisplayName("测试处理原始字节数据")
+    @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠氓聨聼氓搂聥氓颅聴猫聤聜忙聲掳忙聧庐")
     void testHandleRawData() {
-        // 创建测试数据
+        // 氓聢聸氓禄潞忙碌聥猫炉聲忙聲掳忙聧庐
         byte[] testData = "test raw data".getBytes();
 
-        // Mock队列发布
+        // Mock茅聵聼氓聢聴氓聫聭氓赂聝
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(true);
 
-        // 测试处理原始数据
+        // 忙碌聥猫炉聲氓陇聞莽聬聠氓聨聼氓搂聥忙聲掳忙聧庐
         boolean result = messageHandler.handleRawData(testData);
 
-        // 验证结果
-        assertTrue(result, "应该成功处理原始字节数据");
+        // 茅陋聦猫炉聛莽禄聯忙聻聹
+        assertTrue(result, "氓潞聰猫炉楼忙聢聬氓聤聼氓陇聞莽聬聠氓聨聼氓搂聥氓颅聴猫聤聜忙聲掳忙聧庐");
         verify(messageQueue).publish(any(NetworkMessageEvent.class));
     }
 
     @Test
-    @DisplayName("测试处理空消息")
+    @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠莽漏潞忙露聢忙聛?)
     void testHandleEmptyMessage() {
-        // Mock队列发布
+        // Mock茅聵聼氓聢聴氓聫聭氓赂聝
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(true);
 
-        // 测试空字节数组
-        byte[] emptyData = new byte[0];
+        // 忙碌聥猫炉聲莽漏潞氓颅聴猫聤聜忙聲掳莽禄?        byte[] emptyData = new byte[0];
         boolean result = messageHandler.handleRawData(emptyData);
-        assertTrue(result, "应该能处理空消息");
+        assertTrue(result, "氓潞聰猫炉楼猫聝陆氓陇聞莽聬聠莽漏潞忙露聢忙聛炉");
 
-        // 测试null消息
+        // 忙碌聥猫炉聲null忙露聢忙聛炉
         assertThrows(NullPointerException.class, () -> {
             messageHandler.handleRawData(null);
         });
     }
 
     @Test
-    @DisplayName("测试处理大消息")
+    @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠氓陇搂忙露聢忙聛?)
     void testHandleLargeMessage() {
-        // 创建大消息（1MB）
-        byte[] largeData = new byte[1024 * 1024];
+        // 氓聢聸氓禄潞氓陇搂忙露聢忙聛炉茂录聢1MB茂录?        byte[] largeData = new byte[1024 * 1024];
         for (int i = 0; i < largeData.length; i++) {
             largeData[i] = (byte) (i % 256);
         }
 
-        // Mock队列发布
+        // Mock茅聵聼氓聢聴氓聫聭氓赂聝
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(true);
 
-        // 测试处理大消息
-        boolean result = messageHandler.handleRawData(largeData);
+        // 忙碌聥猫炉聲氓陇聞莽聬聠氓陇搂忙露聢忙聛?        boolean result = messageHandler.handleRawData(largeData);
 
-        // 验证结果
-        assertTrue(result, "应该能处理大消息");
+        // 茅陋聦猫炉聛莽禄聯忙聻聹
+        assertTrue(result, "氓潞聰猫炉楼猫聝陆氓陇聞莽聬聠氓陇搂忙露聢忙聛炉");
         verify(messageQueue).publish(any(NetworkMessageEvent.class));
     }
 
     @Test
-    @DisplayName("测试处理多种数据类型")
+    @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠氓陇職莽搂聧忙聲掳忙聧庐莽卤禄氓聻聥")
     void testHandleDifferentDataTypes() {
-        // Mock队列发布
+        // Mock茅聵聼氓聢聴氓聫聭氓赂聝
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(true);
 
-        // 测试字符串数据
-        byte[] stringData = "Hello World".getBytes();
+        // 忙碌聥猫炉聲氓颅聴莽卢娄盲赂虏忙聲掳忙聧?        byte[] stringData = "Hello World".getBytes();
         assertTrue(messageHandler.handleRawData(stringData));
 
-        // 测试JSON数据
+        // 忙碌聥猫炉聲JSON忙聲掳忙聧庐
         byte[] jsonData = "{\"key\": \"value\"}".getBytes();
         assertTrue(messageHandler.handleRawData(jsonData));
 
-        // 测试二进制数据
-        byte[] binaryData = { 0x00, 0x01, 0x02, 0x03, 0x04 };
+        // 忙碌聥猫炉聲盲潞聦猫驴聸氓聢露忙聲掳忙聧?        byte[] binaryData = { 0x00, 0x01, 0x02, 0x03, 0x04 };
         assertTrue(messageHandler.handleRawData(binaryData));
 
-        // 验证所有消息都被发布
-        verify(messageQueue, times(3)).publish(any(NetworkMessageEvent.class));
+        // 茅陋聦猫炉聛忙聣聙忙聹聣忙露聢忙聛炉茅聝陆猫垄芦氓聫聭氓赂?        verify(messageQueue, times(3)).publish(any(NetworkMessageEvent.class));
     }
 
     @Test
-    @DisplayName("测试队列发布失败")
+    @DisplayName("忙碌聥猫炉聲茅聵聼氓聢聴氓聫聭氓赂聝氓陇卤猫麓楼")
     void testQueuePublishFailure() {
-        // Mock队列发布失败
+        // Mock茅聵聼氓聢聴氓聫聭氓赂聝氓陇卤猫麓楼
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(false);
 
-        // 测试处理消息
+        // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
         byte[] testData = "test data".getBytes();
         boolean result = messageHandler.handleRawData(testData);
 
-        // 验证结果
-        assertFalse(result, "队列发布失败时应该返回false");
+        // 茅陋聦猫炉聛莽禄聯忙聻聹
+        assertFalse(result, "茅聵聼氓聢聴氓聫聭氓赂聝氓陇卤猫麓楼忙聴露氓潞聰猫炉楼猫驴聰氓聸聻false");
     }
 
     @Test
-    @DisplayName("测试处理异常情况")
+    @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠氓录聜氓赂赂忙聝聟氓聠碌")
     void testHandleException() {
-        // Mock队列抛出异常
+        // Mock茅聵聼氓聢聴忙聤聸氓聡潞氓录聜氓赂赂
         when(messageQueue.publish(any(NetworkMessageEvent.class)))
                 .thenThrow(new RuntimeException("Queue error"));
 
-        // 测试处理消息
+        // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
         byte[] testData = "test data".getBytes();
         boolean result = messageHandler.handleRawData(testData);
 
-        // 验证结果
-        assertFalse(result, "异常情况下应该返回false");
+        // 茅陋聦猫炉聛莽禄聯忙聻聹
+        assertFalse(result, "氓录聜氓赂赂忙聝聟氓聠碌盲赂聥氓潞聰猫炉楼猫驴聰氓聸聻false");
     }
 
     @Test
-    @DisplayName("测试获取统计信息")
+    @DisplayName("忙碌聥猫炉聲猫聨路氓聫聳莽禄聼猫庐隆盲驴隆忙聛炉")
     void testGetStats() {
-        // 处理一些消息
-        byte[] testData1 = "test data 1".getBytes();
+        // 氓陇聞莽聬聠盲赂聙盲潞聸忙露聢忙聛?        byte[] testData1 = "test data 1".getBytes();
         byte[] testData2 = "test data 2".getBytes();
 
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(true);
@@ -196,26 +189,26 @@ public class NetworkMessageHandlerTest {
         messageHandler.handleRawData(testData1);
         messageHandler.handleRawData(testData2);
 
-        // 获取统计信息
+        // 猫聨路氓聫聳莽禄聼猫庐隆盲驴隆忙聛炉
         NetworkMessageHandler.HandlerStats stats = messageHandler.getStats();
 
-        // 验证统计信息
-        assertNotNull(stats, "统计信息不应该为null");
-        assertTrue(stats.getReceivedCount() >= 0, "接收计数应该大于等于0");
-        assertTrue(stats.getForwardedCount() >= 0, "转发计数应该大于等于0");
+        // 茅陋聦猫炉聛莽禄聼猫庐隆盲驴隆忙聛炉
+        assertNotNull(stats, "莽禄聼猫庐隆盲驴隆忙聛炉盲赂聧氓潞聰猫炉楼盲赂潞null");
+        assertTrue(stats.getReceivedCount() >= 0, "忙聨楼忙聰露猫庐隆忙聲掳氓潞聰猫炉楼氓陇搂盲潞聨莽颅聣盲潞聨0");
+        assertTrue(stats.getForwardedCount() >= 0, "猫陆卢氓聫聭猫庐隆忙聲掳氓潞聰猫炉楼氓陇搂盲潞聨莽颅聣盲潞聨0");
     }
 
     @Test
-    @DisplayName("测试统计信息类")
+    @DisplayName("忙碌聥猫炉聲莽禄聼猫庐隆盲驴隆忙聛炉莽卤?)
     void testHandlerStats() {
-        // 创建统计信息
+        // 氓聢聸氓禄潞莽禄聼猫庐隆盲驴隆忙聛炉
         NetworkMessageHandler.HandlerStats stats = new NetworkMessageHandler.HandlerStats(10, 8);
 
-        // 验证统计信息
+        // 茅陋聦猫炉聛莽禄聼猫庐隆盲驴隆忙聛炉
         assertEquals(10, stats.getReceivedCount());
         assertEquals(8, stats.getForwardedCount());
 
-        // 测试toString方法
+        // 忙碌聥猫炉聲toString忙聳鹿忙鲁聲
         String statsString = stats.toString();
         assertNotNull(statsString);
         assertTrue(statsString.contains("received=10"));
@@ -223,7 +216,7 @@ public class NetworkMessageHandlerTest {
     }
 
     @Test
-    @DisplayName("测试并发处理")
+    @DisplayName("忙碌聥猫炉聲氓鹿露氓聫聭氓陇聞莽聬聠")
     void testConcurrentHandling() throws InterruptedException {
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(true);
 
@@ -231,7 +224,7 @@ public class NetworkMessageHandlerTest {
         int messagesPerThread = 100;
         Thread[] threads = new Thread[threadCount];
 
-        // 创建多个线程并发处理消息
+        // 氓聢聸氓禄潞氓陇職盲赂陋莽潞驴莽篓聥氓鹿露氓聫聭氓陇聞莽聬聠忙露聢忙聛炉
         for (int i = 0; i < threadCount; i++) {
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < messagesPerThread; j++) {
@@ -241,30 +234,28 @@ public class NetworkMessageHandlerTest {
             });
         }
 
-        // 启动所有线程
-        for (Thread thread : threads) {
+        // 氓聬炉氓聤篓忙聣聙忙聹聣莽潞驴莽篓?        for (Thread thread : threads) {
             thread.start();
         }
 
-        // 等待所有线程完成
-        for (Thread thread : threads) {
+        // 莽颅聣氓戮聟忙聣聙忙聹聣莽潞驴莽篓聥氓庐聦忙聢?        for (Thread thread : threads) {
             thread.join();
         }
 
-        // 验证统计信息
+        // 茅陋聦猫炉聛莽禄聼猫庐隆盲驴隆忙聛炉
         NetworkMessageHandler.HandlerStats stats = messageHandler.getStats();
         assertTrue(stats.getReceivedCount() >= threadCount * messagesPerThread);
     }
 
     @Test
-    @DisplayName("测试性能")
+    @DisplayName("忙碌聥猫炉聲忙聙搂猫聝陆")
     void testPerformance() {
         when(messageQueue.publish(any(NetworkMessageEvent.class))).thenReturn(true);
 
         int messageCount = 10000;
         long startTime = System.currentTimeMillis();
 
-        // 处理大量消息
+        // 氓陇聞莽聬聠氓陇搂茅聡聫忙露聢忙聛炉
         for (int i = 0; i < messageCount; i++) {
             byte[] testData = ("performance test " + i).getBytes();
             messageHandler.handleRawData(testData);
@@ -273,10 +264,10 @@ public class NetworkMessageHandlerTest {
         long endTime = System.currentTimeMillis();
         long duration = endTime - startTime;
 
-        // 验证性能（应该能在1秒内处理10000条消息）
-        assertTrue(duration < 1000, "处理10000条消息应该在1秒内完成");
+        // 茅陋聦猫炉聛忙聙搂猫聝陆茂录聢氓潞聰猫炉楼猫聝陆氓聹?莽搂聮氓聠聟氓陇聞莽聬聠10000忙聺隆忙露聢忙聛炉茂录聣
+        assertTrue(duration < 1000, "氓陇聞莽聬聠10000忙聺隆忙露聢忙聛炉氓潞聰猫炉楼氓聹篓1莽搂聮氓聠聟氓庐聦忙聢聬");
 
-        // 验证统计信息
+        // 茅陋聦猫炉聛莽禄聼猫庐隆盲驴隆忙聛炉
         NetworkMessageHandler.HandlerStats stats = messageHandler.getStats();
         assertTrue(stats.getReceivedCount() >= messageCount);
     }

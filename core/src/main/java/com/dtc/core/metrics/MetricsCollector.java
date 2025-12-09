@@ -12,9 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 指标收集器
- * 定期收集和报告指标
- * 
+ * é¸å¨ç£éå æ³¦é£? * ç¹æ°­æ¹¡éå æ³¦éå±¾å§¤éå©å¯é? * 
  * @author Network Service Template
  */
 @Singleton
@@ -37,7 +35,7 @@ public class MetricsCollector {
     }
 
     /**
-     * 启动指标收集
+     * éîå§©é¸å¨ç£éå æ³¦
      */
     public void start() {
         if (started) {
@@ -46,15 +44,14 @@ public class MetricsCollector {
 
         log.info("Starting metrics collection...");
 
-        // 每30秒收集一次指标
-        scheduler.scheduleAtFixedRate(this::collectMetrics, 30, 30, TimeUnit.SECONDS);
+        // å§£?0ç»ææ¹éåç«´å¨âå¯é?        scheduler.scheduleAtFixedRate(this::collectMetrics, 30, 30, TimeUnit.SECONDS);
 
         started = true;
         log.info("Metrics collection started");
     }
 
     /**
-     * 停止指标收集
+     * éæ»îé¸å¨ç£éå æ³¦
      */
     public void stop() {
         if (!started) {
@@ -78,17 +75,16 @@ public class MetricsCollector {
     }
 
     /**
-     * 收集指标
+     * éå æ³¦é¸å¨ç£
      */
     private void collectMetrics() {
         try {
-            // 收集计数器指标
-            Map<String, Long> counters = metricsRegistry.getAllCounters();
+            // éå æ³¦çâæé£ã¦å¯é?            Map<String, Long> counters = metricsRegistry.getAllCounters();
             if (!counters.isEmpty()) {
                 log.debug("Collected {} counter metrics", counters.size());
             }
 
-            // 收集仪表指标
+            // éå æ³¦æµ îãé¸å¨ç£
             Map<String, Long> gauges = metricsRegistry.getAllGauges();
             if (!gauges.isEmpty()) {
                 log.debug("Collected {} gauge metrics", gauges.size());
@@ -100,9 +96,8 @@ public class MetricsCollector {
     }
 
     /**
-     * 是否已启动
-     * 
-     * @return 是否已启动
+     * éîæå®¸ææé?     * 
+     * @return éîæå®¸ææé
      */
     public boolean isStarted() {
         return started;

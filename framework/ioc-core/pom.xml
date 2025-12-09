@@ -26,7 +26,7 @@
         </dependency>
         <dependency>
             <groupId>com.dtc</groupId>
-            <artifactId>ioc-annotations</artifactId>
+            <artifactId>annotations</artifactId>
         </dependency>
         
         <!-- 字节码操作 -->

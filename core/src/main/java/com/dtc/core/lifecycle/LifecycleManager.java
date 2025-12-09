@@ -11,7 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 生命周期管理器
- * 管理组件的生命周期
+ * 管理所有生命周期组件
  * 
  * @author Network Service Template
  */

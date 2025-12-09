@@ -3,50 +3,44 @@ package com.dtc.ioc.core;
 import com.dtc.api.annotations.NotNull;
 
 /**
- * IoC模块接口
- * 提供模块化配置功能，类似Guice的Module
- * 
- * @author Network Service Template
- */
+     * IoCæ¨¡åæ¥å£
+æä¾æ¨¡ååéç½®åè½ï¼ç±»ä¼¼GuiceçModule
+@author Network Service Template
+/
 public interface IoCModule {
     
     /**
-     * 配置模块
-     * 在此方法中注册Bean定义和配置
-     * 
-     * @param context 应用上下文
-     */
+     * éç½®æ¨¡å
+å¨æ­¤æ¹æ³ä¸­æ³¨åBeanå®ä¹åéç½®
+@param context åºç¨ä¸ä¸æ
+/
     void configure(@NotNull NetworkApplicationContext context);
     
     /**
-     * 获取模块名称
-     * 
-     * @return 模块名称
-     */
+     * è·åæ¨¡ååç§°
+@return æ¨¡ååç§°
+/
     @NotNull
     String getModuleName();
     
     /**
-     * 获取模块版本
-     * 
-     * @return 模块版本
-     */
+     * è·åæ¨¡åçæ¬
+@return æ¨¡åçæ¬
+/
     @NotNull
     String getModuleVersion();
     
     /**
-     * 获取模块描述
-     * 
-     * @return 模块描述
-     */
+     * è·åæ¨¡åæè¿°
+@return æ¨¡åæè¿°
+/
     @NotNull
     String getModuleDescription();
     
     /**
-     * 获取依赖的模块
-     * 
-     * @return 依赖模块名称列表
-     */
+     * è·åä¾èµçæ¨¡å
+@return ä¾èµæ¨¡ååç§°åè¡¨
+/
     @NotNull
     String[] getDependencies();
 }

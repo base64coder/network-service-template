@@ -11,16 +11,26 @@
     <artifactId>framework</artifactId>
     <name>framework</name>
     <packaging>pom</packaging>
-    <description>自研IoC框架父模块</description>
+    <description>框架模块（注解和工具）</description>
 
     <modules>
-        <module>ioc-core</module>
-        <module>ioc-annotations</module>
+        <module>annotations</module>
+        <module>aop</module>
+        <module>aop-aspects</module>
+        <!-- ioc-core 模块已废弃，统一使用 Google Guice -->
+        <!-- <module>ioc-core</module> -->
+        <!-- 旧的注解模块已废弃，统一使用 annotations 模块 -->
+        <!-- <module>ioc-annotations</module> -->
+        <!-- <module>web-annotations</module> -->
+        <!-- <module>persistence-annotations</module> -->
+        <!-- 旧的 AOP 模块已重命名 -->
+        <!-- <module>spring-aop</module> -->
+        <!-- <module>spring-aspects</module> -->
     </modules>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -80,8 +90,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
             

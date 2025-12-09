@@ -2,6 +2,7 @@ package com.dtc.core.messaging;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
+
 import io.netty.channel.ChannelHandlerContext;
 
 /**
@@ -57,6 +58,11 @@ public class NetworkMessageEvent {
 
         public Builder message(Object message) {
             event.message = message;
+            return this;
+        }
+
+        public Builder timestamp(long timestamp) {
+            event.timestamp = timestamp;
             return this;
         }
 

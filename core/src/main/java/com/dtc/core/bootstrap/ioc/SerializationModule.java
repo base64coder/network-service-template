@@ -4,7 +4,8 @@ import com.dtc.core.serialization.ProtobufSerializer;
 import com.google.inject.AbstractModule;
 
 /**
- * 序列化模块 绑定序列化相关的服务
+ * 序列化模块
+ * 配置序列化相关的依赖注入
  * 
  * @author Network Service Template
  */

@@ -1,7 +1,7 @@
 package com.dtc.core.extensions;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.config.ServerConfiguration;
+import com.dtc.core.bootstrap.config.ServerConfiguration;
 import com.dtc.core.extensions.model.ExtensionEvent;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -11,7 +11,8 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 扩展系统启动器 负责启动和管理扩展系统
+ * 扩展系统启动器
+ * 负责启动和管理扩展系统的初始化和关闭
  * 
  * @author Network Service Template
  */
@@ -50,13 +51,13 @@ public class ExtensionBootstrap {
                 Collection<ExtensionEvent> extensionEvents = extensionLoader
                         .loadExtensions(configuration.getExtensionsFolder());
 
-                log.info("📦 发现 {} 个扩展事件", extensionEvents.size());
+                log.info("📦 发现 {} 个扩展", extensionEvents.size());
 
                 // 处理扩展事件
-                log.info("⚙️ 处理扩展事件...");
+                log.info("⚙️  处理扩展事件...");
                 lifecycleHandler.handleExtensionEvents(extensionEvents).join();
 
-                log.info("✅ 扩展系统启动成功 - 已加载 {} 个扩展", extensionEvents.size());
+                log.info("✅ 扩展系统启动完成 - 加载了 {} 个扩展", extensionEvents.size());
             } catch (Exception e) {
                 log.error("❌ 扩展系统启动失败", e);
                 throw new RuntimeException("Failed to start extension system", e);

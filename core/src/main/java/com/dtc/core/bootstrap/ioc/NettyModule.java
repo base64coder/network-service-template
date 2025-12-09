@@ -1,12 +1,12 @@
 package com.dtc.core.bootstrap.ioc;
 
-import com.dtc.core.netty.NettyBootstrap;
-import com.dtc.core.netty.NettyServer;
+import com.dtc.core.network.netty.NettyBootstrap;
+import com.dtc.core.network.netty.NettyServer;
 import com.google.inject.AbstractModule;
 
 /**
- * Netty网络模块
- * 绑定Netty相关的服务
+ * Netty 服务器模块
+ * 配置 Netty 相关的依赖注入
  * 
  * @author Network Service Template
  */
@@ -14,10 +14,10 @@ public class NettyModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        // 绑定Netty服务器
+        // 绑定 Netty 服务器实例
         bind(NettyServer.class).asEagerSingleton();
 
-        // 绑定Netty启动器
+        // 绑定 Netty 启动器
         bind(NettyBootstrap.class).asEagerSingleton();
     }
 }

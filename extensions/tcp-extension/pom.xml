@@ -21,6 +21,12 @@
             <artifactId>api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- Core依赖 -->
+        <dependency>
+            <groupId>com.dtc</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Netty网络框架 -->
         <dependency>
             <groupId>io.netty</groupId>

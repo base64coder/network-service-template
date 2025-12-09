@@ -51,7 +51,7 @@ public class AnnotationValidator {
                 }
             }
 
-            // 检查 @Nullable 注解（通常不需要特殊处理，但可以记录）
+            // 检查 @Nullable 注解，虽然允许为null，但可以记录日志
             if (parameter.isAnnotationPresent(Nullable.class)) {
                 log.debug("Parameter '{}' (index {}) of method '{}' is nullable",
                         parameter.getName(), i, method.getName());
@@ -73,7 +73,7 @@ public class AnnotationValidator {
      * @throws IllegalArgumentException 如果验证失败
      */
     public static void validateMethodReturnValue(@NotNull Method method, @Nullable Object returnValue) {
-        // 检查方法返回值的 @NotNull 注解
+        // 检查方法返回值是否有 @NotNull 注解
         if (method.isAnnotationPresent(NotNull.class)) {
             if (returnValue == null) {
                 String errorMessage = String.format("Return value of method '%s' cannot be null", method.getName());
@@ -105,7 +105,7 @@ public class AnnotationValidator {
     }
 
     /**
-     * 检查方法是否有参数验证需求
+     * 检查方法是否需要参数验证
      * 
      * @param method 方法
      * @return 是否需要验证
@@ -124,7 +124,7 @@ public class AnnotationValidator {
      * 获取验证统计信息
      * 
      * @param method 方法
-     * @return 验证统计
+     * @return 验证统计信息
      */
     @NotNull
     public static ValidationStats getValidationStats(@NotNull Method method) {

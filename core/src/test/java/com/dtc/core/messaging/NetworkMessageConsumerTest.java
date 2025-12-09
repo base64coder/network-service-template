@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * NetworkMessageConsumer 单元测试
+ * NetworkMessageConsumer 氓聧聲氓聟聝忙碌聥猫炉聲
  */
 public class NetworkMessageConsumerTest {
 
@@ -57,9 +57,9 @@ public class NetworkMessageConsumerTest {
     }
 
     @Test
-    @DisplayName("测试消费HTTP消息")
+    @DisplayName("忙碌聥猫炉聲忙露聢猫麓鹿HTTP忙露聢忙聛炉")
     void testConsumeHttpMessage() {
-        // 创建HTTP消息事件
+        // 氓聢聸氓禄潞HTTP忙露聢忙聛炉盲潞聥盲禄露
         NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("http")
                 .message(mock(FullHttpRequest.class))
@@ -67,17 +67,17 @@ public class NetworkMessageConsumerTest {
                 .messageType("HTTP_REQUEST")
                 .build();
 
-        // 消费消息
+        // 忙露聢猫麓鹿忙露聢忙聛炉
         consumer.consume(event, 1L, true);
 
-        // 验证HTTP处理器被调用
+        // 茅陋聦猫炉聛HTTP氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
         verify(httpMessageHandler).handleMessage(event);
     }
 
     @Test
-    @DisplayName("测试消费WebSocket消息")
+    @DisplayName("忙碌聥猫炉聲忙露聢猫麓鹿WebSocket忙露聢忙聛炉")
     void testConsumeWebSocketMessage() {
-        // 创建WebSocket消息事件
+        // 氓聢聸氓禄潞WebSocket忙露聢忙聛炉盲潞聥盲禄露
         NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("websocket")
                 .message(mock(TextWebSocketFrame.class))
@@ -85,17 +85,17 @@ public class NetworkMessageConsumerTest {
                 .messageType("WEBSOCKET_FRAME")
                 .build();
 
-        // 消费消息
+        // 忙露聢猫麓鹿忙露聢忙聛炉
         consumer.consume(event, 1L, true);
 
-        // 验证WebSocket处理器被调用
+        // 茅陋聦猫炉聛WebSocket氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
         verify(webSocketMessageHandler).handleMessage(event);
     }
 
     @Test
-    @DisplayName("测试消费MQTT消息")
+    @DisplayName("忙碌聥猫炉聲忙露聢猫麓鹿MQTT忙露聢忙聛炉")
     void testConsumeMqttMessage() {
-        // 创建MQTT消息事件
+        // 氓聢聸氓禄潞MQTT忙露聢忙聛炉盲潞聥盲禄露
         NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("mqtt")
                 .message("MQTT message")
@@ -103,17 +103,17 @@ public class NetworkMessageConsumerTest {
                 .messageType("MQTT_MESSAGE")
                 .build();
 
-        // 消费消息
+        // 忙露聢猫麓鹿忙露聢忙聛炉
         consumer.consume(event, 1L, true);
 
-        // 验证MQTT处理器被调用
+        // 茅陋聦猫炉聛MQTT氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
         verify(mqttMessageHandler).handleMessage(event);
     }
 
     @Test
-    @DisplayName("测试消费TCP消息")
+    @DisplayName("忙碌聥猫炉聲忙露聢猫麓鹿TCP忙露聢忙聛炉")
     void testConsumeTcpMessage() {
-        // 创建TCP消息事件
+        // 氓聢聸氓禄潞TCP忙露聢忙聛炉盲潞聥盲禄露
         ByteBuf byteBuf = Unpooled.buffer();
         byteBuf.writeBytes("TCP message".getBytes());
 
@@ -124,35 +124,33 @@ public class NetworkMessageConsumerTest {
                 .messageType("TCP_MESSAGE")
                 .build();
 
-        // 消费消息
+        // 忙露聢猫麓鹿忙露聢忙聛炉
         consumer.consume(event, 1L, true);
 
-        // 验证TCP处理器被调用
+        // 茅陋聦猫炉聛TCP氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
         verify(tcpMessageHandler).handleMessage(event);
     }
 
     @Test
-    @DisplayName("测试消费自定义协议消息")
+    @DisplayName("忙碌聥猫炉聲忙露聢猫麓鹿猫聡陋氓庐職盲鹿聣氓聧聫猫庐庐忙露聢忙聛?)
     void testConsumeCustomMessage() {
-        // 创建自定义协议消息事件
-        NetworkMessageEvent event = NetworkMessageEvent.builder()
+        // 氓聢聸氓禄潞猫聡陋氓庐職盲鹿聣氓聧聫猫庐庐忙露聢忙聛炉盲潞聥盲禄?        NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("custom")
                 .message("Custom message")
                 .channelContext(channelContext)
                 .messageType("CUSTOM_MESSAGE")
                 .build();
 
-        // 消费消息
+        // 忙露聢猫麓鹿忙露聢忙聛炉
         consumer.consume(event, 1L, true);
 
-        // 验证自定义协议处理器被调用
-        verify(customMessageHandler).handleMessage(event);
+        // 茅陋聦猫炉聛猫聡陋氓庐職盲鹿聣氓聧聫猫庐庐氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰?        verify(customMessageHandler).handleMessage(event);
     }
 
     @Test
-    @DisplayName("测试消费未知协议消息")
+    @DisplayName("忙碌聥猫炉聲忙露聢猫麓鹿忙聹陋莽聼楼氓聧聫猫庐庐忙露聢忙聛炉")
     void testConsumeUnknownProtocolMessage() {
-        // 创建未知协议消息事件
+        // 氓聢聸氓禄潞忙聹陋莽聼楼氓聧聫猫庐庐忙露聢忙聛炉盲潞聥盲禄露
         NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("unknown")
                 .message("Unknown message")
@@ -160,10 +158,9 @@ public class NetworkMessageConsumerTest {
                 .messageType("UNKNOWN_MESSAGE")
                 .build();
 
-        // 消费消息（不应该抛出异常）
-        assertDoesNotThrow(() -> consumer.consume(event, 1L, true));
+        // 忙露聢猫麓鹿忙露聢忙聛炉茂录聢盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂茂录?        assertDoesNotThrow(() -> consumer.consume(event, 1L, true));
 
-        // 验证没有处理器被调用
+        // 茅陋聦猫炉聛忙虏隆忙聹聣氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
         verify(httpMessageHandler, never()).handleMessage(any());
         verify(webSocketMessageHandler, never()).handleMessage(any());
         verify(mqttMessageHandler, never()).handleMessage(any());
@@ -172,28 +169,25 @@ public class NetworkMessageConsumerTest {
     }
 
     @Test
-    @DisplayName("测试消费空消息")
+    @DisplayName("忙碌聥猫炉聲忙露聢猫麓鹿莽漏潞忙露聢忙聛?)
     void testConsumeNullMessage() {
-        // 创建空消息事件
-        NetworkMessageEvent event = NetworkMessageEvent.builder()
+        // 氓聢聸氓禄潞莽漏潞忙露聢忙聛炉盲潞聥盲禄?        NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("http")
                 .message(null)
                 .channelContext(channelContext)
                 .messageType("NULL_MESSAGE")
                 .build();
 
-        // 消费消息（不应该抛出异常）
-        assertDoesNotThrow(() -> consumer.consume(event, 1L, true));
+        // 忙露聢猫麓鹿忙露聢忙聛炉茂录聢盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂茂录?        assertDoesNotThrow(() -> consumer.consume(event, 1L, true));
     }
 
     @Test
-    @DisplayName("测试处理器异常处理")
+    @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠氓聶篓氓录聜氓赂赂氓陇聞莽聬?)
     void testHandlerExceptionHandling() {
-        // Mock处理器抛出异常
-        doThrow(new RuntimeException("Handler error"))
+        // Mock氓陇聞莽聬聠氓聶篓忙聤聸氓聡潞氓录聜氓赂?        doThrow(new RuntimeException("Handler error"))
                 .when(httpMessageHandler).handleMessage(any());
 
-        // 创建HTTP消息事件
+        // 氓聢聸氓禄潞HTTP忙露聢忙聛炉盲潞聥盲禄露
         NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("http")
                 .message(mock(FullHttpRequest.class))
@@ -201,18 +195,17 @@ public class NetworkMessageConsumerTest {
                 .messageType("HTTP_REQUEST")
                 .build();
 
-        // 消费消息（不应该抛出异常）
-        assertDoesNotThrow(() -> consumer.consume(event, 1L, true));
+        // 忙露聢猫麓鹿忙露聢忙聛炉茂录聢盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂茂录?        assertDoesNotThrow(() -> consumer.consume(event, 1L, true));
     }
 
     @Test
-    @DisplayName("测试并发消费")
+    @DisplayName("忙碌聥猫炉聲氓鹿露氓聫聭忙露聢猫麓鹿")
     void testConcurrentConsumption() throws InterruptedException {
         int threadCount = 10;
         int messagesPerThread = 100;
         Thread[] threads = new Thread[threadCount];
 
-        // 创建多个线程并发消费消息
+        // 氓聢聸氓禄潞氓陇職盲赂陋莽潞驴莽篓聥氓鹿露氓聫聭忙露聢猫麓鹿忙露聢忙聛炉
         for (int i = 0; i < threadCount; i++) {
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < messagesPerThread; j++) {
@@ -228,25 +221,22 @@ public class NetworkMessageConsumerTest {
             });
         }
 
-        // 启动所有线程
-        for (Thread thread : threads) {
+        // 氓聬炉氓聤篓忙聣聙忙聹聣莽潞驴莽篓?        for (Thread thread : threads) {
             thread.start();
         }
 
-        // 等待所有线程完成
-        for (Thread thread : threads) {
+        // 莽颅聣氓戮聟忙聣聙忙聹聣莽潞驴莽篓聥氓庐聦忙聢?        for (Thread thread : threads) {
             thread.join();
         }
 
-        // 验证所有消息都被处理
-        verify(httpMessageHandler, times(threadCount * messagesPerThread))
+        // 茅陋聦猫炉聛忙聣聙忙聹聣忙露聢忙聛炉茅聝陆猫垄芦氓陇聞莽聬?        verify(httpMessageHandler, times(threadCount * messagesPerThread))
                 .handleMessage(any(NetworkMessageEvent.class));
     }
 
     @Test
-    @DisplayName("测试不同消息类型的处理")
+    @DisplayName("忙碌聥猫炉聲盲赂聧氓聬聦忙露聢忙聛炉莽卤禄氓聻聥莽職聞氓陇聞莽聬?)
     void testDifferentMessageTypes() {
-        // 测试HTTP消息
+        // 忙碌聥猫炉聲HTTP忙露聢忙聛炉
         NetworkMessageEvent httpEvent = NetworkMessageEvent.builder()
                 .protocolType("http")
                 .message(mock(FullHttpRequest.class))
@@ -256,7 +246,7 @@ public class NetworkMessageConsumerTest {
         consumer.consume(httpEvent, 1L, true);
         verify(httpMessageHandler).handleMessage(httpEvent);
 
-        // 测试WebSocket消息
+        // 忙碌聥猫炉聲WebSocket忙露聢忙聛炉
         NetworkMessageEvent wsEvent = NetworkMessageEvent.builder()
                 .protocolType("websocket")
                 .message(mock(TextWebSocketFrame.class))
@@ -266,7 +256,7 @@ public class NetworkMessageConsumerTest {
         consumer.consume(wsEvent, 1L, true);
         verify(webSocketMessageHandler).handleMessage(wsEvent);
 
-        // 测试MQTT消息
+        // 忙碌聥猫炉聲MQTT忙露聢忙聛炉
         NetworkMessageEvent mqttEvent = NetworkMessageEvent.builder()
                 .protocolType("mqtt")
                 .message("MQTT message")
@@ -276,7 +266,7 @@ public class NetworkMessageConsumerTest {
         consumer.consume(mqttEvent, 1L, true);
         verify(mqttMessageHandler).handleMessage(mqttEvent);
 
-        // 测试TCP消息
+        // 忙碌聥猫炉聲TCP忙露聢忙聛炉
         ByteBuf tcpData = Unpooled.buffer();
         tcpData.writeBytes("TCP data".getBytes());
         NetworkMessageEvent tcpEvent = NetworkMessageEvent.builder()
@@ -288,8 +278,7 @@ public class NetworkMessageConsumerTest {
         consumer.consume(tcpEvent, 1L, true);
         verify(tcpMessageHandler).handleMessage(tcpEvent);
 
-        // 测试自定义协议消息
-        NetworkMessageEvent customEvent = NetworkMessageEvent.builder()
+        // 忙碌聥猫炉聲猫聡陋氓庐職盲鹿聣氓聧聫猫庐庐忙露聢忙聛?        NetworkMessageEvent customEvent = NetworkMessageEvent.builder()
                 .protocolType("custom")
                 .message("Custom message")
                 .channelContext(channelContext)
@@ -300,12 +289,12 @@ public class NetworkMessageConsumerTest {
     }
 
     @Test
-    @DisplayName("测试性能")
+    @DisplayName("忙碌聥猫炉聲忙聙搂猫聝陆")
     void testPerformance() {
         int messageCount = 10000;
         long startTime = System.currentTimeMillis();
 
-        // 处理大量消息
+        // 氓陇聞莽聬聠氓陇搂茅聡聫忙露聢忙聛炉
         for (int i = 0; i < messageCount; i++) {
             NetworkMessageEvent event = NetworkMessageEvent.builder()
                     .protocolType("http")
@@ -320,10 +309,9 @@ public class NetworkMessageConsumerTest {
         long endTime = System.currentTimeMillis();
         long duration = endTime - startTime;
 
-        // 验证性能（应该能在1秒内处理10000条消息）
-        assertTrue(duration < 1000, "处理10000条消息应该在1秒内完成");
+        // 茅陋聦猫炉聛忙聙搂猫聝陆茂录聢氓潞聰猫炉楼猫聝陆氓聹?莽搂聮氓聠聟氓陇聞莽聬聠10000忙聺隆忙露聢忙聛炉茂录聣
+        assertTrue(duration < 1000, "氓陇聞莽聬聠10000忙聺隆忙露聢忙聛炉氓潞聰猫炉楼氓聹篓1莽搂聮氓聠聟氓庐聦忙聢聬");
 
-        // 验证所有消息都被处理
-        verify(httpMessageHandler, times(messageCount)).handleMessage(any(NetworkMessageEvent.class));
+        // 茅陋聦猫炉聛忙聣聙忙聹聣忙露聢忙聛炉茅聝陆猫垄芦氓陇聞莽聬?        verify(httpMessageHandler, times(messageCount)).handleMessage(any(NetworkMessageEvent.class));
     }
 }

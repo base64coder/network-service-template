@@ -13,7 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Disruptor 高性能环形队列 实现生产-消费模式解耦，提供低延迟的消息处理
+ * Disruptor 队列实现
+ * 基于高性能无锁队列Disruptor实现，提供高吞吐量的消息处理
  * 
  * @author Network Service Template
  */
@@ -35,7 +36,7 @@ public class DisruptorQueue<T> {
         // 创建事件工厂
         QueueEventFactory<T> eventFactory = new QueueEventFactory<>();
 
-        // 创建执行器
+        // 创建线程池
         Executor executor = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "DisruptorQueue-Worker");
             t.setDaemon(true);
@@ -99,9 +100,9 @@ public class DisruptorQueue<T> {
     }
 
     /**
-     * 添加消费者
+     * 添加消息消费者
      * 
-     * @param consumer 消费者
+     * @param consumer 消息消费者
      */
     public void addConsumer(@NotNull QueueConsumer<T> consumer) {
         @SuppressWarnings("unchecked")
@@ -111,9 +112,9 @@ public class DisruptorQueue<T> {
     }
 
     /**
-     * 添加多个消费者（并行处理）
+     * 添加多个消息消费者，用于并行处理
      * 
-     * @param consumers 消费者数组
+     * @param consumers 消息消费者数组
      */
     @SafeVarargs
     public final void addConsumers(@NotNull QueueConsumer<T>... consumers) {
@@ -136,7 +137,7 @@ public class DisruptorQueue<T> {
     }
 
     /**
-     * 队列事件
+     * 队列事件数据
      */
     public static class QueueEvent<T> {
         private T data;
@@ -185,7 +186,7 @@ public class DisruptorQueue<T> {
                 consumer.consume(event.getData(), sequence, endOfBatch);
             } catch (Exception e) {
                 log.error("Error processing queue event", e);
-                // 可以在这里添加错误处理逻辑
+                // 可以通过路由管理器实现错误处理逻辑
             }
         }
     }

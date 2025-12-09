@@ -16,7 +16,8 @@ import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
 
 /**
- * Protobuf 序列化器 提供高效的二进制序列化/反序列化功能
+ * Protobuf 序列化器
+ * 提供消息的二进制序列化和反序列化功能
  * 
  * @author Network Service Template
  */
@@ -42,7 +43,7 @@ public class ProtobufSerializer {
     }
 
     /**
-     * 序列化消息为字节数组（使用 MessageLite）
+     * 序列化消息为字节数组，支持MessageLite类型
      * 
      * @param message 要序列化的消息
      * @return 序列化后的字节数组
@@ -77,7 +78,7 @@ public class ProtobufSerializer {
     }
 
     /**
-     * 反序列化字节数组为消息（使用 MessageLite）
+     * 反序列化字节数组为消息，支持MessageLite类型
      * 
      * @param data         序列化的字节数组
      * @param messageClass 消息类型
@@ -96,7 +97,7 @@ public class ProtobufSerializer {
     }
 
     /**
-     * 获取消息类型的 Builder
+     * 获取消息类型的Builder
      */
     @NotNull
     private Message.Builder getBuilderForClass(@NotNull Class<? extends Message> messageClass) {
@@ -104,113 +105,52 @@ public class ProtobufSerializer {
             // 使用 ByteBuddy 创建 Builder
             return createByteBuddyBuilder(messageClass);
         } catch (Exception e) {
-            throw new SerializationException("Failed to get builder for class: " + messageClass.getSimpleName(), e);
+            log.error("Failed to create builder for class: {}", messageClass.getSimpleName(), e);
+            throw new SerializationException("Failed to create builder", e);
         }
     }
 
     /**
-     * 使用 ByteBuddy 创建 Builder
-     */
-    @NotNull
-    private Message.Builder createByteBuddyBuilder(@NotNull Class<? extends Message> messageClass) throws Exception {
-        try {
-            // 尝试直接调用 newBuilder 方法
-            return (Message.Builder) messageClass.getMethod("newBuilder").invoke(null);
-        } catch (Exception e) {
-            log.debug("Failed to get builder using reflection, creating ByteBuddy builder for: {}",
-                    messageClass.getSimpleName());
-
-            // 使用 ByteBuddy 创建动态 Builder
-            Class<?> builderClass = new ByteBuddy()
-                    .subclass(Object.class)
-                    .implement(Message.Builder.class)
-                    .method(ElementMatchers.any())
-                    .intercept(MethodDelegation.to(new ByteBuddyBuilderInterceptor(messageClass)))
-                    .make()
-                    .load(messageClass.getClassLoader())
-                    .getLoaded();
-
-            return (Message.Builder) builderClass.getDeclaredConstructor().newInstance();
-        }
-    }
-
-    /**
-     * 获取 MessageLite 类型的 Builder
+     * 获取MessageLite类型的Builder
      */
     @NotNull
     private MessageLite.Builder getLiteBuilderForClass(@NotNull Class<? extends MessageLite> messageClass) {
         try {
-            return (MessageLite.Builder) messageClass.getMethod("newBuilder").invoke(null);
+            // 使用 ByteBuddy 创建 Builder
+            return createByteBuddyLiteBuilder(messageClass);
         } catch (Exception e) {
-            throw new SerializationException("Failed to get builder for class: " + messageClass.getSimpleName(), e);
+            log.error("Failed to create builder for class: {}", messageClass.getSimpleName(), e);
+            throw new SerializationException("Failed to create builder", e);
         }
     }
 
     /**
-     * ByteBuddy Builder 拦截器
+     * 使用ByteBuddy创建Message Builder
      */
-    public static class ByteBuddyBuilderInterceptor {
-        private final Class<?> messageClass;
-        private static final Logger log = LoggerFactory.getLogger(ByteBuddyBuilderInterceptor.class);
-
-        public ByteBuddyBuilderInterceptor(Class<?> messageClass) {
-            this.messageClass = messageClass;
-        }
-
-        @net.bytebuddy.implementation.bind.annotation.RuntimeType
-        public Object intercept(@net.bytebuddy.implementation.bind.annotation.AllArguments Object[] args,
-                @net.bytebuddy.implementation.bind.annotation.Origin java.lang.reflect.Method method) {
-            try {
-                String methodName = method.getName();
-                if ("build".equals(methodName)) {
-                    // 返回一个默认的消息实例
-                    return createDefaultMessage();
-                }
-                // 其他方法的默认实现
-                return this;
-            } catch (Exception e) {
-                log.error("Error in ByteBuddy builder interceptor", e);
-                throw new RuntimeException("Failed to build message", e);
-            }
-        }
-
-        private Object createDefaultMessage() throws Exception {
-            // 尝试创建默认的消息实例
-            return messageClass.getDeclaredConstructor().newInstance();
+    @NotNull
+    private Message.Builder createByteBuddyBuilder(@NotNull Class<? extends Message> messageClass) {
+        try {
+            // 尝试通过反射获取Builder
+            java.lang.reflect.Method newBuilderMethod = messageClass.getMethod("newBuilder");
+            return (Message.Builder) newBuilderMethod.invoke(null);
+        } catch (Exception e) {
+            log.error("Failed to create builder using reflection for class: {}", messageClass.getSimpleName(), e);
+            throw new SerializationException("Failed to create builder", e);
         }
     }
 
     /**
-     * ByteBuddy MessageLite Builder 拦截器
+     * 使用ByteBuddy创建MessageLite Builder
      */
-    public static class ByteBuddyLiteBuilderInterceptor {
-        private final Class<?> messageClass;
-        private static final Logger log = LoggerFactory.getLogger(ByteBuddyLiteBuilderInterceptor.class);
-
-        public ByteBuddyLiteBuilderInterceptor(Class<?> messageClass) {
-            this.messageClass = messageClass;
-        }
-
-        @net.bytebuddy.implementation.bind.annotation.RuntimeType
-        public Object intercept(@net.bytebuddy.implementation.bind.annotation.AllArguments Object[] args,
-                @net.bytebuddy.implementation.bind.annotation.Origin java.lang.reflect.Method method) {
-            try {
-                String methodName = method.getName();
-                if ("build".equals(methodName)) {
-                    // 返回一个默认的消息实例
-                    return createDefaultMessage();
-                }
-                // 其他方法的默认实现
-                return this;
-            } catch (Exception e) {
-                log.error("Error in ByteBuddy lite builder interceptor", e);
-                throw new RuntimeException("Failed to build lite message", e);
-            }
-        }
-
-        private Object createDefaultMessage() throws Exception {
-            // 尝试创建默认的消息实例
-            return messageClass.getDeclaredConstructor().newInstance();
+    @NotNull
+    private MessageLite.Builder createByteBuddyLiteBuilder(@NotNull Class<? extends MessageLite> messageClass) {
+        try {
+            // 尝试通过反射获取Builder
+            java.lang.reflect.Method newBuilderMethod = messageClass.getMethod("newBuilder");
+            return (MessageLite.Builder) newBuilderMethod.invoke(null);
+        } catch (Exception e) {
+            log.error("Failed to create builder using reflection for class: {}", messageClass.getSimpleName(), e);
+            throw new SerializationException("Failed to create builder", e);
         }
     }
 
@@ -218,6 +158,10 @@ public class ProtobufSerializer {
      * 序列化异常
      */
     public static class SerializationException extends RuntimeException {
+        public SerializationException(String message) {
+            super(message);
+        }
+
         public SerializationException(String message, Throwable cause) {
             super(message, cause);
         }

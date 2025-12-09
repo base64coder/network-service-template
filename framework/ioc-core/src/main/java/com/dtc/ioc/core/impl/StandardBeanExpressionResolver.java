@@ -8,11 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 标准Bean表达式解析器实现
- * 借鉴Spring StandardBeanExpressionResolver的设计
- * 
- * @author Network Service Template
- */
+     * æ åBeanè¡¨è¾¾å¼è§£æå¨å®ç°
+åé´Spring StandardBeanExpressionResolverçè®¾è®¡
+@author Network Service Template
+/
 public class StandardBeanExpressionResolver implements BeanExpressionResolver {
     
     private static final Logger log = LoggerFactory.getLogger(StandardBeanExpressionResolver.class);
@@ -21,25 +20,25 @@ public class StandardBeanExpressionResolver implements BeanExpressionResolver {
     @Nullable
     public Object evaluate(@NotNull String value, @NotNull BeanExpressionContext evalContext) {
         try {
-            log.debug("🔧 Evaluating expression: {}", value);
+            log.debug("ð§ Evaluating expression: {}", value);
             
-            // 简化实现，支持基本的Bean引用
+            // ç®åå®ç°ï¼æ¯æåºæ¬çBeanå¼ç¨
             if (value.startsWith("@") && value.length() > 1) {
                 String beanName = value.substring(1);
                 return evalContext.getBean(beanName);
             }
             
-            // 支持系统属性引用
+            // æ¯æç³»ç»å±æ§å¼ç¨
             if (value.startsWith("${") && value.endsWith("}")) {
                 String propertyName = value.substring(2, value.length() - 1);
                 return System.getProperty(propertyName);
             }
             
-            // 默认返回原值
+            // é»è®¤è¿ååå¼
             return value;
             
         } catch (Exception e) {
-            log.error("❌ Error evaluating expression: {}", value, e);
+            log.error("â Error evaluating expression: {}", value, e);
             return null;
         }
     }

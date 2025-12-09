@@ -4,8 +4,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Scope;
 
 /**
- * 懒加载单例作用域
- * 提供懒加载单例功能
+ * 延迟单例作用域
+ * 注册延迟单例作用域
  * 
  * @author Network Service Template
  */

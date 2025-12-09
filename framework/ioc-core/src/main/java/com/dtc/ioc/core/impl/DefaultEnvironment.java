@@ -10,20 +10,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 默认环境配置实现
- * 借鉴Spring Environment的设计
- * 
- * @author Network Service Template
- */
+     * é»è®¤ç¯å¢éç½®å®ç°
+åé´Spring Environmentçè®¾è®¡
+@author Network Service Template
+/
 public class DefaultEnvironment implements Environment {
     
     private static final Logger log = LoggerFactory.getLogger(DefaultEnvironment.class);
     
-    // 配置属性存储
+    // éç½®å±æ§å­å¨
     private final Map<String, Object> properties = new ConcurrentHashMap<>();
     
     public DefaultEnvironment() {
-        // 初始化默认配置
+        // åå§åé»è®¤éç½®
         initializeDefaultProperties();
     }
     
@@ -72,27 +71,26 @@ public class DefaultEnvironment implements Environment {
     }
     
     /**
-     * 设置配置属性
-     * 
-     * @param key 属性键
-     * @param value 属性值
-     */
+     * è®¾ç½®éç½®å±æ§
+@param key å±æ§é®
+@param value å±æ§å¼
+/
     public void setProperty(String key, Object value) {
         properties.put(key, value);
-        log.debug("🔧 Property set: {} = {}", key, value);
+        log.debug("ð§ Property set: {} = {}", key, value);
     }
     
     /**
-     * 初始化默认配置
-     */
+     * åå§åé»è®¤éç½®
+/
     private void initializeDefaultProperties() {
-        // 设置默认配置
+        // è®¾ç½®é»è®¤éç½®
         setProperty("application.name", "Network Service Template");
         setProperty("application.version", "1.0.0");
         setProperty("server.port", 8080);
         setProperty("server.host", "localhost");
         setProperty("logging.level", "INFO");
         
-        log.debug("🔧 Default properties initialized");
+        log.debug("ð§ Default properties initialized");
     }
 }

@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 扩展关闭管理器
- * 提供统一的扩展停止策略和优雅关闭机制
+ * 提供管理扩展关闭的策略和优雅关闭流程
  * 
  * @author Network Service Template
  */
@@ -22,7 +22,6 @@ public class ExtensionShutdownManager {
 
     private static final Logger log = LoggerFactory.getLogger(ExtensionShutdownManager.class);
     private static final long DEFAULT_SHUTDOWN_TIMEOUT_MS = 30000; // 30秒默认超时
-
     private final ExtensionManager extensionManager;
 
     @Inject
@@ -62,10 +61,10 @@ public class ExtensionShutdownManager {
                     return;
                 }
 
-                // 按优先级排序（优先级高的先关闭）
+                // 按优先级排序，优先级高的先关闭
                 extensions.sort((e1, e2) -> Integer.compare(e2.getPriority(), e1.getPriority()));
 
-                // 并行关闭所有扩展
+                // 逐个关闭所有扩展
                 AtomicInteger completedCount = new AtomicInteger(0);
                 @SuppressWarnings("unchecked")
                 CompletableFuture<Void>[] shutdownFutures = extensions.stream()
@@ -109,13 +108,13 @@ public class ExtensionShutdownManager {
                     log.debug("Extension {} prepared for shutdown", extensionId);
                 }
 
-                // 步骤2: 停止接收新请求
+                // 步骤2: 停止接受新请求
                 stopAcceptingNewRequests(extension);
 
-                // 步骤3: 等待正在处理的请求完成
+                // 步骤3: 等待待处理的请求完成
                 waitForPendingRequests(extension, timeoutMs);
 
-                // 步骤4: 关闭连接
+                // 步骤4: 关闭活动连接
                 closeActiveConnections(extension);
 
                 // 步骤5: 停止扩展
@@ -137,7 +136,7 @@ public class ExtensionShutdownManager {
     }
 
     /**
-     * 停止接收新请求
+     * 停止接受新请求
      * 
      * @param extension 扩展
      */
@@ -149,18 +148,18 @@ public class ExtensionShutdownManager {
             // 设置扩展为禁用状态
             extension.setEnabled(false);
 
-            // 根据扩展类型执行特定的停止逻辑
+            // 根据扩展类型执行相应的停止操作
             if (extensionId.contains("http")) {
-                // HTTP 扩展：移除路由
+                // HTTP 扩展需要移除路由
                 log.debug("Removing HTTP routes for extension: {}", extensionId);
             } else if (extensionId.contains("tcp")) {
-                // TCP 扩展：关闭端口
+                // TCP 扩展需要关闭端口
                 log.debug("Closing TCP port for extension: {}", extensionId);
             } else if (extensionId.contains("websocket")) {
-                // WebSocket 扩展：关闭端口
+                // WebSocket 扩展需要关闭端口
                 log.debug("Closing WebSocket port for extension: {}", extensionId);
             } else if (extensionId.contains("mqtt")) {
-                // MQTT 扩展：关闭端口
+                // MQTT 扩展需要关闭端口
                 log.debug("Closing MQTT port for extension: {}", extensionId);
             }
 
@@ -171,7 +170,7 @@ public class ExtensionShutdownManager {
     }
 
     /**
-     * 等待正在处理的请求完成
+     * 等待待处理的请求完成
      * 
      * @param extension 扩展
      * @param timeoutMs 超时时间
@@ -181,7 +180,7 @@ public class ExtensionShutdownManager {
             String extensionId = extension.getId();
             log.debug("Waiting for pending requests to complete for extension: {}", extensionId);
 
-            // 检查扩展是否支持统计功能（通过StatisticsAware基类）
+            // 检查扩展是否支持统计功能，如果支持则使用StatisticsAware接口
             if (extension instanceof com.dtc.core.statistics.StatisticsAware) {
                 com.dtc.core.statistics.StatisticsAware statsExtension = (com.dtc.core.statistics.StatisticsAware) extension;
                 long pendingRequests = statsExtension.getPendingRequestCount();
@@ -217,7 +216,7 @@ public class ExtensionShutdownManager {
     }
 
     /**
-     * 关闭活跃连接
+     * 关闭活动连接
      * 
      * @param extension 扩展
      */
@@ -226,8 +225,8 @@ public class ExtensionShutdownManager {
             String extensionId = extension.getId();
             log.debug("Closing active connections for extension: {}", extensionId);
 
-            // 根据扩展类型执行特定的连接关闭逻辑
-            // 使用反射来避免硬编码类型依赖
+            // 根据扩展类型执行相应的连接关闭操作
+            // 使用反射调用优雅关闭连接的方法
             try {
                 if (extensionId.contains("tcp")) {
                     // 尝试调用 TCP 扩展的连接关闭方法
@@ -275,13 +274,13 @@ public class ExtensionShutdownManager {
             activeRequests = gracefulExtension.getActiveRequestCount();
         }
 
-        // 检查扩展是否支持统计功能（通过StatisticsAware基类）
+        // 检查扩展是否支持统计功能，如果支持则使用StatisticsAware接口
         if (extension instanceof com.dtc.core.statistics.StatisticsAware) {
             com.dtc.core.statistics.StatisticsAware statsExtension = (com.dtc.core.statistics.StatisticsAware) extension;
             activeRequests = statsExtension.getActiveRequestCount();
         }
 
-        // 尝试获取连接数量（使用反射避免硬编码类型依赖）
+        // 尝试获取连接数量，使用反射调用连接管理方法
         try {
             if (extensionId.contains("tcp") || extensionId.contains("websocket") || extensionId.contains("custom")) {
                 java.lang.reflect.Method method = extension.getClass().getMethod("getActiveConnectionCount");

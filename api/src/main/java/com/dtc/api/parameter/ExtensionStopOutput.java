@@ -4,39 +4,39 @@ import com.dtc.api.annotations.NotNull;
 
 import java.util.Optional;
 
-/**
- * 扩展停止输出参数
- * 
- * @author Network Service Template
- */
+/ææææ
+ææ æ©å±åæ­¢è¾åºåæ°
+ææ 
+ææ @author Network Service Template
+ææ/
 public interface ExtensionStopOutput {
 
-    /**
-     * 设置停止失败原因
-     * 
-     * @param reason 失败原因
-     */
+    /ææææ
+ææ è®¾ç½®åæ­¢å¤±è´¥åå 
+ææ 
+ææ @param reason å¤±è´¥åå 
+ææ/
     void preventStop(@NotNull String reason);
 
-    /**
-     * 获取停止失败原因
-     * 
-     * @return 失败原因，如果停止成功则返回空
-     */
+    /ææææ
+ææ è·ååæ­¢å¤±è´¥åå 
+ææ 
+ææ @return å¤±è´¥åå ï¼å¦æåæ­¢æååè¿åç©º
+ææ/
     @NotNull
     Optional<String> getReason();
 
-    /**
-     * 设置清理延迟时间（毫秒）
-     * 
-     * @param delayMs 延迟时间
-     */
+    /ææææ
+ææ è®¾ç½®æ¸çå»¶è¿æ¶é´ï¼æ¯«ç§ï¼
+ææ 
+ææ @param delayMs å»¶è¿æ¶é´
+ææ/
     void setCleanupDelay(long delayMs);
 
-    /**
-     * 获取清理延迟时间
-     * 
-     * @return 延迟时间
-     */
+    /ææææ
+ææ è·åæ¸çå»¶è¿æ¶é´
+ææ 
+ææ @return å»¶è¿æ¶é´
+ææ/
     long getCleanupDelay();
 }

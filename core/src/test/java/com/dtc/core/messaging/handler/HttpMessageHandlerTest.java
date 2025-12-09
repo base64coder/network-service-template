@@ -1,8 +1,8 @@
 package com.dtc.core.messaging.handler;
 
-import com.dtc.core.http.HttpRequestEx;
-import com.dtc.core.http.HttpRequestHandler;
-import com.dtc.core.http.HttpResponseEx;
+import com.dtc.core.network.http.HttpRequestEx;
+import com.dtc.core.network.http.HttpRequestHandler;
+import com.dtc.core.network.http.HttpResponseEx;
 import com.dtc.core.messaging.NetworkMessageEvent;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.Channel;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * HttpMessageHandler 单元测试
+ * HttpMessageHandler 氓聧聲氓聟聝忙碌聥猫炉聲
  */
 public class HttpMessageHandlerTest {
 
@@ -37,33 +37,33 @@ public class HttpMessageHandlerTest {
         @BeforeEach
         void setUp() {
                 MockitoAnnotations.openMocks(this);
-                // 设置channelContext.channel()返回mock channel
+                // 猫庐戮莽陆庐channelContext.channel()猫驴聰氓聸聻mock channel
                 when(channelContext.channel()).thenReturn(channel);
-                // 设置channel.isActive()返回true
+                // 猫庐戮莽陆庐channel.isActive()猫驴聰氓聸聻true
                 when(channel.isActive()).thenReturn(true);
-                // 设置channel的writeAndFlush方法返回ChannelFuture
+                // 猫庐戮莽陆庐channel莽職聞writeAndFlush忙聳鹿忙鲁聲猫驴聰氓聸聻ChannelFuture
                 when(channel.writeAndFlush(any())).thenReturn(mock(io.netty.channel.ChannelFuture.class));
-                // 设置ctx.writeAndFlush返回ChannelFuture
+                // 猫庐戮莽陆庐ctx.writeAndFlush猫驴聰氓聸聻ChannelFuture
                 when(channelContext.writeAndFlush(any())).thenReturn(mock(io.netty.channel.ChannelFuture.class));
-                // 默认Mock requestHandler返回一个非null响应
+                // 茅禄聵猫庐陇Mock requestHandler猫驴聰氓聸聻盲赂聙盲赂陋茅聺聻null氓聯聧氓潞聰
                 HttpResponseEx defaultResponse = mock(HttpResponseEx.class);
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(defaultResponse);
                 httpMessageHandler = new HttpMessageHandler(requestHandler);
         }
 
         @Test
-        @DisplayName("测试处理HTTP消息")
+        @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠HTTP忙露聢忙聛炉")
         void testHandleMessage() {
-                // 创建测试请求
+                // 氓聢聸氓禄潞忙碌聥猫炉聲猫炉路忙卤聜
                 FullHttpRequest nettyRequest = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
                                 HttpMethod.GET,
                                 "/test");
 
-                // 确保content不为null
+                // 莽隆庐盲驴聺content盲赂聧盲赂潞null
                 assertNotNull(nettyRequest.content(), "Request content should not be null");
 
-                // 创建网络消息事件
+                // 氓聢聸氓禄潞莽陆聭莽禄聹忙露聢忙聛炉盲潞聥盲禄露
                 NetworkMessageEvent event = NetworkMessageEvent.builder()
                                 .protocolType("http")
                                 .message(nettyRequest)
@@ -71,30 +71,27 @@ public class HttpMessageHandlerTest {
                                 .messageType("HTTP_REQUEST")
                                 .build();
 
-                // Mock请求处理器返回响应
-                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫驴聰氓聸聻氓聯聧氓潞?                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
 
-                // 测试处理消息
+                // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
                 try {
                         httpMessageHandler.handleMessage(event);
                 } catch (Exception e) {
-                        System.err.println("处理消息时抛出异常: " + e.getMessage());
+                        System.err.println("氓陇聞莽聬聠忙露聢忙聛炉忙聴露忙聤聸氓聡潞氓录聜氓赂? " + e.getMessage());
                         e.printStackTrace();
-                        fail("处理消息时不应该抛出异常: " + e.getMessage());
+                        fail("氓陇聞莽聬聠忙露聢忙聛炉忙聴露盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂: " + e.getMessage());
                 }
 
-                // 验证requestHandler被调用
-                verify(requestHandler, atLeastOnce()).handleRequest(any(HttpRequestEx.class));
+                // 茅陋聦猫炉聛requestHandler猫垄芦猫掳聝莽聰?                verify(requestHandler, atLeastOnce()).handleRequest(any(HttpRequestEx.class));
 
-                // 验证ctx.writeAndFlush被调用
-                verify(channelContext, atLeastOnce()).writeAndFlush(any());
+                // 茅陋聦猫炉聛ctx.writeAndFlush猫垄芦猫掳聝莽聰?                verify(channelContext, atLeastOnce()).writeAndFlush(any());
         }
 
         @Test
-        @DisplayName("测试处理POST请求")
+        @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠POST猫炉路忙卤聜")
         void testHandlePostRequest() {
-                // 创建POST请求
+                // 氓聢聸氓禄潞POST猫炉路忙卤聜
                 ByteBuf content = Unpooled.copiedBuffer("test body", io.netty.util.CharsetUtil.UTF_8);
                 FullHttpRequest postRequest = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
@@ -102,7 +99,7 @@ public class HttpMessageHandlerTest {
                                 "/api/test",
                                 content);
 
-                // 创建网络消息事件
+                // 氓聢聸氓禄潞莽陆聭莽禄聹忙露聢忙聛炉盲潞聥盲禄露
                 NetworkMessageEvent event = NetworkMessageEvent.builder()
                                 .protocolType("http")
                                 .message(postRequest)
@@ -110,33 +107,31 @@ public class HttpMessageHandlerTest {
                                 .messageType("HTTP_REQUEST")
                                 .build();
 
-                // Mock请求处理器返回响应
-                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫驴聰氓聸聻氓聯聧氓潞?                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
 
-                // 测试处理消息
+                // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
                 try {
                         httpMessageHandler.handleMessage(event);
                 } catch (Exception e) {
-                        System.err.println("处理消息时抛出异常: " + e.getMessage());
+                        System.err.println("氓陇聞莽聬聠忙露聢忙聛炉忙聴露忙聤聸氓聡潞氓录聜氓赂? " + e.getMessage());
                         e.printStackTrace();
-                        fail("处理消息时不应该抛出异常: " + e.getMessage());
+                        fail("氓陇聞莽聬聠忙露聢忙聛炉忙聴露盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂: " + e.getMessage());
                 }
 
-                // 验证请求处理器被调用
+                // 茅陋聦猫炉聛猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
                 verify(requestHandler).handleRequest(any(HttpRequestEx.class));
 
-                // 验证ctx.writeAndFlush被调用
-                verify(channelContext, atLeastOnce()).writeAndFlush(any());
+                // 茅陋聦猫炉聛ctx.writeAndFlush猫垄芦猫掳聝莽聰?                verify(channelContext, atLeastOnce()).writeAndFlush(any());
         }
 
         @Test
-        @DisplayName("测试处理非FullHttpRequest消息")
+        @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠茅聺聻FullHttpRequest忙露聢忙聛炉")
         void testHandleNonFullHttpRequestMessage() {
-                // 创建非FullHttpRequest消息
+                // 氓聢聸氓禄潞茅聺聻FullHttpRequest忙露聢忙聛炉
                 String nonHttpMessage = "not an HTTP request";
 
-                // 创建网络消息事件
+                // 氓聢聸氓禄潞莽陆聭莽禄聹忙露聢忙聛炉盲潞聥盲禄露
                 NetworkMessageEvent event = NetworkMessageEvent.builder()
                                 .protocolType("http")
                                 .message(nonHttpMessage)
@@ -144,50 +139,47 @@ public class HttpMessageHandlerTest {
                                 .messageType("HTTP_REQUEST")
                                 .build();
 
-                // 测试处理消息
+                // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
                 try {
                         httpMessageHandler.handleMessage(event);
                 } catch (Exception e) {
-                        System.err.println("处理消息时抛出异常: " + e.getMessage());
+                        System.err.println("氓陇聞莽聬聠忙露聢忙聛炉忙聴露忙聤聸氓聡潞氓录聜氓赂? " + e.getMessage());
                         e.printStackTrace();
-                        fail("处理消息时不应该抛出异常: " + e.getMessage());
+                        fail("氓陇聞莽聬聠忙露聢忙聛炉忙聴露盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂: " + e.getMessage());
                 }
 
-                // 验证请求处理器没有被调用
+                // 茅陋聦猫炉聛猫炉路忙卤聜氓陇聞莽聬聠氓聶篓忙虏隆忙聹聣猫垄芦猫掳聝莽聰篓
                 verify(requestHandler, never()).handleRequest(any());
 
-                // 验证响应没有被发送
-                verify(channelContext, never()).writeAndFlush(any());
+                // 茅陋聦猫炉聛氓聯聧氓潞聰忙虏隆忙聹聣猫垄芦氓聫聭茅聙?                verify(channelContext, never()).writeAndFlush(any());
         }
 
         @Test
-        @DisplayName("测试处理空消息")
+        @DisplayName("忙碌聥猫炉聲氓陇聞莽聬聠莽漏潞忙露聢忙聛?)
         void testHandleNullMessage() {
-                // 创建空消息事件
-                NetworkMessageEvent event = NetworkMessageEvent.builder()
+                // 氓聢聸氓禄潞莽漏潞忙露聢忙聛炉盲潞聥盲禄?                NetworkMessageEvent event = NetworkMessageEvent.builder()
                                 .protocolType("http")
                                 .message(null)
                                 .channelContext(channelContext)
                                 .messageType("HTTP_REQUEST")
                                 .build();
 
-                // 测试处理消息（不应该抛出异常）
-                assertDoesNotThrow(() -> httpMessageHandler.handleMessage(event));
+                // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉茂录聢盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂茂录?                assertDoesNotThrow(() -> httpMessageHandler.handleMessage(event));
 
-                // 验证请求处理器没有被调用
+                // 茅陋聦猫炉聛猫炉路忙卤聜氓陇聞莽聬聠氓聶篓忙虏隆忙聹聣猫垄芦猫掳聝莽聰篓
                 verify(requestHandler, never()).handleRequest(any());
         }
 
         @Test
-        @DisplayName("测试请求处理器异常")
+        @DisplayName("忙碌聥猫炉聲猫炉路忙卤聜氓陇聞莽聬聠氓聶篓氓录聜氓赂?)
         void testRequestHandlerException() {
-                // 创建测试请求
+                // 氓聢聸氓禄潞忙碌聥猫炉聲猫炉路忙卤聜
                 FullHttpRequest nettyRequest = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
                                 HttpMethod.GET,
                                 "/test");
 
-                // 创建网络消息事件
+                // 氓聢聸氓禄潞莽陆聭莽禄聹忙露聢忙聛炉盲潞聥盲禄露
                 NetworkMessageEvent event = NetworkMessageEvent.builder()
                                 .protocolType("http")
                                 .message(nettyRequest)
@@ -195,28 +187,25 @@ public class HttpMessageHandlerTest {
                                 .messageType("HTTP_REQUEST")
                                 .build();
 
-                // Mock请求处理器抛出异常
-                when(requestHandler.handleRequest(any(HttpRequestEx.class)))
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓忙聤聸氓聡潞氓录聜氓赂?                when(requestHandler.handleRequest(any(HttpRequestEx.class)))
                                 .thenThrow(new RuntimeException("Request handler error"));
 
-                // 测试处理消息（不应该抛出异常）
-                assertDoesNotThrow(() -> httpMessageHandler.handleMessage(event));
+                // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉茂录聢盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂茂录?                assertDoesNotThrow(() -> httpMessageHandler.handleMessage(event));
 
-                // 验证请求处理器被调用
+                // 茅陋聦猫炉聛猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
                 verify(requestHandler).handleRequest(any(HttpRequestEx.class));
 
-                // 验证channel.isActive()被调用（handleError中调用）
+                // 茅陋聦猫炉聛channel.isActive()猫垄芦猫掳聝莽聰篓茂录聢handleError盲赂颅猫掳聝莽聰篓茂录聣
                 verify(channel, atLeastOnce()).isActive();
         }
 
         @Test
-        @DisplayName("测试不同HTTP方法")
+        @DisplayName("忙碌聥猫炉聲盲赂聧氓聬聦HTTP忙聳鹿忙鲁聲")
         void testDifferentHttpMethods() {
-                // Mock请求处理器返回响应
-                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫驴聰氓聸聻氓聯聧氓潞?                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
 
-                // 测试GET请求
+                // 忙碌聥猫炉聲GET猫炉路忙卤聜
                 FullHttpRequest getRequest = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
                                 HttpMethod.GET,
@@ -229,7 +218,7 @@ public class HttpMessageHandlerTest {
                                 .build();
                 httpMessageHandler.handleMessage(getEvent);
 
-                // 测试POST请求
+                // 忙碌聥猫炉聲POST猫炉路忙卤聜
                 FullHttpRequest postRequest = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
                                 HttpMethod.POST,
@@ -242,7 +231,7 @@ public class HttpMessageHandlerTest {
                                 .build();
                 httpMessageHandler.handleMessage(postEvent);
 
-                // 测试PUT请求
+                // 忙碌聥猫炉聲PUT猫炉路忙卤聜
                 FullHttpRequest putRequest = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
                                 HttpMethod.PUT,
@@ -255,7 +244,7 @@ public class HttpMessageHandlerTest {
                                 .build();
                 httpMessageHandler.handleMessage(putEvent);
 
-                // 测试DELETE请求
+                // 忙碌聥猫炉聲DELETE猫炉路忙卤聜
                 FullHttpRequest deleteRequest = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
                                 HttpMethod.DELETE,
@@ -268,15 +257,14 @@ public class HttpMessageHandlerTest {
                                 .build();
                 httpMessageHandler.handleMessage(deleteEvent);
 
-                // 验证所有请求都被处理
-                verify(requestHandler, times(4)).handleRequest(any(HttpRequestEx.class));
+                // 茅陋聦猫炉聛忙聣聙忙聹聣猫炉路忙卤聜茅聝陆猫垄芦氓陇聞莽聬?                verify(requestHandler, times(4)).handleRequest(any(HttpRequestEx.class));
                 verify(channelContext, times(4)).writeAndFlush(mockResponse);
         }
 
         @Test
-        @DisplayName("测试带请求头的HTTP请求")
+        @DisplayName("忙碌聥猫炉聲氓赂娄猫炉路忙卤聜氓陇麓莽職聞HTTP猫炉路忙卤聜")
         void testHttpRequestWithHeaders() {
-                // 创建带请求头的HTTP请求
+                // 氓聢聸氓禄潞氓赂娄猫炉路忙卤聜氓陇麓莽職聞HTTP猫炉路忙卤聜
                 FullHttpRequest request = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
                                 HttpMethod.GET,
@@ -285,7 +273,7 @@ public class HttpMessageHandlerTest {
                 request.headers().set("Authorization", "Bearer token");
                 request.headers().set("User-Agent", "Test Client");
 
-                // 创建网络消息事件
+                // 氓聢聸氓禄潞莽陆聭莽禄聹忙露聢忙聛炉盲潞聥盲禄露
                 NetworkMessageEvent event = NetworkMessageEvent.builder()
                                 .protocolType("http")
                                 .message(request)
@@ -293,36 +281,34 @@ public class HttpMessageHandlerTest {
                                 .messageType("HTTP_REQUEST")
                                 .build();
 
-                // Mock请求处理器返回响应
-                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫驴聰氓聸聻氓聯聧氓潞?                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
 
-                // 测试处理消息
+                // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
                 try {
                         httpMessageHandler.handleMessage(event);
                 } catch (Exception e) {
-                        System.err.println("处理消息时抛出异常: " + e.getMessage());
+                        System.err.println("氓陇聞莽聬聠忙露聢忙聛炉忙聴露忙聤聸氓聡潞氓录聜氓赂? " + e.getMessage());
                         e.printStackTrace();
-                        fail("处理消息时不应该抛出异常: " + e.getMessage());
+                        fail("氓陇聞莽聬聠忙露聢忙聛炉忙聴露盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂: " + e.getMessage());
                 }
 
-                // 验证请求处理器被调用
+                // 茅陋聦猫炉聛猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
                 verify(requestHandler).handleRequest(any(HttpRequestEx.class));
 
-                // 验证ctx.writeAndFlush被调用
-                verify(channelContext, atLeastOnce()).writeAndFlush(any());
+                // 茅陋聦猫炉聛ctx.writeAndFlush猫垄芦猫掳聝莽聰?                verify(channelContext, atLeastOnce()).writeAndFlush(any());
         }
 
         @Test
-        @DisplayName("测试响应对象类型转换")
+        @DisplayName("忙碌聥猫炉聲氓聯聧氓潞聰氓炉鹿猫卤隆莽卤禄氓聻聥猫陆卢忙聧垄")
         void testResponseObjectTypeConversion() {
-                // 创建测试请求
+                // 氓聢聸氓禄潞忙碌聥猫炉聲猫炉路忙卤聜
                 FullHttpRequest nettyRequest = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
                                 HttpMethod.GET,
                                 "/test");
 
-                // 创建网络消息事件
+                // 氓聢聸氓禄潞莽陆聭莽禄聹忙露聢忙聛炉盲潞聥盲禄露
                 NetworkMessageEvent event = NetworkMessageEvent.builder()
                                 .protocolType("http")
                                 .message(nettyRequest)
@@ -330,18 +316,17 @@ public class HttpMessageHandlerTest {
                                 .messageType("HTTP_REQUEST")
                                 .build();
 
-                // Mock请求处理器返回响应
-                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫驴聰氓聸聻氓聯聧氓潞?                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
                 when(mockResponse.getStatusCode()).thenReturn(200);
                 when(mockResponse.getContentType()).thenReturn("application/json");
                 when(mockResponse.getBody()).thenReturn("{\"message\":\"test\"}");
                 when(mockResponse.getHeaders()).thenReturn(new java.util.HashMap<>());
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
 
-                // 测试处理消息
+                // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
                 httpMessageHandler.handleMessage(event);
 
-                // 验证发送的是FullHttpResponse对象，而不是HttpResponseEx对象
+                // 茅陋聦猫炉聛氓聫聭茅聙聛莽職聞忙聵炉FullHttpResponse氓炉鹿猫卤隆茂录聦猫聙聦盲赂聧忙聵炉HttpResponseEx氓炉鹿猫卤隆
                 verify(channelContext, atLeastOnce()).writeAndFlush(argThat(obj -> {
                         if (obj instanceof io.netty.handler.codec.http.FullHttpResponse) {
                                 io.netty.handler.codec.http.FullHttpResponse response = 
@@ -353,9 +338,9 @@ public class HttpMessageHandlerTest {
         }
 
         @Test
-        @DisplayName("测试带请求体的HTTP请求")
+        @DisplayName("忙碌聥猫炉聲氓赂娄猫炉路忙卤聜盲陆聯莽職聞HTTP猫炉路忙卤聜")
         void testHttpRequestWithBody() {
-                // 创建带请求体的POST请求
+                // 氓聢聸氓禄潞氓赂娄猫炉路忙卤聜盲陆聯莽職聞POST猫炉路忙卤聜
                 ByteBuf content = Unpooled.copiedBuffer("{\"key\": \"value\"}", io.netty.util.CharsetUtil.UTF_8);
                 FullHttpRequest request = new DefaultFullHttpRequest(
                                 HttpVersion.HTTP_1_1,
@@ -365,11 +350,10 @@ public class HttpMessageHandlerTest {
                 request.headers().set("Content-Type", "application/json");
                 request.headers().set("Content-Length", content.readableBytes());
 
-                // 确保content不为null且可读
-                assertNotNull(request.content(), "Request content should not be null");
+                // 莽隆庐盲驴聺content盲赂聧盲赂潞null盲赂聰氓聫炉猫炉?                assertNotNull(request.content(), "Request content should not be null");
                 assertTrue(request.content().readableBytes() > 0, "Request content should have readable bytes");
 
-                // 创建网络消息事件
+                // 氓聢聸氓禄潞莽陆聭莽禄聹忙露聢忙聛炉盲潞聥盲禄露
                 NetworkMessageEvent event = NetworkMessageEvent.builder()
                                 .protocolType("http")
                                 .message(request)
@@ -377,38 +361,35 @@ public class HttpMessageHandlerTest {
                                 .messageType("HTTP_REQUEST")
                                 .build();
 
-                // Mock请求处理器返回响应
-                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫驴聰氓聸聻氓聯聧氓潞?                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
 
-                // 测试处理消息
+                // 忙碌聥猫炉聲氓陇聞莽聬聠忙露聢忙聛炉
                 try {
                         httpMessageHandler.handleMessage(event);
                 } catch (Exception e) {
-                        System.err.println("处理消息时抛出异常: " + e.getMessage());
+                        System.err.println("氓陇聞莽聬聠忙露聢忙聛炉忙聴露忙聤聸氓聡潞氓录聜氓赂? " + e.getMessage());
                         e.printStackTrace();
-                        fail("处理消息时不应该抛出异常: " + e.getMessage());
+                        fail("氓陇聞莽聬聠忙露聢忙聛炉忙聴露盲赂聧氓潞聰猫炉楼忙聤聸氓聡潞氓录聜氓赂赂: " + e.getMessage());
                 }
 
-                // 验证请求处理器被调用
+                // 茅陋聦猫炉聛猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫垄芦猫掳聝莽聰篓
                 verify(requestHandler).handleRequest(any(HttpRequestEx.class));
 
-                // 验证ctx.writeAndFlush被调用
-                verify(channelContext, atLeastOnce()).writeAndFlush(any());
+                // 茅陋聦猫炉聛ctx.writeAndFlush猫垄芦猫掳聝莽聰?                verify(channelContext, atLeastOnce()).writeAndFlush(any());
         }
 
         @Test
-        @DisplayName("测试并发处理")
+        @DisplayName("忙碌聥猫炉聲氓鹿露氓聫聭氓陇聞莽聬聠")
         void testConcurrentHandling() throws InterruptedException {
-                // Mock请求处理器返回响应
-                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫驴聰氓聸聻氓聯聧氓潞?                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
 
                 int threadCount = 10;
                 int requestsPerThread = 100;
                 Thread[] threads = new Thread[threadCount];
 
-                // 创建多个线程并发处理请求
+                // 氓聢聸氓禄潞氓陇職盲赂陋莽潞驴莽篓聥氓鹿露氓聫聭氓陇聞莽聬聠猫炉路忙卤聜
                 for (int i = 0; i < threadCount; i++) {
                         threads[i] = new Thread(() -> {
                                 for (int j = 0; j < requestsPerThread; j++) {
@@ -428,34 +409,30 @@ public class HttpMessageHandlerTest {
                         });
                 }
 
-                // 启动所有线程
-                for (Thread thread : threads) {
+                // 氓聬炉氓聤篓忙聣聙忙聹聣莽潞驴莽篓?                for (Thread thread : threads) {
                         thread.start();
                 }
 
-                // 等待所有线程完成
-                for (Thread thread : threads) {
+                // 莽颅聣氓戮聟忙聣聙忙聹聣莽潞驴莽篓聥氓庐聦忙聢?                for (Thread thread : threads) {
                         thread.join();
                 }
 
-                // 验证所有请求都被处理
-                verify(requestHandler, times(threadCount * requestsPerThread))
+                // 茅陋聦猫炉聛忙聣聙忙聹聣猫炉路忙卤聜茅聝陆猫垄芦氓陇聞莽聬?                verify(requestHandler, times(threadCount * requestsPerThread))
                                 .handleRequest(any(HttpRequestEx.class));
                 verify(channelContext, times(threadCount * requestsPerThread))
                                 .writeAndFlush(mockResponse);
         }
 
         @Test
-        @DisplayName("测试性能")
+        @DisplayName("忙碌聥猫炉聲忙聙搂猫聝陆")
         void testPerformance() {
-                // Mock请求处理器返回响应
-                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
+                // Mock猫炉路忙卤聜氓陇聞莽聬聠氓聶篓猫驴聰氓聸聻氓聯聧氓潞?                HttpResponseEx mockResponse = mock(HttpResponseEx.class);
                 when(requestHandler.handleRequest(any(HttpRequestEx.class))).thenReturn(mockResponse);
 
                 int requestCount = 10000;
                 long startTime = System.currentTimeMillis();
 
-                // 处理大量请求
+                // 氓陇聞莽聬聠氓陇搂茅聡聫猫炉路忙卤聜
                 for (int i = 0; i < requestCount; i++) {
                         FullHttpRequest request = new DefaultFullHttpRequest(
                                         HttpVersion.HTTP_1_1,
@@ -474,11 +451,10 @@ public class HttpMessageHandlerTest {
                 long endTime = System.currentTimeMillis();
                 long duration = endTime - startTime;
 
-                // 验证性能（应该能在合理时间内处理10000个请求）
-                assertTrue(duration < 5000, "处理10000个请求应该在5秒内完成");
+                // 茅陋聦猫炉聛忙聙搂猫聝陆茂录聢氓潞聰猫炉楼猫聝陆氓聹篓氓聬聢莽聬聠忙聴露茅聴麓氓聠聟氓陇聞莽聬聠10000盲赂陋猫炉路忙卤聜茂录聣
+                assertTrue(duration < 5000, "氓陇聞莽聬聠10000盲赂陋猫炉路忙卤聜氓潞聰猫炉楼氓聹篓5莽搂聮氓聠聟氓庐聦忙聢聬");
 
-                // 验证所有请求都被处理
-                verify(requestHandler, times(requestCount)).handleRequest(any(HttpRequestEx.class));
+                // 茅陋聦猫炉聛忙聣聙忙聹聣猫炉路忙卤聜茅聝陆猫垄芦氓陇聞莽聬?                verify(requestHandler, times(requestCount)).handleRequest(any(HttpRequestEx.class));
                 verify(channelContext, times(requestCount)).writeAndFlush(mockResponse);
         }
 }

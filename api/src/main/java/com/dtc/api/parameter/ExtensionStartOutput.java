@@ -5,42 +5,42 @@ import com.dtc.api.annotations.Nullable;
 
 import java.util.Optional;
 
-/**
- * 扩展启动输出参数
- * 
- * @author Network Service Template
- */
+/ææææ
+ææ æ©å±å¯å¨è¾åºåæ°
+ææ 
+ææ @author Network Service Template
+ææ/
 public interface ExtensionStartOutput {
 
-    /**
-     * 设置启动失败原因
-     * 
-     * @param reason 失败原因
-     */
+    /ææææ
+ææ è®¾ç½®å¯å¨å¤±è´¥åå 
+ææ 
+ææ @param reason å¤±è´¥åå 
+ææ/
     void preventStartup(@NotNull String reason);
 
-    /**
-     * 获取启动失败原因
-     * 
-     * @return 失败原因，如果启动成功则返回空
-     */
+    /ææææ
+ææ è·åå¯å¨å¤±è´¥åå 
+ææ 
+ææ @return å¤±è´¥åå ï¼å¦æå¯å¨æååè¿åç©º
+ææ/
     @NotNull
     Optional<String> getReason();
 
-    /**
-     * 设置扩展配置
-     * 
-     * @param key   配置键
-     * @param value 配置值
-     */
+    /ææææ
+ææ è®¾ç½®æ©å±éç½®
+ææ 
+ææ @param key   éç½®é®
+ææ @param value éç½®å¼
+ææ/
     void setConfiguration(@NotNull String key, @NotNull String value);
 
-    /**
-     * 获取扩展配置
-     * 
-     * @param key 配置键
-     * @return 配置值
-     */
+    /ææææ
+ææ è·åæ©å±éç½®
+ææ 
+ææ @param key éç½®é®
+ææ @return éç½®å¼
+ææ/
     @Nullable
     String getConfiguration(@NotNull String key);
 }

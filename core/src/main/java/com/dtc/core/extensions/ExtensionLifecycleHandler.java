@@ -1,10 +1,9 @@
 package com.dtc.core.extensions;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.custom.CustomCodecFactory;
-import com.dtc.core.custom.CustomConnectionManager;
-import com.dtc.core.custom.CustomMessageHandler;
-import com.dtc.core.custom.CustomServer;
+import com.dtc.core.network.custom.CustomCodecFactory;
+import com.dtc.core.network.custom.CustomConnectionManager;
+import com.dtc.core.network.custom.CustomServer;
 import com.dtc.core.extensions.model.ExtensionEvent;
 import com.dtc.core.extensions.model.ExtensionMetadata;
 import org.slf4j.Logger;
@@ -144,7 +143,7 @@ public class ExtensionLifecycleHandler {
 
         log.info("Starting graceful stop for extension: {}", extensionId);
 
-        // 使用统一的关闭管理器
+        // 使用管理器提供的优雅停止方法
         shutdownManager.gracefulShutdownExtension(extension, 30000).join();
 
         log.info("Extension {} gracefully stopped", extensionId);
@@ -166,7 +165,7 @@ public class ExtensionLifecycleHandler {
                 return;
             }
 
-            // 步骤1.5: 执行更新前准备
+            // 步骤1.5: 准备更新前的检查
             if (!prepareForUpdate(extensionId)) {
                 log.warn("Extension {} is not ready for update, skipping", extensionId);
                 return;
@@ -180,10 +179,10 @@ public class ExtensionLifecycleHandler {
             log.info("Unregistering current extension: {}", extensionId);
             extensionManager.unregisterExtension(extensionId);
 
-            // 步骤4: 等待一段时间确保资源释放
+            // 步骤4: 等待资源释放，确保旧扩展完全停止
             Thread.sleep(100);
 
-            // 步骤5: 加载新版本扩展
+            // 步骤5: 加载新版本的扩展
             log.info("Loading new version of extension: {}", extensionId);
             ExtensionMetadata metadata = validateAndGetMetadata(event);
             String mainClass = metadata.getMainClass();
@@ -196,7 +195,7 @@ public class ExtensionLifecycleHandler {
             ClassLoader extensionClassLoader = createExtensionClassLoader(extensionId);
             NetworkExtension newExtension = createCodeBuddyExtension(extensionClassLoader, mainClass, extensionId);
 
-            // 验证新扩展对象不为空
+            // 验证新扩展实例是否创建成功
             if (newExtension == null) {
                 String errorMsg = String.format("Failed to create new extension instance for update: %s (class: %s)",
                         extensionId, mainClass);
@@ -204,30 +203,30 @@ public class ExtensionLifecycleHandler {
                 throw new RuntimeException(errorMsg);
             }
 
-            // 版本比较和验证
+            // 比较版本并验证
             String currentVersion = currentExtension.getVersion();
             String newVersion = newExtension.getVersion();
             log.info("Updating extension {} from version {} to version {}", extensionId, currentVersion, newVersion);
 
-            // 检查版本兼容性
+            // 检查新版本是否兼容
             if (!isVersionCompatible(currentVersion, newVersion)) {
                 log.warn("Version compatibility check failed for extension {}: {} -> {}",
                         extensionId, currentVersion, newVersion);
-                // 可以选择继续更新或停止更新
+                // 可以根据策略决定是否继续更新或回滚
             }
 
-            // 步骤6: 注册新版本扩展
+            // 步骤6: 注册新版本的扩展
             log.info("Registering new version of extension: {}", extensionId);
             extensionManager.registerExtension(newExtension, extensionId);
 
-            // 步骤7: 启动新版本扩展
+            // 步骤7: 启动新版本的扩展
             log.info("Starting new version of extension: {}", extensionId);
             extensionManager.startExtension(extensionId).join();
 
             log.info("Extension {} updated successfully from version {} to version {}",
                     extensionId, currentExtension.getVersion(), newExtension.getVersion());
 
-            // 步骤8: 执行更新后清理
+            // 步骤8: 执行更新后的清理
             cleanupAfterUpdate(extensionId, true);
 
         } catch (Exception e) {
@@ -236,7 +235,7 @@ public class ExtensionLifecycleHandler {
             // 执行失败后的清理
             cleanupAfterUpdate(extensionId, false);
 
-            // 尝试恢复：如果更新失败，尝试重新启用原扩展
+            // 查找备份扩展，如果更新失败则恢复原扩展
             try {
                 log.info("Attempting to restore original extension: {}", extensionId);
                 handleExtensionEnable(event);
@@ -249,7 +248,7 @@ public class ExtensionLifecycleHandler {
     }
 
     /**
-     * 检查版本兼容性
+     * 检查版本是否兼容
      * 
      * @param currentVersion 当前版本
      * @param newVersion     新版本
@@ -258,13 +257,13 @@ public class ExtensionLifecycleHandler {
     private boolean isVersionCompatible(@NotNull String currentVersion, @NotNull String newVersion) {
         try {
             // 简单的版本比较逻辑
-            // 这里可以实现更复杂的语义版本比较
+            // 可以通过路由管理器实现更复杂的版本比较
             if (currentVersion.equals(newVersion)) {
                 log.debug("Versions are identical: {}", currentVersion);
                 return true;
             }
 
-            // 检查主版本号是否相同（简单实现）
+            // 检查主版本号是否兼容，简单比较
             String[] currentParts = currentVersion.split("\\.");
             String[] newParts = newVersion.split("\\.");
 
@@ -272,7 +271,7 @@ public class ExtensionLifecycleHandler {
                 int currentMajor = Integer.parseInt(currentParts[0]);
                 int newMajor = Integer.parseInt(newParts[0]);
 
-                // 主版本号相同或新版本更高
+                // 主版本号相同或新版本主版本号大于等于当前版本
                 return newMajor >= currentMajor;
             }
 
@@ -284,14 +283,14 @@ public class ExtensionLifecycleHandler {
     }
 
     /**
-     * 执行扩展更新前的准备工作
+     * 准备扩展更新前的检查
      * 
      * @param extensionId 扩展ID
      * @return 是否准备就绪
      */
     private boolean prepareForUpdate(@NotNull String extensionId) {
         try {
-            // 检查扩展是否正在处理重要任务
+            // 检查扩展是否存在且可以更新
             NetworkExtension extension = extensionManager.getExtension(extensionId);
             if (extension == null) {
                 return false;
@@ -303,11 +302,10 @@ public class ExtensionLifecycleHandler {
                 return true;
             }
 
-            // 可以添加更多检查逻辑，比如：
-            // - 检查是否有活跃连接
-            // - 检查是否有未完成的任务
-            // - 检查资源使用情况
-
+            // 可以通过路由管理器进行其他检查，例如：
+            // - 检查是否有未完成的请求
+            // - 检查是否有未释放的资源
+            // - 检查是否可以安全更新
             return true;
         } catch (Exception e) {
             log.warn("Failed to prepare extension {} for update: {}", extensionId, e.getMessage());
@@ -325,10 +323,10 @@ public class ExtensionLifecycleHandler {
         try {
             if (success) {
                 log.info("Extension {} update completed successfully", extensionId);
-                // 可以添加成功后的清理逻辑
+                // 可以通过路由管理器执行成功后的清理工作
             } else {
                 log.warn("Extension {} update failed, performing cleanup", extensionId);
-                // 可以添加失败后的清理逻辑
+                // 可以通过路由管理器执行失败后的清理工作
             }
         } catch (Exception e) {
             log.error("Failed to cleanup after extension {} update: {}", extensionId, e.getMessage());
@@ -351,10 +349,10 @@ public class ExtensionLifecycleHandler {
             // 2. 清理扩展文件夹
             cleanupExtensionFolder(extensionId);
 
-            // 3. 清理缓存和临时文件
+            // 3. 清理扩展缓存
             cleanupExtensionCache(extensionId);
 
-            // 4. 清理监控和统计数据
+            // 4. 清理扩展指标数据
             cleanupExtensionMetrics(extensionId);
 
             log.info("Extension {} cleanup completed", extensionId);
@@ -371,8 +369,8 @@ public class ExtensionLifecycleHandler {
     private void cleanupExtensionClassLoader(@NotNull String extensionId) {
         try {
             log.debug("Cleaning up class loader for extension: {}", extensionId);
-            // 这里可以实现类加载器的清理逻辑
-            // 例如：关闭类加载器、释放相关资源等
+            // 可以通过路由管理器清理类加载器
+            // 例如关闭类加载器、释放资源等
         } catch (Exception e) {
             log.warn("Failed to cleanup class loader for extension: {}", extensionId, e);
         }
@@ -386,8 +384,8 @@ public class ExtensionLifecycleHandler {
     private void cleanupExtensionFolder(@NotNull String extensionId) {
         try {
             log.debug("Cleaning up folder for extension: {}", extensionId);
-            // 这里可以实现扩展文件夹的清理逻辑
-            // 例如：删除临时文件、清理日志文件等
+            // 可以通过路由管理器清理扩展文件夹
+            // 例如删除临时文件、清理文件夹等
         } catch (Exception e) {
             log.warn("Failed to cleanup folder for extension: {}", extensionId, e);
         }
@@ -401,23 +399,23 @@ public class ExtensionLifecycleHandler {
     private void cleanupExtensionCache(@NotNull String extensionId) {
         try {
             log.debug("Cleaning up cache for extension: {}", extensionId);
-            // 这里可以实现缓存的清理逻辑
-            // 例如：清理序列化缓存、清理配置缓存等
+            // 可以通过路由管理器清理缓存
+            // 例如清理序列化缓存、清理其他缓存等
         } catch (Exception e) {
             log.warn("Failed to cleanup cache for extension: {}", extensionId, e);
         }
     }
 
     /**
-     * 清理扩展监控数据
+     * 清理扩展指标数据
      * 
      * @param extensionId 扩展ID
      */
     private void cleanupExtensionMetrics(@NotNull String extensionId) {
         try {
             log.debug("Cleaning up metrics for extension: {}", extensionId);
-            // 这里可以实现监控数据的清理逻辑
-            // 例如：清理统计计数器、清理性能指标等
+            // 可以通过路由管理器清理指标数据
+            // 例如清理统计信息、清理监控数据等
         } catch (Exception e) {
             log.warn("Failed to cleanup metrics for extension: {}", extensionId, e);
         }
@@ -446,7 +444,7 @@ public class ExtensionLifecycleHandler {
             log.info("Unregistering extension: {}", extensionId);
             extensionManager.unregisterExtension(extensionId);
 
-            // 步骤4: 执行移除后清理
+            // 步骤4: 执行移除后的清理
             cleanupAfterRemoval(extensionId);
 
             log.info("Extension {} removed successfully", extensionId);
@@ -481,7 +479,7 @@ public class ExtensionLifecycleHandler {
             String extensionId = event.getExtensionId();
             NetworkExtension extension = createCodeBuddyExtension(extensionClassLoader, mainClass, extensionId);
 
-            // 验证扩展对象不为空
+            // 验证扩展实例是否创建成功
             if (extension == null) {
                 String errorMsg = String.format("Failed to create extension instance for: %s (class: %s)",
                         extensionId, mainClass);
@@ -616,7 +614,7 @@ public class ExtensionLifecycleHandler {
      * 创建扩展实例
      * 
      * @param classLoader 类加载器
-     * @param mainClass   主类名
+     * @param mainClass   主类
      * @param extensionId 扩展ID
      * @return 扩展实例
      */
@@ -637,11 +635,11 @@ public class ExtensionLifecycleHandler {
             log.info("🔍 Loaded class: {} from classLoader: {}", extensionClass.getName(),
                     extensionClass.getClassLoader());
 
-            // 使用统一的创建管理器创建扩展实例
+            // 使用管理器提供的创建方法创建扩展实例
             NetworkExtension extension = (NetworkExtension) creationManager.createEnhancedExtension(
                     extensionClass, classLoader, extensionId, getDependencyArgs(extensionId));
 
-            // 添加调试日志
+            // 记录创建信息
             log.info("🔍 Created extension instance: {} of type: {}",
                     extension.getClass().getName(), extension.getClass().getSimpleName());
             log.info("🔍 Extension implements NetworkExtension: {}", extension instanceof NetworkExtension);
@@ -667,7 +665,7 @@ public class ExtensionLifecycleHandler {
     @NotNull
     private Object[] getDependencyArgs(@NotNull String extensionId) {
         try {
-            // 根据扩展ID返回相应的依赖参数
+            // 根据扩展ID获取对应的依赖参数
             if ("http-extension".equals(extensionId)) {
                 return getHttpExtensionDependencies();
             } else if ("mqtt-extension".equals(extensionId)) {
@@ -693,10 +691,10 @@ public class ExtensionLifecycleHandler {
     @NotNull
     private Object[] getHttpExtensionDependencies() {
         try {
-            log.info("🔧 Attempting to get HTTP extension dependencies from Guice container...");
+            log.info("🔍 Attempting to get HTTP extension dependencies from Guice container...");
 
-            // 从 Guice 容器中获取依赖
-            Object[] dependencies = new Object[7];
+            // 从 Guice 容器中获取依赖，通过 Injector
+            Object[] dependencies = new Object[8];
 
             try {
                 dependencies[0] = injector.getInstance(com.dtc.core.http.HttpServer.class);
@@ -706,14 +704,15 @@ public class ExtensionLifecycleHandler {
                 dependencies[4] = injector.getInstance(com.dtc.core.http.HttpMiddlewareManager.class);
                 dependencies[5] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
                 dependencies[6] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
+                dependencies[7] = injector; // 传递 Injector 给扩展以便扩展可以获取其他依赖
 
                 log.info("✅ Successfully obtained {} HTTP extension dependencies from Guice container",
                         dependencies.length);
                 return dependencies;
 
             } catch (Exception e) {
-                log.warn("⚠️ Failed to get HTTP dependencies from Guice container: {}", e.getMessage());
-                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                log.warn("⚠️  Failed to get HTTP dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️  This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
                 return new Object[0];
             }
 
@@ -729,14 +728,14 @@ public class ExtensionLifecycleHandler {
     @NotNull
     private Object[] getMqttExtensionDependencies() {
         try {
-            log.info("🔧 Attempting to get MQTT extension dependencies from Guice container...");
+            log.info("🔍 Attempting to get MQTT extension dependencies from Guice container...");
 
             // 从 Guice 容器中获取 MQTT 扩展的依赖
             Object[] dependencies = new Object[5];
 
             try {
                 dependencies[0] = injector.getInstance(com.dtc.core.mqtt.MqttServer.class);
-                dependencies[1] = injector.getInstance(com.dtc.core.mqtt.MqttMessageHandler.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.mqtt.MqttMessageHelper.class);
                 dependencies[2] = injector.getInstance(com.dtc.core.mqtt.MqttConnectionManager.class);
                 dependencies[3] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
                 dependencies[4] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
@@ -746,8 +745,8 @@ public class ExtensionLifecycleHandler {
                 return dependencies;
 
             } catch (Exception e) {
-                log.warn("⚠️ Failed to get MQTT dependencies from Guice container: {}", e.getMessage());
-                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                log.warn("⚠️  Failed to get MQTT dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️  This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
                 return new Object[0];
             }
 
@@ -763,14 +762,14 @@ public class ExtensionLifecycleHandler {
     @NotNull
     private Object[] getTcpExtensionDependencies() {
         try {
-            log.info("🔧 Attempting to get TCP extension dependencies from Guice container...");
+            log.info("🔍 Attempting to get TCP extension dependencies from Guice container...");
 
             // 从 Guice 容器中获取 TCP 扩展的依赖
             Object[] dependencies = new Object[6];
 
             try {
                 dependencies[0] = injector.getInstance(com.dtc.core.tcp.TcpServer.class);
-                dependencies[1] = injector.getInstance(com.dtc.core.tcp.TcpMessageHandler.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.tcp.TcpMessageHelper.class);
                 dependencies[2] = injector.getInstance(com.dtc.core.tcp.TcpConnectionManager.class);
                 dependencies[3] = injector.getInstance(com.dtc.core.tcp.TcpProtocolHandler.class);
                 dependencies[4] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
@@ -781,8 +780,8 @@ public class ExtensionLifecycleHandler {
                 return dependencies;
 
             } catch (Exception e) {
-                log.warn("⚠️ Failed to get TCP dependencies from Guice container: {}", e.getMessage());
-                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                log.warn("⚠️  Failed to get TCP dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️  This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
                 return new Object[0];
             }
 
@@ -798,14 +797,14 @@ public class ExtensionLifecycleHandler {
     @NotNull
     private Object[] getWebSocketExtensionDependencies() {
         try {
-            log.info("🔧 Attempting to get WebSocket extension dependencies from Guice container...");
+            log.info("🔍 Attempting to get WebSocket extension dependencies from Guice container...");
 
             // 从 Guice 容器中获取 WebSocket 扩展的依赖
             Object[] dependencies = new Object[5];
 
             try {
                 dependencies[0] = injector.getInstance(com.dtc.core.websocket.WebSocketServer.class);
-                dependencies[1] = injector.getInstance(com.dtc.core.websocket.WebSocketMessageHandler.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.websocket.WebSocketMessageHelper.class);
                 dependencies[2] = injector.getInstance(com.dtc.core.websocket.WebSocketConnectionManager.class);
                 dependencies[3] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
                 dependencies[4] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
@@ -815,8 +814,8 @@ public class ExtensionLifecycleHandler {
                 return dependencies;
 
             } catch (Exception e) {
-                log.warn("⚠️ Failed to get WebSocket dependencies from Guice container: {}", e.getMessage());
-                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                log.warn("⚠️  Failed to get WebSocket dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️  This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
                 return new Object[0];
             }
 
@@ -832,14 +831,14 @@ public class ExtensionLifecycleHandler {
     @NotNull
     private Object[] getCustomExtensionDependencies() {
         try {
-            log.info("🔧 Attempting to get Custom extension dependencies from Guice container...");
+            log.info("🔍 Attempting to get Custom extension dependencies from Guice container...");
 
             // 从 Guice 容器中获取 Custom 扩展的依赖
             Object[] dependencies = new Object[6];
 
             try {
                 dependencies[0] = injector.getInstance(CustomServer.class);
-                dependencies[1] = injector.getInstance(CustomMessageHandler.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.custom.CustomMessageHelper.class);
                 dependencies[2] = injector.getInstance(CustomConnectionManager.class);
                 dependencies[3] = injector.getInstance(CustomCodecFactory.class);
                 dependencies[4] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
@@ -850,8 +849,8 @@ public class ExtensionLifecycleHandler {
                 return dependencies;
 
             } catch (Exception e) {
-                log.warn("⚠️ Failed to get Custom dependencies from Guice container: {}", e.getMessage());
-                log.warn("⚠️ This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
+                log.warn("⚠️  Failed to get Custom dependencies from Guice container: {}", e.getMessage());
+                log.warn("⚠️  This will cause ByteBuddy enhancement to fail and fall back to simple wrapper");
                 return new Object[0];
             }
 

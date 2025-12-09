@@ -10,9 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 
 /**
- * 验证拦截器
- * 使用 AOP 自动拦截方法调用并进行参数和返回值验证
- * 
+ * æ¥ å²çé·ï¸½åé£? * æµ£è·¨æ¤ AOP é·îå§©é·ï¸½åéè§ç¡¶çåªæ¤éªæ°ç¹çå±½å¼¬éæ¿æ°æ©æ¿æ´éå¥¸çç? * 
  * @author Network Service Template
  */
 public class ValidationInterceptor implements MethodInterceptor {
@@ -25,22 +23,20 @@ public class ValidationInterceptor implements MethodInterceptor {
         Method method = invocation.getMethod();
         Object[] arguments = invocation.getArguments();
 
-        // 记录方法调用
+        // çæ¿ç¶éè§ç¡¶çåªæ¤
         log.debug("Intercepting method call: {}.{}",
                 method.getDeclaringClass().getSimpleName(), method.getName());
 
         try {
-            // 验证参数
+            // æ¥ å²çéåæ
             if (AnnotationValidator.needsParameterValidation(method)) {
                 AnnotationValidator.validateMethodParameters(method, arguments);
                 log.debug("Parameter validation passed for method: {}", method.getName());
             }
 
-            // 执行原方法
-            Object result = invocation.proceed();
+            // éµÑîéç¸æå¨?            Object result = invocation.proceed();
 
-            // 验证返回值
-            AnnotationValidator.validateMethodReturnValue(method, result);
+            // æ¥ å²çæ©æ¿æ´é?            AnnotationValidator.validateMethodReturnValue(method, result);
 
             log.debug("Method execution completed successfully: {}", method.getName());
             return result;

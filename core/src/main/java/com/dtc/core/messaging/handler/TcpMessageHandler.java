@@ -1,18 +1,24 @@
 package com.dtc.core.messaging.handler;
 
-import com.dtc.api.annotations.NotNull;
-import com.dtc.core.messaging.NetworkMessageEvent;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.nio.charset.StandardCharsets;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dtc.api.annotations.NotNull;
+import com.dtc.api.annotations.Nullable;
+import com.dtc.core.messaging.MessageHandlerRegistry;
+import com.dtc.core.messaging.NetworkMessageEvent;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+
 /**
  * TCP 消息处理器
- * 专门处理 TCP 协议的消息
+ * 负责处理 TCP 协议类型的消息，从Disruptor队列接收并分发处理
  * 
  * @author Network Service Template
  */
@@ -21,16 +27,18 @@ public class TcpMessageHandler {
 
     private static final Logger log = LoggerFactory.getLogger(TcpMessageHandler.class);
 
+    private final MessageHandlerRegistry messageHandlerRegistry;
+
     @Inject
-    public TcpMessageHandler() {
-        // 可以注入TCP相关的处理器
+    public TcpMessageHandler(@Nullable MessageHandlerRegistry messageHandlerRegistry) {
+        this.messageHandlerRegistry = messageHandlerRegistry;
     }
 
     /**
      * 处理 TCP 消息
      */
     public void handleMessage(@NotNull NetworkMessageEvent event) {
-        log.debug("🔗 Processing TCP message: {}", event.getEventId());
+        log.debug("🔍 Processing TCP message: {}", event.getEventId());
         
         try {
             Object message = event.getMessage();
@@ -47,7 +55,7 @@ public class TcpMessageHandler {
             } else if (message instanceof byte[]) {
                 handleByteArrayMessage(ctx, (byte[]) message);
             } else {
-                log.warn("⚠️ Unexpected message type in TCP handler: {}", 
+                log.warn("⚠️  Unexpected message type in TCP handler: {}", 
                         message != null ? message.getClass().getSimpleName() : "null");
             }
             
@@ -67,17 +75,17 @@ public class TcpMessageHandler {
             
             // 检查消息长度
             if (messageLength < 4) {
-                log.warn("⚠️ TCP message too short: {} bytes", messageLength);
+                log.warn("⚠️  TCP message too short: {} bytes", messageLength);
                 return;
             }
             
-            // 读取消息头（假设前4字节是消息长度）
+            // 读取消息头部，前4字节为消息体长度
             int headerLength = message.getInt(0);
             log.debug("TCP message header length: {}", headerLength);
             
-            // 验证消息完整性
+            // 检查消息是否完整
             if (messageLength < headerLength + 4) {
-                log.warn("⚠️ TCP message incomplete: expected {} bytes, got {} bytes", 
+                log.warn("⚠️  TCP message incomplete: expected {} bytes, got {} bytes", 
                         headerLength + 4, messageLength);
                 return;
             }
@@ -116,9 +124,9 @@ public class TcpMessageHandler {
      */
     private void processTcpMessage(@NotNull ChannelHandlerContext ctx, @NotNull ByteBuf messageBody) {
         try {
-            // 读取消息类型（假设第1字节是消息类型）
+            // 读取消息类型，第1字节为消息类型
             if (messageBody.readableBytes() < 1) {
-                log.warn("⚠️ TCP message body too short");
+                log.warn("⚠️  TCP message body too short");
                 return;
             }
             
@@ -140,7 +148,7 @@ public class TcpMessageHandler {
                     handleErrorMessage(ctx, messageBody);
                     break;
                 default:
-                    log.warn("⚠️ Unknown TCP message type: {}", messageType);
+                    log.warn("⚠️  Unknown TCP message type: {}", messageType);
                     handleUnknownMessage(ctx, messageBody);
                     break;
             }
@@ -162,7 +170,7 @@ public class TcpMessageHandler {
         try {
             // 发送心跳响应
             ByteBuf response = ctx.alloc().buffer(5);
-            response.writeInt(1); // 消息长度
+            response.writeInt(1); // 消息体长度
             response.writeByte(0x01); // 心跳响应类型
             ctx.writeAndFlush(response);
             
@@ -184,16 +192,33 @@ public class TcpMessageHandler {
             byte[] data = new byte[messageBody.readableBytes()];
             messageBody.readBytes(data);
             
-            // 处理数据
-            String dataString = new String(data, java.nio.charset.StandardCharsets.UTF_8);
+            // 处理数据内容
+            String dataString = new String(data, StandardCharsets.UTF_8);
             log.debug("TCP data message content: {}", dataString);
             
-            // 发送数据响应
+            // 查找注解驱动的处理器
+            if (messageHandlerRegistry != null) {
+                MessageHandlerRegistry.HandlerMethod handler = 
+                    messageHandlerRegistry.findHandler("TCP", dataString.trim());
+                
+                if (handler != null) {
+                    try {
+                        // 调用用户定义的处理器方法
+                        handler.invoke(ctx, dataString);
+                        return;
+                    } catch (Exception e) {
+                        log.error("Failed to invoke TCP handler", e);
+                    }
+                }
+            }
+            
+            // 如果未找到注解驱动的处理器，使用默认处理器
+            log.debug("No annotation-driven handler found for TCP message: {}, using default handler", dataString);
             String responseData = "Echo: " + dataString;
-            byte[] responseBytes = responseData.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            byte[] responseBytes = responseData.getBytes(StandardCharsets.UTF_8);
             
             ByteBuf response = ctx.alloc().buffer(4 + 1 + responseBytes.length);
-            response.writeInt(1 + responseBytes.length); // 消息长度
+            response.writeInt(1 + responseBytes.length); // 消息体长度
             response.writeByte(0x02); // 数据响应类型
             response.writeBytes(responseBytes);
             ctx.writeAndFlush(response);
@@ -213,11 +238,11 @@ public class TcpMessageHandler {
         
         try {
             // 处理控制消息逻辑
-            // 这里可以实现具体的控制逻辑
+            // 可以通过路由管理器来处理控制逻辑
             
             // 发送控制响应
             ByteBuf response = ctx.alloc().buffer(5);
-            response.writeInt(1); // 消息长度
+            response.writeInt(1); // 消息体长度
             response.writeByte(0x03); // 控制响应类型
             ctx.writeAndFlush(response);
             
@@ -244,7 +269,7 @@ public class TcpMessageHandler {
             
             // 发送错误确认
             ByteBuf response = ctx.alloc().buffer(5);
-            response.writeInt(1); // 消息长度
+            response.writeInt(1); // 消息体长度
             response.writeByte(0x04); // 错误确认类型
             ctx.writeAndFlush(response);
             
@@ -262,7 +287,7 @@ public class TcpMessageHandler {
         try {
             // 发送未知消息响应
             ByteBuf response = ctx.alloc().buffer(5);
-            response.writeInt(1); // 消息长度
+            response.writeInt(1); // 消息体长度
             response.writeByte(0xFF); // 未知消息响应类型
             ctx.writeAndFlush(response);
             
@@ -281,7 +306,7 @@ public class TcpMessageHandler {
             byte[] errorBytes = errorMsg.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             
             ByteBuf response = ctx.alloc().buffer(4 + 1 + errorBytes.length);
-            response.writeInt(1 + errorBytes.length); // 消息长度
+            response.writeInt(1 + errorBytes.length); // 消息体长度
             response.writeByte(0x04); // 错误消息类型
             response.writeBytes(errorBytes);
             ctx.writeAndFlush(response);
@@ -295,7 +320,7 @@ public class TcpMessageHandler {
      * 处理错误
      */
     private void handleError(@NotNull NetworkMessageEvent event, @NotNull Exception error) {
-        log.error("💥 Error handling TCP message: {}", event.getEventId(), error);
+        log.error("🔴 Error handling TCP message: {}", event.getEventId(), error);
         
         try {
             ChannelHandlerContext ctx = event.getChannelContext();

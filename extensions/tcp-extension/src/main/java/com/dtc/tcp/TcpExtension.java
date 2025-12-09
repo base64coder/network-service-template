@@ -13,10 +13,10 @@ import com.dtc.api.parameter.ExtensionStopOutput;
 import com.dtc.core.extensions.NetworkExtension;
 import com.dtc.core.extensions.model.ExtensionMetadata;
 import com.dtc.core.extensions.GracefulShutdownExtension;
-import com.dtc.core.tcp.TcpServer;
-import com.dtc.core.tcp.TcpMessageHandler;
-import com.dtc.core.tcp.TcpConnectionManager;
-import com.dtc.core.tcp.TcpProtocolHandler;
+import com.dtc.core.network.tcp.TcpServer;
+import com.dtc.core.network.tcp.TcpMessageHelper;
+import com.dtc.core.network.tcp.TcpConnectionManager;
+import com.dtc.core.network.tcp.TcpProtocolHandler;
 import com.dtc.core.statistics.StatisticsAware;
 import com.dtc.core.messaging.NetworkMessageEvent;
 import com.dtc.core.messaging.NetworkMessageQueue;
@@ -33,8 +33,8 @@ import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * TCP协议扩展示例
- * 实现TCP协议的基本功能
+ * TCP 协议扩展
+ * 实现 TCP 协议扩展的功能和逻辑
  * 
  * @author Network Service Template
  */
@@ -45,7 +45,7 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
     private static final Logger log = LoggerFactory.getLogger(TcpExtension.class);
 
     private final TcpServer tcpServer;
-    private final TcpMessageHandler messageHandler;
+    private final TcpMessageHelper messageHelper;
     private final TcpConnectionManager connectionManager;
     private final TcpProtocolHandler protocolHandler;
     private final NetworkMessageQueue messageQueue;
@@ -54,19 +54,19 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
     private volatile boolean enabled = true;
     private volatile boolean shutdownPrepared = false;
 
-    // 连接管理
+    // 活跃连接
     private final ConcurrentHashMap<String, ChannelHandlerContext> activeConnections = new ConcurrentHashMap<>();
 
     @Inject
     public TcpExtension(@NotNull TcpServer tcpServer,
-            @NotNull TcpMessageHandler messageHandler,
+            @NotNull TcpMessageHelper messageHelper,
             @NotNull TcpConnectionManager connectionManager,
             @NotNull TcpProtocolHandler protocolHandler,
             @NotNull NetworkMessageQueue messageQueue,
             @NotNull com.dtc.core.statistics.StatisticsCollector statisticsCollector) {
         super(statisticsCollector);
         this.tcpServer = tcpServer;
-        this.messageHandler = messageHandler;
+        this.messageHelper = messageHelper;
         this.connectionManager = connectionManager;
         this.protocolHandler = protocolHandler;
         this.messageQueue = messageQueue;
@@ -77,7 +77,7 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
         log.info("Starting TCP Extension v{}", input.getExtensionVersion());
 
         try {
-            // 初始化TCP协议处理器
+            // 初始化 TCP 协议处理器
             initializeTcpHandler();
 
             started = true;
@@ -93,7 +93,7 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
         log.info("Stopping TCP Extension v{}", input.getExtensionVersion());
 
         try {
-            // 清理TCP协议资源
+            // 清理 TCP 协议扩展资源
             cleanupTcpHandler();
 
             started = false;
@@ -125,11 +125,11 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
     public void onConnect(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
         log.info("TCP client connected: {} from {}", clientId, ctx.channel().remoteAddress());
 
-        // 添加连接到活跃连接管理
+        // 保存活跃连接到连接映射
         activeConnections.put(clientId, ctx);
         connectionManager.addConnection(clientId, ctx);
 
-        // 使用协议处理器处理连接
+        // 通过协议处理器处理连接
         protocolHandler.handleConnect(ctx, clientId);
     }
 
@@ -137,20 +137,20 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
     public void onDisconnect(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
         log.info("TCP client disconnected: {}", clientId);
 
-        // 从活跃连接中移除
+        // 移除活跃连接
         activeConnections.remove(clientId);
         connectionManager.removeConnection(clientId);
 
-        // 使用协议处理器处理断开连接
+        // 通过协议处理器处理断开连接
         protocolHandler.handleDisconnect(ctx, clientId);
     }
 
     @Override
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-        log.debug("📨 TCP message received from client: {}", ctx.channel().remoteAddress());
+        log.debug("TCP message received from client: {}", ctx.channel().remoteAddress());
 
         try {
-            // 处理 TCP 消息 - 使用 Disruptor 异步处理
+            // 处理 TCP 消息 - 通过 Disruptor 异步处理
             if (message != null) {
                 // 创建网络消息事件
                 NetworkMessageEvent event = createNetworkMessageEvent(ctx, message);
@@ -158,17 +158,17 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
                 // 发布到 Disruptor 队列进行异步处理
                 boolean published = messageQueue.publish(event);
                 if (published) {
-                    log.debug("✅ TCP message published to Disruptor queue: {}", event.getEventId());
+                    log.debug("TCP message published to Disruptor queue: {}", event.getEventId());
                 } else {
-                    log.error("❌ Failed to publish TCP message to Disruptor queue");
+                    log.error("Failed to publish TCP message to Disruptor queue");
                     // 如果发布失败，发送错误响应
                     sendErrorResponse(ctx, "Service temporarily unavailable");
                 }
             } else {
-                log.warn("⚠️ Received null message in TCP extension");
+                log.warn("Received null message in TCP extension");
             }
         } catch (Exception e) {
-            log.error("❌ Error handling TCP message from client: {}", ctx.channel().remoteAddress(), e);
+            log.error("Error handling TCP message from client: {}", ctx.channel().remoteAddress(), e);
             sendErrorResponse(ctx, "Internal server error");
         }
     }
@@ -177,7 +177,7 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
     public void onException(@NotNull ChannelHandlerContext ctx, @NotNull Throwable cause) {
         log.error("TCP protocol error from client: {}", ctx.channel().remoteAddress(), cause);
 
-        // 使用协议处理器处理异常
+        // 通过协议处理器处理异常
         protocolHandler.handleException(ctx, cause);
     }
 
@@ -188,20 +188,20 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
     }
 
     /**
-     * 处理TCP消息
+     * 处理 TCP 消息
      */
     private void handleTcpMessage(@NotNull ChannelHandlerContext ctx, @NotNull ByteBuf message) {
         try {
-            // 读取消息内容
+            // 读取消息字节数据
             byte[] data = new byte[message.readableBytes()];
             message.getBytes(message.readerIndex(), data);
 
-            // 处理消息内容
+            // 处理消息字节数据
             String content = new String(data);
             log.debug("Processing TCP message: {}", content);
 
-            // 这里可以实现具体的TCP消息处理逻辑
-            // 例如：协议解析、消息路由、数据转换等
+            // 这里可以根据需要添加自定义消息处理逻辑
+            // 例如协议格式的消息解析等
             processTcpData(ctx, content);
 
         } catch (Exception e) {
@@ -210,14 +210,14 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
     }
 
     /**
-     * 处理TCP数据
+     * 处理 TCP 数据
      */
     private void processTcpData(@NotNull ChannelHandlerContext ctx, @NotNull String data) {
-        // 这里可以实现具体的TCP数据处理逻辑
-        // 例如：自定义协议解析、消息格式验证等
+        // 这里可以根据需要添加自定义数据处理逻辑
+        // 例如简单协议格式的消息解析等
         log.debug("Processing TCP data: {}", data);
 
-        // 示例：简单的回显处理
+        // 简单示例：根据消息类型处理
         if (data.trim().equals("ping")) {
             sendResponse(ctx, "pong");
         } else if (data.trim().equals("hello")) {
@@ -254,12 +254,12 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
      */
     private void cleanupClientSession(@NotNull String clientId) {
         log.debug("Cleaning up session for client: {}", clientId);
-        // 这里可以实现会话清理逻辑
-        // 例如：清理缓存、释放资源等
+        // 这里可以根据需要添加会话清理逻辑
+        // 例如清理缓存数据等
     }
 
     /**
-     * 处理TCP异常
+     * 处理 TCP 异常
      */
     private void handleTcpException(@NotNull ChannelHandlerContext ctx, @NotNull Throwable cause) {
         // 根据异常类型进行不同处理
@@ -269,30 +269,30 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
             log.error("Unexpected TCP error", cause);
         }
 
-        // 可以选择关闭连接或发送错误响应
+        // 这里可以根据需要关闭连接或发送错误响应
         // ctx.close();
     }
 
     /**
-     * 初始化TCP处理器
+     * 初始化 TCP 协议处理器
      */
     private void initializeTcpHandler() {
         log.info("Initializing TCP protocol handler...");
-        // 初始化TCP协议相关的组件
-        // 例如：配置缓冲区大小、设置超时时间等
+        // 初始化 TCP 协议扩展相关资源
+        // 例如设置缓冲区大小、超时时间等
     }
 
     /**
-     * 清理TCP处理器
+     * 清理 TCP 协议处理器
      */
     private void cleanupTcpHandler() {
         log.info("Cleaning up TCP protocol handler...");
-        // 清理TCP协议相关的资源
-        // 例如：关闭连接、释放缓冲区等
+        // 清理 TCP 协议扩展相关资源
+        // 例如关闭连接、清理缓存等
     }
 
     /**
-     * TCP消息处理器
+     * TCP 消息处理器
      */
     private static class TcpMessageHandler implements MessageHandler {
 
@@ -301,11 +301,11 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
         public Object handleMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
             log.debug("Handling TCP message: {}", message.getClass().getSimpleName());
 
-            // 处理接收到的TCP消息
-            // 这里可以实现具体的TCP消息处理逻辑
-            // 例如：消息验证、协议解析等
+            // 处理接收到的 TCP 消息
+            // 这里可以根据需要添加自定义消息处理逻辑
+            // 例如消息解析和协议格式等
 
-            return null; // 继续处理链
+            return null; // 不返回响应
         }
 
         @Override
@@ -313,28 +313,28 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
         public Object handleOutboundMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
             log.debug("Handling outbound TCP message: {}", message.getClass().getSimpleName());
 
-            // 处理发送的TCP消息
-            // 这里可以实现TCP消息的预处理逻辑
-            // 例如：消息格式化、协议封装等
+            // 处理发送的 TCP 消息
+            // 这里可以根据需要添加发送消息处理逻辑
+            // 例如消息编码和协议格式等
 
             return message; // 发送消息
         }
 
         @Override
         public int getPriority() {
-            return 70; // TCP消息处理器优先级
+            return 70; // TCP 消息处理器优先级
         }
 
         @Override
         public boolean supports(@NotNull Class<?> messageType) {
-            // 检查是否支持该消息类型
+            // 检查是否支持该类型的消息
             return messageType.getName().contains("ByteBuf") ||
                     messageType.getName().contains("tcp") ||
                     messageType.getName().contains("TCP");
         }
     }
 
-    // NetworkExtension 实现
+    // NetworkExtension 接口实现
     @Override
     @NotNull
     public String getId() {
@@ -441,7 +441,7 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
         }
     }
 
-    // ========== GracefulShutdownExtension 实现 ==========
+    // ========== GracefulShutdownExtension 接口实现 ==========
 
     @Override
     public void prepareForShutdown() throws Exception {
@@ -449,7 +449,7 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
         shutdownPrepared = true;
 
         // 停止接收新的 TCP 连接
-        // 这里可以关闭端口、移除路由等
+        // 这里可以关闭连接、移除路由等操作
         log.info("TCP extension prepared for shutdown");
     }
 
@@ -479,7 +479,7 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
         return getActiveRequestCount() == 0;
     }
 
-    // ========== 统计功能已移至StatisticsAware基类 ==========
+    // ========== 连接管理方法（继承自StatisticsAware基类） ==========
 
     /**
      * 获取活跃连接数量
@@ -561,7 +561,7 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
                 .messageSize(messageSize)
                 .messageType("TCP_MESSAGE")
                 .isRequest(true)
-                .priority(4) // TCP消息优先级
+                .priority(4) // TCP 消息优先级
                 .build();
     }
 
@@ -570,13 +570,13 @@ public class TcpExtension extends StatisticsAware implements ExtensionMain, Prot
      */
     private void sendErrorResponse(@NotNull ChannelHandlerContext ctx, @NotNull String errorMessage) {
         try {
-            // TCP错误响应处理
+            // TCP 错误响应处理
             String errorMsg = "ERROR: " + errorMessage;
             ByteBuf buffer = ctx.alloc().buffer();
             buffer.writeBytes(errorMsg.getBytes());
             ctx.writeAndFlush(buffer);
         } catch (Exception e) {
-            log.error("❌ Failed to send error response to TCP client: {}", ctx.channel().remoteAddress(), e);
+            log.error("Failed to send error response to TCP client: {}", ctx.channel().remoteAddress(), e);
         }
     }
 }

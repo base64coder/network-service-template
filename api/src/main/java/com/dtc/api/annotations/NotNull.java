@@ -1,12 +1,12 @@
 package com.dtc.api.annotations;
 
-import java.lang.annotation.*;
+import java.lang.annotation.ææ;
 
-/**
- * 标记参数、返回值或字段不能为null
- * 
- * @author Network Service Template
- */
+/ææææ
+ææ æ è®°åæ°ãè¿åå¼æå­æ®µä¸è½ä¸ºnull
+ææ 
+ææ @author Network Service Template
+ææ/
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD })

@@ -7,7 +7,7 @@ import com.google.inject.AbstractModule;
 
 /**
  * 安全模块
- * 绑定安全相关的服务
+ * 配置安全相关的依赖注入
  * 
  * @author Network Service Template
  */

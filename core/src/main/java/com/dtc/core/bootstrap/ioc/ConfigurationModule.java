@@ -1,14 +1,14 @@
 package com.dtc.core.bootstrap.ioc;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.config.ConfigurationService;
-import com.dtc.core.config.ServerConfiguration;
-import com.dtc.core.config.ServerId;
+import com.dtc.core.bootstrap.config.ConfigurationService;
+import com.dtc.core.bootstrap.config.ServerConfiguration;
+import com.dtc.core.bootstrap.config.ServerId;
 import com.google.inject.AbstractModule;
 
 /**
  * 配置模块
- * 绑定配置相关的服务
+ * 配置配置服务相关的依赖注入
  * 
  * @author Network Service Template
  */
@@ -22,13 +22,13 @@ public class ConfigurationModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        // 绑定服务器配置
+        // 绑定服务器配置实例
         bind(ServerConfiguration.class).toInstance(configuration);
 
-        // 绑定服务器ID
+        // 绑定服务器ID实例
         bind(ServerId.class).toInstance(new ServerId(configuration.getServerId()));
 
-        // 绑定配置服务
+        // 绑定配置服务实例
         bind(ConfigurationService.class).asEagerSingleton();
     }
 }

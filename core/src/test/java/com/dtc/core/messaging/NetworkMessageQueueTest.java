@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * NetworkMessageQueue 单元测试
+ * NetworkMessageQueue 氓聧聲氓聟聝忙碌聥猫炉聲
  */
 public class NetworkMessageQueueTest {
 
@@ -58,60 +58,58 @@ public class NetworkMessageQueueTest {
     }
 
     @Test
-    @DisplayName("测试队列启动和停止")
+    @DisplayName("忙碌聥猫炉聲茅聵聼氓聢聴氓聬炉氓聤篓氓聮聦氓聛聹忙颅?)
     void testQueueStartAndStop() {
-        // 测试启动
+        // 忙碌聥猫炉聲氓聬炉氓聤篓
         assertDoesNotThrow(() -> messageQueue.start());
 
-        // 测试停止
+        // 忙碌聥猫炉聲氓聛聹忙颅垄
         assertDoesNotThrow(() -> messageQueue.stop());
     }
 
     @Test
-    @DisplayName("测试消息发布")
+    @DisplayName("忙碌聥猫炉聲忙露聢忙聛炉氓聫聭氓赂聝")
     @Timeout(5)
     void testMessagePublish() throws InterruptedException {
-        // 启动队列
+        // 氓聬炉氓聤篓茅聵聼氓聢聴
         messageQueue.start();
 
-        // 创建测试消息
+        // 氓聢聸氓禄潞忙碌聥猫炉聲忙露聢忙聛炉
         NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("test")
                 .message("test message")
                 .messageType("TEST_MESSAGE")
                 .build();
 
-        // 发布消息
+        // 氓聫聭氓赂聝忙露聢忙聛炉
         boolean published = messageQueue.publish(event);
-        assertTrue(published, "消息应该成功发布");
+        assertTrue(published, "忙露聢忙聛炉氓潞聰猫炉楼忙聢聬氓聤聼氓聫聭氓赂聝");
 
-        // 等待处理
+        // 莽颅聣氓戮聟氓陇聞莽聬聠
         Thread.sleep(100);
 
-        // 停止队列
+        // 氓聛聹忙颅垄茅聵聼氓聢聴
         messageQueue.stop();
     }
 
     @Test
-    @DisplayName("测试队列状态")
+    @DisplayName("忙碌聥猫炉聲茅聵聼氓聢聴莽聤露忙聙?)
     void testQueueStatus() {
-        // 启动前状态
-        NetworkMessageQueue.QueueStatus status = messageQueue.getStatus();
+        // 氓聬炉氓聤篓氓聣聧莽聤露忙聙?        NetworkMessageQueue.QueueStatus status = messageQueue.getStatus();
         assertNotNull(status);
 
-        // 启动队列
+        // 氓聬炉氓聤篓茅聵聼氓聢聴
         messageQueue.start();
 
-        // 启动后状态
-        status = messageQueue.getStatus();
+        // 氓聬炉氓聤篓氓聬聨莽聤露忙聙?        status = messageQueue.getStatus();
         assertNotNull(status);
 
-        // 停止队列
+        // 氓聛聹忙颅垄茅聵聼氓聢聴
         messageQueue.stop();
     }
 
     @Test
-    @DisplayName("测试高并发消息发布")
+    @DisplayName("忙碌聥猫炉聲茅芦聵氓鹿露氓聫聭忙露聢忙聛炉氓聫聭氓赂?)
     @Timeout(10)
     void testConcurrentMessagePublish() throws InterruptedException {
         messageQueue.start();
@@ -120,7 +118,7 @@ public class NetworkMessageQueueTest {
         CountDownLatch latch = new CountDownLatch(messageCount);
         AtomicInteger successCount = new AtomicInteger(0);
 
-        // 并发发布消息
+        // 氓鹿露氓聫聭氓聫聭氓赂聝忙露聢忙聛炉
         for (int i = 0; i < messageCount; i++) {
             new Thread(() -> {
                 NetworkMessageEvent event = NetworkMessageEvent.builder()
@@ -136,22 +134,19 @@ public class NetworkMessageQueueTest {
             }).start();
         }
 
-        // 等待所有消息处理完成
-        assertTrue(latch.await(5, TimeUnit.SECONDS), "所有消息应该在5秒内处理完成");
+        // 莽颅聣氓戮聟忙聣聙忙聹聣忙露聢忙聛炉氓陇聞莽聬聠氓庐聦忙聢?        assertTrue(latch.await(5, TimeUnit.SECONDS), "忙聣聙忙聹聣忙露聢忙聛炉氓潞聰猫炉楼氓聹篓5莽搂聮氓聠聟氓陇聞莽聬聠氓庐聦忙聢聬");
 
-        // 验证成功发布的消息数量
-        assertTrue(successCount.get() > 0, "应该有消息成功发布");
+        // 茅陋聦猫炉聛忙聢聬氓聤聼氓聫聭氓赂聝莽職聞忙露聢忙聛炉忙聲掳茅聡?        assertTrue(successCount.get() > 0, "氓潞聰猫炉楼忙聹聣忙露聢忙聛炉忙聢聬氓聤聼氓聫聭氓赂?);
 
         messageQueue.stop();
     }
 
     @Test
-    @DisplayName("测试队列满时的处理")
+    @DisplayName("忙碌聥猫炉聲茅聵聼氓聢聴忙禄隆忙聴露莽職聞氓陇聞莽聬?)
     void testQueueFullHandling() {
         messageQueue.start();
 
-        // 发布大量消息直到队列满
-        int publishedCount = 0;
+        // 氓聫聭氓赂聝氓陇搂茅聡聫忙露聢忙聛炉莽聸麓氓聢掳茅聵聼氓聢聴忙禄?        int publishedCount = 0;
         for (int i = 0; i < 10000; i++) {
             NetworkMessageEvent event = NetworkMessageEvent.builder()
                     .protocolType("test")
@@ -162,21 +157,21 @@ public class NetworkMessageQueueTest {
             if (messageQueue.publish(event)) {
                 publishedCount++;
             } else {
-                break; // 队列满，停止发布
+                break; // 茅聵聼氓聢聴忙禄隆茂录聦氓聛聹忙颅垄氓聫聭氓赂聝
             }
         }
 
-        assertTrue(publishedCount > 0, "应该有一些消息成功发布");
+        assertTrue(publishedCount > 0, "氓潞聰猫炉楼忙聹聣盲赂聙盲潞聸忙露聢忙聛炉忙聢聬氓聤聼氓聫聭氓赂?);
 
         messageQueue.stop();
     }
 
     @Test
-    @DisplayName("测试不同协议类型的消息")
+    @DisplayName("忙碌聥猫炉聲盲赂聧氓聬聦氓聧聫猫庐庐莽卤禄氓聻聥莽職聞忙露聢忙聛?)
     void testDifferentProtocolMessages() {
         messageQueue.start();
 
-        // 测试HTTP消息
+        // 忙碌聥猫炉聲HTTP忙露聢忙聛炉
         NetworkMessageEvent httpEvent = NetworkMessageEvent.builder()
                 .protocolType("http")
                 .message("HTTP message")
@@ -184,7 +179,7 @@ public class NetworkMessageQueueTest {
                 .build();
         assertTrue(messageQueue.publish(httpEvent));
 
-        // 测试WebSocket消息
+        // 忙碌聥猫炉聲WebSocket忙露聢忙聛炉
         NetworkMessageEvent wsEvent = NetworkMessageEvent.builder()
                 .protocolType("websocket")
                 .message("WebSocket message")
@@ -192,7 +187,7 @@ public class NetworkMessageQueueTest {
                 .build();
         assertTrue(messageQueue.publish(wsEvent));
 
-        // 测试MQTT消息
+        // 忙碌聥猫炉聲MQTT忙露聢忙聛炉
         NetworkMessageEvent mqttEvent = NetworkMessageEvent.builder()
                 .protocolType("mqtt")
                 .message("MQTT message")
@@ -204,7 +199,7 @@ public class NetworkMessageQueueTest {
     }
 
     @Test
-    @DisplayName("测试消息事件构建器")
+    @DisplayName("忙碌聥猫炉聲忙露聢忙聛炉盲潞聥盲禄露忙聻聞氓禄潞氓聶?)
     void testNetworkMessageEventBuilder() {
         NetworkMessageEvent event = NetworkMessageEvent.builder()
                 .protocolType("test")
@@ -227,7 +222,7 @@ public class NetworkMessageQueueTest {
     }
 
     @Test
-    @DisplayName("测试队列性能")
+    @DisplayName("忙碌聥猫炉聲茅聵聼氓聢聴忙聙搂猫聝陆")
     @Timeout(10)
     void testQueuePerformance() throws InterruptedException {
         messageQueue.start();
@@ -235,7 +230,7 @@ public class NetworkMessageQueueTest {
         long startTime = System.currentTimeMillis();
         int messageCount = 10000;
 
-        // 发布大量消息
+        // 氓聫聭氓赂聝氓陇搂茅聡聫忙露聢忙聛炉
         for (int i = 0; i < messageCount; i++) {
             NetworkMessageEvent event = NetworkMessageEvent.builder()
                     .protocolType("test")
@@ -246,14 +241,14 @@ public class NetworkMessageQueueTest {
             messageQueue.publish(event);
         }
 
-        // 等待处理完成
+        // 莽颅聣氓戮聟氓陇聞莽聬聠氓庐聦忙聢聬
         Thread.sleep(1000);
 
         long endTime = System.currentTimeMillis();
         long duration = endTime - startTime;
 
-        // 验证性能（应该能在合理时间内处理10000条消息）
-        assertTrue(duration < 5000, "处理10000条消息应该在5秒内完成");
+        // 茅陋聦猫炉聛忙聙搂猫聝陆茂录聢氓潞聰猫炉楼猫聝陆氓聹篓氓聬聢莽聬聠忙聴露茅聴麓氓聠聟氓陇聞莽聬聠10000忙聺隆忙露聢忙聛炉茂录聣
+        assertTrue(duration < 5000, "氓陇聞莽聬聠10000忙聺隆忙露聢忙聛炉氓潞聰猫炉楼氓聹篓5莽搂聮氓聠聟氓庐聦忙聢聬");
 
         messageQueue.stop();
     }

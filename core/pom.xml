@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.dtc</groupId>
@@ -19,6 +19,13 @@
         <dependency>
             <groupId>com.dtc</groupId>
             <artifactId>api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 统一注解依赖 -->
+        <dependency>
+            <groupId>com.dtc</groupId>
+            <artifactId>annotations</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -42,6 +49,13 @@
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
+        </dependency>
+        
+        <!-- JDBC支持 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
         </dependency>
 
         <!-- JSON处理 -->

@@ -2,7 +2,7 @@ package com.dtc.core.bootstrap.ioc;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import com.dtc.core.config.ServerConfiguration;
+import com.dtc.core.bootstrap.config.ServerConfiguration;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -12,7 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 网络服务Guice启动器 负责创建和配置依赖注入容器
+ * Guice 容器工厂
+ * 负责创建和配置 Guice 依赖注入容器
  * 
  * @author Network Service Template
  */
@@ -21,10 +22,10 @@ public class GuiceContainerFactory {
     private static final Logger log = LoggerFactory.getLogger(GuiceContainerFactory.class);
 
     /**
-     * 创建主要的依赖注入容器
+     * 创建网络服务主容器
      *
      * @param configuration 服务器配置
-     * @return 依赖注入容器
+     * @return Guice 注入器
      */
     @Nullable
     public static Injector bootstrapInjector(@NotNull ServerConfiguration configuration) {
@@ -33,17 +34,17 @@ public class GuiceContainerFactory {
         try {
             final ImmutableList.Builder<AbstractModule> modules = ImmutableList.builder();
 
-            // 基础模块
+            // 核心模块
             modules.add(
                     /* 系统信息模块 */
                     new SystemInformationModule(configuration),
-                    /* 懒加载单例模块 */
+                    /* 延迟单例模块 */
                     new LazySingletonModule(),
                     /* 生命周期模块 */
                     new LifecycleModule(),
                     /* 配置模块 */
                     new ConfigurationModule(configuration),
-                    /* Netty网络模块 */
+                    /* Netty 服务器模块 */
                     new NettyModule(),
                     /* 网络服务主模块 */
                     new NetworkServiceMainModule(),
@@ -51,7 +52,7 @@ public class GuiceContainerFactory {
                     new ExtensionModule(),
                     /* 扩展依赖模块 */
                     new ExtensionDependencyModule(),
-                    /* 指标监控模块 */
+                    /* 指标模块 */
                     new MetricsModule(),
                     /* 安全模块 */
                     new SecurityModule(),
@@ -78,10 +79,10 @@ public class GuiceContainerFactory {
     }
 
     /**
-     * 创建扩展系统的依赖注入容器
+     * 创建扩展系统容器
      *
      * @param configuration 服务器配置
-     * @return 扩展系统注入容器
+     * @return 扩展系统注入器
      */
     @NotNull
     public static Injector extensionInjector(@NotNull ServerConfiguration configuration) {
@@ -96,10 +97,10 @@ public class GuiceContainerFactory {
     }
 
     /**
-     * 创建持久化系统的依赖注入容器
+     * 创建持久化系统容器
      *
      * @param configuration 服务器配置
-     * @return 持久化系统注入容器
+     * @return 持久化系统注入器
      */
     @NotNull
     public static Injector persistenceInjector(@NotNull ServerConfiguration configuration) {

@@ -7,8 +7,8 @@ import com.dtc.core.extensions.model.ExtensionMetadata;
 import java.nio.file.Path;
 
 /**
- * 网络扩展接口
- * 定义扩展的基本行为
+ * 网络协议扩展接口
+ * 自定义协议扩展的基础接口
  * 
  * @author Network Service Template
  */
@@ -122,9 +122,9 @@ public interface NetworkExtension {
     boolean isStopped();
 
     /**
-     * 清理扩展资源
+     * 清理扩展
      * 
-     * @param disable 是否禁用扩展
+     * @param disable 是否禁用
      */
     void cleanup(boolean disable);
 }

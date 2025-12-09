@@ -5,8 +5,8 @@ import com.dtc.core.metrics.MetricsRegistry;
 import com.google.inject.AbstractModule;
 
 /**
- * 指标监控模块
- * 绑定指标监控相关的服务
+ * 指标模块
+ * 配置指标相关的依赖注入
  * 
  * @author Network Service Template
  */

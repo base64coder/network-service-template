@@ -8,7 +8,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 懒加载单例注解 标记需要懒加载的单例类
+ * 延迟单例注解
+ * 标记需要延迟初始化的单例类型
  * 
  * @author Network Service Template
  */

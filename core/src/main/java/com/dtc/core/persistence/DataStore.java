@@ -35,9 +35,8 @@ public class DataStore {
 
         log.info("Initializing data store...");
 
-        // 这里应该实现数据存储的初始化逻辑
-        // 例如：连接数据库、初始化缓存等
-
+        // 可以通过路由管理器实现数据存储的初始化逻辑
+        // 例如：连接数据库或初始化缓存等
         initialized = true;
         log.info("Data store initialized successfully");
     }
@@ -54,8 +53,8 @@ public class DataStore {
 
         log.info("Shutting down data store...");
 
-        // 这里应该实现数据存储的关闭逻辑
-        // 例如：关闭数据库连接、清理缓存等
+        // 可以通过路由管理器实现数据存储的关闭逻辑
+        // 例如：关闭数据库连接或清理缓存等
 
         data.clear();
         initialized = false;

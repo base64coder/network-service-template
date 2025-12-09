@@ -7,9 +7,9 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 
 /**
- * 统计感知基类
- * 为需要统计功能的组件提供统一的统计能力
- * 所有统计都委托给StatisticsCollector，避免重复统计
+ * 统计信息感知接口
+ * 为需要统计信息的组件提供统计信息收集功能
+ * 组件统计信息通过StatisticsCollector收集，并可以查询统计信息
  * 
  * @author Network Service Template
  */
@@ -53,7 +53,7 @@ public abstract class StatisticsAware {
     }
 
     /**
-     * 记录连接断开
+     * 记录连接关闭
      */
     protected void recordConnectionClosed() {
         statisticsCollector.onConnectionClosed();
@@ -62,7 +62,7 @@ public abstract class StatisticsAware {
     // ========== 统计信息获取方法 ==========
 
     /**
-     * 获取活跃连接数
+     * 获取活动连接数
      */
     public int getActiveConnections() {
         return statisticsCollector.getActiveConnections();
@@ -97,7 +97,7 @@ public abstract class StatisticsAware {
     }
 
     /**
-     * 获取活跃请求数
+     * 获取活动请求数
      */
     public long getActiveRequestCount() {
         return statisticsCollector.getActiveRequestCount();

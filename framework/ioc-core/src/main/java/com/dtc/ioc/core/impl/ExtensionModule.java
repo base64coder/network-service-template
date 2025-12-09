@@ -4,21 +4,20 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.ioc.core.NetworkApplicationContext;
 
 /**
- * 扩展模块
- * 配置扩展系统相关组件
- * 
- * @author Network Service Template
- */
+     * æ©å±æ¨¡å
+éç½®æ©å±ç³»ç»ç¸å³ç»ä»¶
+@author Network Service Template
+/
 public class ExtensionModule extends AbstractIoCModule {
     
     @Override
     public void configure(@NotNull NetworkApplicationContext context) {
-        // 注册扩展管理组件
+        // æ³¨åæ©å±ç®¡çç»ä»¶
         bind(context, "extensionManager", ExtensionManager.class);
         bind(context, "extensionBootstrap", ExtensionBootstrap.class);
         bind(context, "extensionLifecycleHandler", ExtensionLifecycleHandler.class);
         
-        // 注册扩展依赖
+        // æ³¨åæ©å±ä¾èµ
         bind(context, "httpExtension", HttpExtension.class);
         bind(context, "mqttExtension", MqttExtension.class);
         bind(context, "tcpExtension", TcpExtension.class);
@@ -34,16 +33,16 @@ public class ExtensionModule extends AbstractIoCModule {
     @Override
     @NotNull
     public String getModuleDescription() {
-        return "扩展系统模块，提供扩展管理、生命周期管理等功能";
+        return "æ©å±ç³»ç»æ¨¡åï¼æä¾æ©å±ç®¡çãçå½å¨æç®¡çç­åè½";
     }
     
     @Override
     @NotNull
     public String[] getDependencies() {
-        return new String[]{"NetworkServiceModule"}; // 依赖核心模块
+        return new String[]{"NetworkServiceModule"}; // ä¾èµæ ¸å¿æ¨¡å
     }
     
-    // 模拟的类定义（实际项目中这些类应该存在）
+    // æ¨¡æçç±»å®ä¹ï¼å®éé¡¹ç®ä¸­è¿äºç±»åºè¯¥å­å¨ï¼
     public static class ExtensionManager {}
     public static class ExtensionBootstrap {}
     public static class ExtensionLifecycleHandler {}

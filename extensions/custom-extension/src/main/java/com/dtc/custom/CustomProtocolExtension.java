@@ -10,10 +10,10 @@ import com.dtc.api.parameter.ExtensionStartInput;
 import com.dtc.api.parameter.ExtensionStartOutput;
 import com.dtc.api.parameter.ExtensionStopInput;
 import com.dtc.api.parameter.ExtensionStopOutput;
-import com.dtc.core.custom.CustomCodecFactory;
-import com.dtc.core.custom.CustomConnectionManager;
-import com.dtc.core.custom.CustomServer;
-import com.dtc.core.custom.CustomMessageHandler;
+import com.dtc.core.network.custom.CustomCodecFactory;
+import com.dtc.core.network.custom.CustomConnectionManager;
+import com.dtc.core.network.custom.CustomServer;
+import com.dtc.core.network.custom.CustomMessageHelper;
 import com.dtc.core.statistics.StatisticsAware;
 import com.dtc.core.messaging.NetworkMessageEvent;
 import com.dtc.core.messaging.NetworkMessageQueue;
@@ -32,9 +32,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 自定义协议扩展示例
- * 展示如何通过扩展实现自定义编解码器
- *
+ * 自定义协议扩展
+ * 实现自定义协议的编解码器和消息处理逻辑
+ * 
  * @author Network Service Template
  */
 @Singleton
@@ -47,49 +47,49 @@ public class CustomProtocolExtension extends StatisticsAware
     @SuppressWarnings("unused") // 保留用于依赖注入，但由NettyServer统一管理
     private final CustomServer customServer;
     @SuppressWarnings("unused") // 保留用于依赖注入，但由NettyServer统一管理
-    private final CustomMessageHandler customMessageHandler;
+    private final CustomMessageHelper customMessageHelper;
     @SuppressWarnings("unused") // 保留用于依赖注入，但由NettyServer统一管理
     private final CustomConnectionManager connectionManager;
     private final CustomCodecFactory customCodec;
     private final NetworkMessageQueue messageQueue;
 
     private volatile boolean started = false;
-    @SuppressWarnings("unused") // 保留用于优雅关闭功能
+    @SuppressWarnings("unused") // 保留用于优雅停机功能
     private volatile boolean shutdownPrepared = false;
 
-    // 连接管理
+    // 活跃连接
     private final ConcurrentHashMap<String, ChannelHandlerContext> activeConnections = new ConcurrentHashMap<>();
 
     @Inject
     public CustomProtocolExtension(@NotNull CustomServer customServer,
-            @NotNull CustomMessageHandler customMessageHandler,
+            @NotNull CustomMessageHelper customMessageHelper,
             @NotNull CustomConnectionManager connectionManager,
             @NotNull CustomCodecFactory customCodec,
             @NotNull NetworkMessageQueue messageQueue,
             @NotNull com.dtc.core.statistics.StatisticsCollector statisticsCollector) {
         super(statisticsCollector);
         this.customServer = customServer;
-        this.customMessageHandler = customMessageHandler;
+        this.customMessageHelper = customMessageHelper;
         this.connectionManager = connectionManager;
         this.customCodec = customCodec;
         this.messageQueue = messageQueue;
     }
 
     /**
-     * 创建自定义解码器
+     * 创建自定义协议解码器
      */
     @NotNull
     public ChannelHandler createCustomDecoder() {
-        // 使用注入的编解码器创建解码器
+        // 这里可以根据需要创建自定义解码器
         return new CustomMessageDecoder(customCodec);
     }
 
     /**
-     * 创建自定义编码器
+     * 创建自定义协议编码器
      */
     @NotNull
     public ChannelHandler createCustomEncoder() {
-        // 使用注入的编解码器创建编码器
+        // 这里可以根据需要创建自定义编码器
         return new CustomMessageEncoder(customCodec);
     }
 
@@ -150,7 +150,7 @@ public class CustomProtocolExtension extends StatisticsAware
     public void onConnect(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
         log.info("Client {} connected to custom protocol", clientId);
 
-        // 添加连接到活跃连接管理
+        // 保存活跃连接
         activeConnections.put(clientId, ctx);
     }
 
@@ -158,16 +158,16 @@ public class CustomProtocolExtension extends StatisticsAware
     public void onDisconnect(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
         log.info("Client {} disconnected from custom protocol", clientId);
 
-        // 从活跃连接中移除
+        // 移除活跃连接
         activeConnections.remove(clientId);
     }
 
     @Override
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-        log.debug("📨 Custom protocol message received from client: {}", ctx.channel().remoteAddress());
+        log.debug("Custom protocol message received from client: {}", ctx.channel().remoteAddress());
 
         try {
-            // 处理自定义协议消息 - 使用 Disruptor 异步处理
+            // 处理自定义协议消息 - 通过 Disruptor 异步处理
             if (message != null) {
                 // 创建网络消息事件
                 NetworkMessageEvent event = createNetworkMessageEvent(ctx, message);
@@ -175,17 +175,17 @@ public class CustomProtocolExtension extends StatisticsAware
                 // 发布到 Disruptor 队列进行异步处理
                 boolean published = messageQueue.publish(event);
                 if (published) {
-                    log.debug("✅ Custom protocol message published to Disruptor queue: {}", event.getEventId());
+                    log.debug("Custom protocol message published to Disruptor queue: {}", event.getEventId());
                 } else {
-                    log.error("❌ Failed to publish Custom protocol message to Disruptor queue");
+                    log.error("Failed to publish Custom protocol message to Disruptor queue");
                     // 如果发布失败，发送错误响应
                     sendErrorResponse(ctx, "Service temporarily unavailable");
                 }
             } else {
-                log.warn("⚠️ Received null message in Custom protocol extension");
+                log.warn("Received null message in Custom protocol extension");
             }
         } catch (Exception e) {
-            log.error("❌ Error handling Custom protocol message from client: {}", ctx.channel().remoteAddress(), e);
+            log.error("Error handling Custom protocol message from client: {}", ctx.channel().remoteAddress(), e);
             sendErrorResponse(ctx, "Internal server error");
         }
     }
@@ -283,7 +283,7 @@ public class CustomProtocolExtension extends StatisticsAware
 
     @Override
     public void setEnabled(boolean enabled) {
-        // 扩展启用状态由外部控制
+        // 自定义协议扩展不支持禁用
     }
 
     @Override
@@ -302,20 +302,20 @@ public class CustomProtocolExtension extends StatisticsAware
         started = false;
     }
 
-    // ========== 私有方法 ==========
+    // ========== 私有辅助方法 ==========
 
     private void initializeCustomHandler() {
         log.debug("Initializing custom protocol handler");
-        // 这里可以添加自定义协议的初始化逻辑
+        // 这里可以添加初始化自定义协议处理器的逻辑
     }
 
     private void cleanupCustomHandler() {
         log.debug("Cleaning up custom protocol handler");
-        // 这里可以添加自定义协议的清理逻辑
+        // 这里可以添加清理自定义协议处理器的逻辑
     }
 
     /**
-     * 自定义消息处理器
+     * 自定义协议消息处理器
      */
     private class CustomProtocolMessageHandler implements MessageHandler {
 
@@ -324,14 +324,14 @@ public class CustomProtocolExtension extends StatisticsAware
         public Object handleMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
             // 处理接收到的消息
             onMessage(ctx, message);
-            return null; // 继续处理链
+            return null; // 不返回响应
         }
 
         @Override
         @Nullable
         public Object handleOutboundMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
             // 处理发送的消息
-            return message; // 直接发送
+            return message; // 直接返回
         }
 
         @Override
@@ -352,8 +352,8 @@ public class CustomProtocolExtension extends StatisticsAware
         log.info("Preparing Custom Protocol extension for shutdown...");
         shutdownPrepared = true;
 
-        // 停止接收新的自定义协议连接
-        // 这里可以关闭端口、移除路由等
+        // 关闭所有活跃的自定义协议连接
+        // 这里可以添加关闭连接的逻辑
         log.info("Custom Protocol extension prepared for shutdown");
     }
 
@@ -383,7 +383,7 @@ public class CustomProtocolExtension extends StatisticsAware
         return getActiveRequestCount() == 0;
     }
 
-    // ========== 统计功能已移至StatisticsAware基类 ==========
+    // ========== 连接管理方法（继承自StatisticsAware） ==========
 
     /**
      * 获取活跃连接数量
@@ -438,10 +438,10 @@ public class CustomProtocolExtension extends StatisticsAware
         }
     }
 
-    // ========== 自定义编解码器 ==========
+    // ========== 自定义协议编解码器 ==========
 
     /**
-     * 自定义消息解码器
+     * 自定义协议消息解码器
      */
     public static class CustomMessageDecoder extends io.netty.handler.codec.MessageToMessageDecoder<ByteBuf> {
         @SuppressWarnings("unused")
@@ -459,7 +459,7 @@ public class CustomProtocolExtension extends StatisticsAware
     }
 
     /**
-     * 自定义消息编码器
+     * 自定义协议消息编码器
      */
     public static class CustomMessageEncoder extends io.netty.handler.codec.MessageToByteEncoder<Object> {
         @SuppressWarnings("unused")
@@ -523,7 +523,7 @@ public class CustomProtocolExtension extends StatisticsAware
             ctx.writeAndFlush(response);
 
         } catch (Exception e) {
-            log.error("❌ Failed to send error response to Custom protocol client: {}", ctx.channel().remoteAddress(),
+            log.error("Failed to send error response to Custom protocol client: {}", ctx.channel().remoteAddress(),
                     e);
         }
     }

@@ -5,43 +5,38 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 /**
- * 依赖注入器接口
- * 借鉴Guice的依赖注入机制
- * 
- * @author Network Service Template
- */
+     * ä¾èµæ³¨å¥å¨æ¥å£
+åé´Guiceçä¾èµæ³¨å¥æºå¶
+@author Network Service Template
+/
 public interface DependencyInjector {
     
     /**
-     * 注入依赖
-     * 
-     * @param bean Bean实例
-     * @param definition Bean定义
-     */
+     * æ³¨å¥ä¾èµ
+@param bean Beanå®ä¾
+@param definition Beanå®ä¹
+/
     void injectDependencies(Object bean, BeanDefinition definition);
     
     /**
-     * 注入字段依赖
-     * 
-     * @param bean Bean实例
-     * @param beanClass Bean类型
-     */
+     * æ³¨å¥å­æ®µä¾èµ
+@param bean Beanå®ä¾
+@param beanClass Beanç±»å
+/
     void injectFieldDependencies(Object bean, Class<?> beanClass);
     
     /**
-     * 注入构造函数依赖
-     * 
-     * @param constructor 构造函数
-     * @param args 参数
-     * @return Bean实例
-     */
+     * æ³¨å¥æé å½æ°ä¾èµ
+@param constructor æé å½æ°
+@param args åæ°
+@return Beanå®ä¾
+/
     Object createBeanWithConstructor(Constructor<?> constructor, Object[] args);
     
     /**
-     * 注入方法依赖
-     * 
-     * @param bean Bean实例
-     * @param beanClass Bean类型
-     */
+     * æ³¨å¥æ¹æ³ä¾èµ
+@param bean Beanå®ä¾
+@param beanClass Beanç±»å
+/
     void injectMethodDependencies(Object bean, Class<?> beanClass);
 }

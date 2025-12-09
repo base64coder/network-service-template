@@ -42,14 +42,14 @@ public class DiagnosticService {
     /**
      * 执行健康检查
      * 
-     * @return 健康检查结果
+     * @return 健康检查状态
      */
     @NotNull
     public HealthStatus performHealthCheck() {
         log.debug("Performing health check...");
 
-        // 这里应该实现具体的健康检查逻辑
-        // 例如：检查数据库连接、外部服务等
+        // 简单的健康检查逻辑
+        // 实际应该检查各种资源状态，如内存、连接数等
 
         return HealthStatus.HEALTHY;
     }

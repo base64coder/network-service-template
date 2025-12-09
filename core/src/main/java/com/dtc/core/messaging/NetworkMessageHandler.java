@@ -1,18 +1,20 @@
 package com.dtc.core.messaging;
 
-import com.dtc.api.annotations.NotNull;
-import com.dtc.core.serialization.ProtobufSerializer;
-import com.dtc.core.messaging.NetworkMessageQueue;
-import com.google.protobuf.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.concurrent.atomic.AtomicLong;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dtc.api.annotations.NotNull;
+import com.dtc.core.serialization.ProtobufSerializer;
+import com.google.protobuf.Message;
 
 /**
- * 网络消息处理器 处理网络消息的接收、序列化和转发
+ * 网络消息处理器
+ * 处理网络消息的接收和转发，将消息封装为事件并放入队列
  * 
  * @author Network Service Template
  */
@@ -45,7 +47,7 @@ public class NetworkMessageHandler {
             log.debug("Handling message: {} (size: {} bytes)", message.getClass().getSimpleName(),
                     message.getSerializedSize());
 
-            // 创建网络消息事件并发布到队列
+            // 创建网络消息事件并放入队列
             NetworkMessageEvent event = NetworkMessageEvent.builder()
                     .protocolType("tcp") // 默认协议类型
                     .message(message)
@@ -81,7 +83,7 @@ public class NetworkMessageHandler {
 
             log.debug("Handling raw data: {} bytes", data.length);
 
-            // 创建网络消息事件并发布到队列
+            // 创建网络消息事件并放入队列
             NetworkMessageEvent event = NetworkMessageEvent.builder()
                     .protocolType("custom") // 原始数据默认为custom协议
                     .message(data)
@@ -106,7 +108,7 @@ public class NetworkMessageHandler {
     }
 
     /**
-     * 获取处理统计信息
+     * 获取处理器统计信息
      */
     @NotNull
     public HandlerStats getStats() {
@@ -114,7 +116,7 @@ public class NetworkMessageHandler {
     }
 
     /**
-     * 处理器统计信息
+     * 处理器统计信息类
      */
     public static class HandlerStats {
         private final long receivedCount;

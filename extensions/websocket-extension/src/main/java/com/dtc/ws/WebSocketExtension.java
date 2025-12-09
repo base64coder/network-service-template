@@ -13,9 +13,9 @@ import com.dtc.api.parameter.ExtensionStopOutput;
 import com.dtc.core.extensions.NetworkExtension;
 import com.dtc.core.extensions.model.ExtensionMetadata;
 import com.dtc.core.extensions.GracefulShutdownExtension;
-import com.dtc.core.websocket.WebSocketServer;
-import com.dtc.core.websocket.WebSocketMessageHandler;
-import com.dtc.core.websocket.WebSocketConnectionManager;
+import com.dtc.core.network.websocket.WebSocketServer;
+import com.dtc.core.network.websocket.WebSocketMessageHelper;
+import com.dtc.core.network.websocket.WebSocketConnectionManager;
 import com.dtc.core.statistics.StatisticsAware;
 import com.dtc.core.messaging.NetworkMessageEvent;
 import com.dtc.core.messaging.NetworkMessageQueue;
@@ -33,8 +33,8 @@ import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * WebSocket协议扩展示例
- * 实现WebSocket协议的基本功能
+ * WebSocket 协议扩展
+ * 实现 WebSocket 协议扩展的功能和逻辑
  * 
  * @author Network Service Template
  */
@@ -45,7 +45,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
     private static final Logger log = LoggerFactory.getLogger(WebSocketExtension.class);
 
     private final WebSocketServer webSocketServer;
-    private final WebSocketMessageHandler messageHandler;
+    private final WebSocketMessageHelper messageHelper;
     private final WebSocketConnectionManager connectionManager;
     private final NetworkMessageQueue messageQueue;
 
@@ -53,18 +53,18 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
     private volatile boolean enabled = true;
     private volatile boolean shutdownPrepared = false;
 
-    // 连接管理
+    // 活跃连接
     private final ConcurrentHashMap<String, ChannelHandlerContext> activeConnections = new ConcurrentHashMap<>();
 
     @Inject
     public WebSocketExtension(@NotNull WebSocketServer webSocketServer,
-            @NotNull WebSocketMessageHandler messageHandler,
+            @NotNull WebSocketMessageHelper messageHelper,
             @NotNull WebSocketConnectionManager connectionManager,
             @NotNull NetworkMessageQueue messageQueue,
             @NotNull com.dtc.core.statistics.StatisticsCollector statisticsCollector) {
         super(statisticsCollector);
         this.webSocketServer = webSocketServer;
-        this.messageHandler = messageHandler;
+        this.messageHelper = messageHelper;
         this.connectionManager = connectionManager;
         this.messageQueue = messageQueue;
     }
@@ -74,7 +74,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
         log.info("Starting WebSocket Extension v{}", input.getExtensionVersion());
 
         try {
-            // 初始化WebSocket处理器
+            // 初始化 WebSocket 协议处理器
             initializeWebSocketHandler();
 
             started = true;
@@ -90,7 +90,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
         log.info("Stopping WebSocket Extension v{}", input.getExtensionVersion());
 
         try {
-            // 清理WebSocket协议资源
+            // 清理 WebSocket 协议扩展资源
             cleanupWebSocketHandler();
 
             started = false;
@@ -122,30 +122,30 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
     public void onConnect(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
         log.info("WebSocket client connected: {} from {}", clientId, ctx.channel().remoteAddress());
 
-        // 添加连接到活跃连接管理
+        // 保存活跃连接到连接映射
         activeConnections.put(clientId, ctx);
 
-        // 处理WebSocket连接
-        // 这里可以实现WebSocket握手和连接建立逻辑
+        // 处理 WebSocket 连接
+        // 这里可以根据需要添加 WebSocket 握手后的连接处理逻辑
     }
 
     @Override
     public void onDisconnect(@NotNull ChannelHandlerContext ctx, @NotNull String clientId) {
         log.info("WebSocket client disconnected: {}", clientId);
 
-        // 从活跃连接中移除
+        // 移除活跃连接
         activeConnections.remove(clientId);
 
-        // 处理WebSocket断开连接
-        // 这里可以实现WebSocket关闭逻辑
+        // 处理 WebSocket 断开连接
+        // 这里可以根据需要添加 WebSocket 关闭处理逻辑
     }
 
     @Override
     public void onMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
-        log.debug("📨 WebSocket message received from client: {}", ctx.channel().remoteAddress());
+        log.debug("WebSocket message received from client: {}", ctx.channel().remoteAddress());
 
         try {
-            // 处理 WebSocket 消息 - 使用 Disruptor 异步处理
+            // 处理 WebSocket 消息 - 通过 Disruptor 异步处理
             if (message instanceof WebSocketFrame) {
                 WebSocketFrame webSocketFrame = (WebSocketFrame) message;
 
@@ -155,18 +155,18 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
                 // 发布到 Disruptor 队列进行异步处理
                 boolean published = messageQueue.publish(event);
                 if (published) {
-                    log.debug("✅ WebSocket message published to Disruptor queue: {}", event.getEventId());
+                    log.debug("WebSocket message published to Disruptor queue: {}", event.getEventId());
                 } else {
-                    log.error("❌ Failed to publish WebSocket message to Disruptor queue");
+                    log.error("Failed to publish WebSocket message to Disruptor queue");
                     // 如果发布失败，发送错误响应
                     sendErrorResponse(ctx, "Service temporarily unavailable");
                 }
             } else {
-                log.warn("⚠️ Received unexpected message type in WebSocket extension: {}",
+                log.warn("Received unexpected message type in WebSocket extension: {}",
                         message.getClass().getSimpleName());
             }
         } catch (Exception e) {
-            log.error("❌ Error handling WebSocket message from client: {}", ctx.channel().remoteAddress(), e);
+            log.error("Error handling WebSocket message from client: {}", ctx.channel().remoteAddress(), e);
             sendErrorResponse(ctx, "Internal server error");
         }
     }
@@ -175,8 +175,8 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
     public void onException(@NotNull ChannelHandlerContext ctx, @NotNull Throwable cause) {
         log.error("WebSocket protocol error from client: {}", ctx.channel().remoteAddress(), cause);
 
-        // 处理WebSocket协议异常
-        // 这里可以实现异常处理和连接关闭逻辑
+        // 处理 WebSocket 协议错误
+        // 这里可以根据需要添加错误处理逻辑，如关闭连接等
     }
 
     @Override
@@ -186,7 +186,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
     }
 
     /**
-     * 处理WebSocket帧
+     * 处理 WebSocket 帧
      */
     private void handleWebSocketFrame(@NotNull ChannelHandlerContext ctx, @NotNull WebSocketFrame frame) {
         if (frame instanceof TextWebSocketFrame) {
@@ -207,8 +207,8 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
      * 处理文本消息
      */
     private void handleTextMessage(@NotNull ChannelHandlerContext ctx, @NotNull String text) {
-        // 这里可以实现文本消息的处理逻辑
-        // 例如：JSON解析、消息路由等
+        // 这里可以根据需要添加文本消息处理逻辑
+        // 例如解析 JSON 格式的消息等
         log.debug("Processing text message: {}", text);
     }
 
@@ -216,29 +216,29 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
      * 处理二进制消息
      */
     private void handleBinaryMessage(@NotNull ChannelHandlerContext ctx, @NotNull io.netty.buffer.ByteBuf content) {
-        // 这里可以实现二进制消息的处理逻辑
-        // 例如：协议解析、数据解压缩等
+        // 这里可以根据需要添加二进制消息处理逻辑
+        // 例如协议格式的数据解析等
         log.debug("Processing binary message: {} bytes", content.readableBytes());
     }
 
     /**
-     * 初始化WebSocket处理器
+     * 初始化 WebSocket 协议处理器
      */
     private void initializeWebSocketHandler() {
         log.info("Initializing WebSocket protocol handler...");
-        // 初始化WebSocket协议相关的组件
+        // 初始化 WebSocket 协议扩展相关资源
     }
 
     /**
-     * 清理WebSocket处理器
+     * 清理 WebSocket 协议处理器
      */
     private void cleanupWebSocketHandler() {
         log.info("Cleaning up WebSocket protocol handler...");
-        // 清理WebSocket协议相关的资源
+        // 清理 WebSocket 协议扩展相关资源
     }
 
     /**
-     * WebSocket消息处理器
+     * WebSocket 消息处理器
      */
     private static class WebSocketMessageHandler implements MessageHandler {
 
@@ -247,10 +247,10 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
         public Object handleMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
             log.debug("Handling WebSocket message: {}", message.getClass().getSimpleName());
 
-            // 处理接收到的WebSocket消息
-            // 这里可以实现具体的WebSocket消息处理逻辑
+            // 处理接收到的 WebSocket 消息
+            // 这里可以根据需要添加自定义消息处理逻辑
 
-            return null; // 继续处理链
+            return null; // 不返回响应
         }
 
         @Override
@@ -258,26 +258,26 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
         public Object handleOutboundMessage(@NotNull ChannelHandlerContext ctx, @NotNull Object message) {
             log.debug("Handling outbound WebSocket message: {}", message.getClass().getSimpleName());
 
-            // 处理发送的WebSocket消息
-            // 这里可以实现WebSocket消息的预处理逻辑
+            // 处理发送的 WebSocket 消息
+            // 这里可以根据需要添加发送消息处理逻辑
 
             return message; // 发送消息
         }
 
         @Override
         public int getPriority() {
-            return 60; // WebSocket消息处理器优先级
+            return 60; // WebSocket 消息处理器优先级
         }
 
         @Override
         public boolean supports(@NotNull Class<?> messageType) {
-            // 检查是否支持该消息类型
+            // 检查是否支持该类型的消息
             return messageType.getName().contains("WebSocket") ||
                     messageType.getName().contains("websocket");
         }
     }
 
-    // NetworkExtension 实现
+    // NetworkExtension 接口实现
     @Override
     @NotNull
     public String getId() {
@@ -384,7 +384,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
         }
     }
 
-    // ========== GracefulShutdownExtension 实现 ==========
+    // ========== GracefulShutdownExtension 接口实现 ==========
 
     @Override
     public void prepareForShutdown() throws Exception {
@@ -392,7 +392,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
         shutdownPrepared = true;
 
         // 停止接收新的 WebSocket 连接
-        // 这里可以关闭端口、移除路由等
+        // 这里可以关闭连接、移除路由等操作
         log.info("WebSocket extension prepared for shutdown");
     }
 
@@ -422,7 +422,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
         return getActiveRequestCount() == 0;
     }
 
-    // ========== 统计功能已移至StatisticsAware基类 ==========
+    // ========== 连接管理方法（继承自StatisticsAware基类） ==========
 
     /**
      * 获取活跃连接数量
@@ -500,7 +500,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
                 .messageSize(messageSize)
                 .messageType("WEBSOCKET_FRAME")
                 .isRequest(true)
-                .priority(2) // WebSocket消息优先级
+                .priority(2) // WebSocket 消息优先级
                 .build();
     }
 
@@ -512,7 +512,7 @@ public class WebSocketExtension extends StatisticsAware implements ExtensionMain
             TextWebSocketFrame errorFrame = new TextWebSocketFrame("ERROR: " + errorMessage);
             ctx.writeAndFlush(errorFrame);
         } catch (Exception e) {
-            log.error("❌ Failed to send error response to WebSocket client: {}", ctx.channel().remoteAddress(), e);
+            log.error("Failed to send error response to WebSocket client: {}", ctx.channel().remoteAddress(), e);
         }
     }
 }

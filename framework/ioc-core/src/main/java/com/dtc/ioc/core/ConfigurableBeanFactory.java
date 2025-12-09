@@ -6,165 +6,145 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 可配置Bean工厂接口
- * 提供Bean工厂的配置功能
- * 借鉴Spring ConfigurableBeanFactory的设计
- * 
- * @author Network Service Template
- */
+     * å¯éç½®Beanå·¥åæ¥å£
+æä¾Beanå·¥åçéç½®åè½
+åé´Spring ConfigurableBeanFactoryçè®¾è®¡
+@author Network Service Template
+/
 public interface ConfigurableBeanFactory extends BeanFactory {
     
     /**
-     * 设置Bean类加载器
-     * 
-     * @param beanClassLoader Bean类加载器
-     */
+     * è®¾ç½®Beanç±»å è½½å¨
+@param beanClassLoader Beanç±»å è½½å¨
+/
     void setBeanClassLoader(ClassLoader beanClassLoader);
     
     /**
-     * 设置Bean表达式解析器
-     * 
-     * @param resolver 表达式解析器
-     */
+     * è®¾ç½®Beanè¡¨è¾¾å¼è§£æå¨
+@param resolver è¡¨è¾¾å¼è§£æå¨
+/
     void setBeanExpressionResolver(BeanExpressionResolver resolver);
     
     /**
-     * 添加属性编辑器注册器
-     * 
-     * @param registrar 属性编辑器注册器
-     */
+     * æ·»å å±æ§ç¼è¾å¨æ³¨åå¨
+@param registrar å±æ§ç¼è¾å¨æ³¨åå¨
+/
     void addPropertyEditorRegistrar(PropertyEditorRegistrar registrar);
     
     /**
-     * 添加Bean后处理器
-     * 
-     * @param beanPostProcessor Bean后处理器
-     */
+     * æ·»å Beanåå¤çå¨
+@param beanPostProcessor Beanåå¤çå¨
+/
     void addBeanPostProcessor(BeanPostProcessor beanPostProcessor);
     
     /**
-     * 获取Bean后处理器数量
-     * 
-     * @return 后处理器数量
-     */
+     * è·åBeanåå¤çå¨æ°é
+@return åå¤çå¨æ°é
+/
     int getBeanPostProcessorCount();
     
     /**
-     * 注册Bean定义
-     * 
-     * @param beanName Bean名称
-     * @param beanDefinition Bean定义
-     */
+     * æ³¨åBeanå®ä¹
+@param beanName Beanåç§°
+@param beanDefinition Beanå®ä¹
+/
     void registerBeanDefinition(String beanName, BeanDefinition beanDefinition);
     
     /**
-     * 获取Bean定义
-     * 
-     * @param beanName Bean名称
-     * @return Bean定义
-     */
+     * è·åBeanå®ä¹
+@param beanName Beanåç§°
+@return Beanå®ä¹
+/
     @Nullable
     BeanDefinition getBeanDefinition(String beanName);
     
     /**
-     * 获取所有Bean定义
-     * 
-     * @return Bean定义映射
-     */
+     * è·åææBeanå®ä¹
+@return Beanå®ä¹æ å°
+/
     @NotNull
     Map<String, BeanDefinition> getBeanDefinitions();
     
     /**
-     * 获取Bean定义名称
-     * 
-     * @return Bean定义名称数组
-     */
+     * è·åBeanå®ä¹åç§°
+@return Beanå®ä¹åç§°æ°ç»
+/
     @NotNull
     String[] getBeanDefinitionNames();
     
     /**
-     * 注册单例Bean
-     * 
-     * @param beanName Bean名称
-     * @param singletonObject 单例对象
-     */
+     * æ³¨ååä¾Bean
+@param beanName Beanåç§°
+@param singletonObject åä¾å¯¹è±¡
+/
     void registerSingleton(String beanName, Object singletonObject);
     
     /**
-     * 获取单例Bean
-     * 
-     * @param beanName Bean名称
-     * @return 单例Bean
-     */
+     * è·ååä¾Bean
+@param beanName Beanåç§°
+@return åä¾Bean
+/
     @Nullable
     Object getSingleton(String beanName);
     
     /**
-     * 添加单例Bean
-     * 
-     * @param beanName Bean名称
-     * @param singletonObject 单例对象
-     */
+     * æ·»å åä¾Bean
+@param beanName Beanåç§°
+@param singletonObject åä¾å¯¹è±¡
+/
     void addSingleton(String beanName, Object singletonObject);
     
     /**
-     * 获取单例互斥锁
-     * 
-     * @return 互斥锁对象
-     */
+     * è·ååä¾äºæ¥é
+@return äºæ¥éå¯¹è±¡
+/
     @NotNull
     Object getSingletonMutex();
     
     /**
-     * 获取Bean后处理器列表
-     * 
-     * @return Bean后处理器列表
-     */
+     * è·åBeanåå¤çå¨åè¡¨
+@return Beanåå¤çå¨åè¡¨
+/
     @NotNull
     List<BeanPostProcessor> getBeanPostProcessors();
     
     /**
-     * 获取Bean类加载器
-     * 
-     * @return Bean类加载器
-     */
+     * è·åBeanç±»å è½½å¨
+@return Beanç±»å è½½å¨
+/
     @Nullable
     ClassLoader getBeanClassLoader();
     
     /**
-     * 获取Bean表达式解析器
-     * 
-     * @return Bean表达式解析器
-     */
+     * è·åBeanè¡¨è¾¾å¼è§£æå¨
+@return Beanè¡¨è¾¾å¼è§£æå¨
+/
     @Nullable
     BeanExpressionResolver getBeanExpressionResolver();
     
     /**
-     * 获取属性编辑器注册表
-     * 
-     * @return 属性编辑器注册表
-     */
+     * è·åå±æ§ç¼è¾å¨æ³¨åè¡¨
+@return å±æ§ç¼è¾å¨æ³¨åè¡¨
+/
     @Nullable
     PropertyEditorRegistry getPropertyEditorRegistry();
     
     /**
-     * 设置属性编辑器注册表
-     * 
-     * @param propertyEditorRegistry 属性编辑器注册表
-     */
+     * è®¾ç½®å±æ§ç¼è¾å¨æ³¨åè¡¨
+@param propertyEditorRegistry å±æ§ç¼è¾å¨æ³¨åè¡¨
+/
     void setPropertyEditorRegistry(PropertyEditorRegistry propertyEditorRegistry);
     
     /**
-     * 销毁Bean
-     * 
-     * @param beanName Bean名称
-     * @param beanInstance Bean实例
-     * @param definition Bean定义
-     */
+     * éæ¯Bean
+@param beanName Beanåç§°
+@param beanInstance Beanå®ä¾
+@param definition Beanå®ä¹
+/
     void destroyBean(String beanName, Object beanInstance, BeanDefinition definition);
     
     /**
-     * 清理Bean定义
-     */
+     * æ¸çBeanå®ä¹
+/
     void clearBeanDefinitions();
 }

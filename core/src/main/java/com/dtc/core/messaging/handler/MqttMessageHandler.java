@@ -1,18 +1,22 @@
 package com.dtc.core.messaging.handler;
 
-import com.dtc.api.annotations.NotNull;
-import com.dtc.core.messaging.NetworkMessageEvent;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dtc.api.annotations.NotNull;
+import com.dtc.api.annotations.Nullable;
+import com.dtc.core.messaging.MessageHandlerRegistry;
+import com.dtc.core.messaging.NetworkMessageEvent;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+
 /**
  * MQTT 消息处理器
- * 专门处理 MQTT 协议的消息
+ * 负责处理 MQTT 协议类型的消息
  * 
  * @author Network Service Template
  */
@@ -21,16 +25,18 @@ public class MqttMessageHandler {
 
     private static final Logger log = LoggerFactory.getLogger(MqttMessageHandler.class);
 
+    private final MessageHandlerRegistry messageHandlerRegistry;
+
     @Inject
-    public MqttMessageHandler() {
-        // 可以注入MQTT相关的处理器
+    public MqttMessageHandler(@Nullable MessageHandlerRegistry messageHandlerRegistry) {
+        this.messageHandlerRegistry = messageHandlerRegistry;
     }
 
     /**
      * 处理 MQTT 消息
      */
     public void handleMessage(@NotNull NetworkMessageEvent event) {
-        log.debug("📡 Processing MQTT message: {}", event.getEventId());
+        log.debug("🔍 Processing MQTT message: {}", event.getEventId());
         
         try {
             Object message = event.getMessage();
@@ -44,7 +50,7 @@ public class MqttMessageHandler {
             } else if (message instanceof byte[]) {
                 handleByteArrayMessage(ctx, (byte[]) message);
             } else {
-                log.warn("⚠️ Unexpected message type in MQTT handler: {}", 
+                log.warn("⚠️  Unexpected message type in MQTT handler: {}", 
                         message != null ? message.getClass().getSimpleName() : "null");
             }
             
@@ -63,7 +69,7 @@ public class MqttMessageHandler {
             int messageLength = message.readableBytes();
             log.debug("Processing MQTT ByteBuf message: {} bytes", messageLength);
             
-            // 解析MQTT消息头
+            // 解析MQTT消息类型
             if (messageLength > 0) {
                 byte firstByte = message.getByte(0);
                 int messageType = (firstByte >> 4) & 0x0F;
@@ -103,7 +109,7 @@ public class MqttMessageHandler {
                         handleDisconnectMessage(ctx, message);
                         break;
                     default:
-                        log.warn("⚠️ Unknown MQTT message type: {}", messageType);
+                        log.warn("⚠️  Unknown MQTT message type: {}", messageType);
                         break;
                 }
             }
@@ -145,9 +151,47 @@ public class MqttMessageHandler {
         // 处理MQTT连接确认
     }
 
+    /**
+     * 处理MQTT发布消息
+     * 尝试使用注解驱动的处理器，如果未找到则使用默认处理器
+     */
     private void handlePublishMessage(@NotNull ChannelHandlerContext ctx, @NotNull ByteBuf message) {
         log.debug("Processing MQTT PUBLISH message");
-        // 处理MQTT发布消息
+        
+        try {
+            // 解析MQTT PUBLISH消息，提取主题和负载
+            // 这里简化处理，实际需要解析消息剩余长度
+            int remainingLength = message.readableBytes();
+            if (remainingLength > 0) {
+                // 解析主题和负载，这里简化处理
+                // 实际需要按照MQTT协议解析消息剩余长度UTF-8编码的主题和负载
+                byte[] data = new byte[remainingLength];
+                message.getBytes(message.readerIndex(), data);
+                String topic = ""; // 主题需要从消息中解析
+                String payload = new String(data, java.nio.charset.StandardCharsets.UTF_8);
+                
+                // 查找注解驱动的处理器
+                if (messageHandlerRegistry != null) {
+                    MessageHandlerRegistry.HandlerMethod handler = 
+                        messageHandlerRegistry.findMqttHandler("PUBLISH", topic);
+                    
+                    if (handler != null) {
+                        try {
+                            // 调用用户定义的处理器方法
+                            handler.invoke(ctx, message);
+                            return;
+                        } catch (Exception e) {
+                            log.error("Failed to invoke MQTT handler", e);
+                        }
+                    }
+                }
+            }
+            
+            // 如果未找到注解驱动的处理器，使用默认处理器
+            log.debug("No annotation-driven handler found for MQTT PUBLISH message, using default handler");
+        } catch (Exception e) {
+            log.error("Error processing MQTT PUBLISH message", e);
+        }
     }
 
     private void handlePubAckMessage(@NotNull ChannelHandlerContext ctx, @NotNull ByteBuf message) {
@@ -232,7 +276,7 @@ public class MqttMessageHandler {
      * 处理错误
      */
     private void handleError(@NotNull NetworkMessageEvent event, @NotNull Exception error) {
-        log.error("💥 Error handling MQTT message: {}", event.getEventId(), error);
+        log.error("🔴 Error handling MQTT message: {}", event.getEventId(), error);
         
         try {
             ChannelHandlerContext ctx = event.getChannelContext();

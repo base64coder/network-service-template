@@ -1,28 +1,25 @@
 package com.dtc.ioc.core;
 
 /**
- * 上下文关闭事件
- * 当应用上下文关闭时发布
- * 借鉴Spring ContextClosedEvent的设计
- * 
- * @author Network Service Template
- */
+     * ä¸ä¸æå³é­äºä»¶
+å½åºç¨ä¸ä¸æå³é­æ¶åå¸
+åé´Spring ContextClosedEventçè®¾è®¡
+@author Network Service Template
+/
 public class ContextClosedEvent extends ApplicationEvent {
     
     /**
-     * 构造函数
-     * 
-     * @param source 应用上下文
-     */
+     * æé å½æ°
+@param source åºç¨ä¸ä¸æ
+/
     public ContextClosedEvent(NetworkApplicationContext source) {
         super(source);
     }
     
     /**
-     * 获取应用上下文
-     * 
-     * @return 应用上下文
-     */
+     * è·ååºç¨ä¸ä¸æ
+@return åºç¨ä¸ä¸æ
+/
     public NetworkApplicationContext getApplicationContext() {
         return (NetworkApplicationContext) getSource();
     }

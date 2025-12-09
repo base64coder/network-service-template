@@ -27,10 +27,9 @@ public class AuthenticationService {
     public boolean authenticate(@NotNull String username, @NotNull String password) {
         log.debug("Authenticating user: {}", username);
 
-        // 这里应该实现具体的认证逻辑
-        // 例如：数据库查询、LDAP认证等
-
-        return true; // 简化实现，总是返回成功
+        // 可以通过路由管理器实现认证逻辑
+        // 例如：数据库查询或LDAP认证等
+        return true; // 简单实现，总是返回成功
     }
 
     /**
@@ -42,9 +41,8 @@ public class AuthenticationService {
     public boolean validateToken(@NotNull String token) {
         log.debug("Validating token: {}", token);
 
-        // 这里应该实现令牌验证逻辑
-        // 例如：JWT验证、OAuth验证等
-
-        return true; // 简化实现，总是返回成功
+        // 可以通过路由管理器实现令牌验证逻辑
+        // 例如：JWT验证或OAuth验证等
+        return true; // 简单实现，总是返回成功
     }
 }

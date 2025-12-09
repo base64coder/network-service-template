@@ -17,7 +17,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * 扩展加载器 负责扫描和加载扩展
+ * 扩展加载器
+ * 负责扫描和加载所有扩展
  * 
  * @author Network Service Template
  */
@@ -28,9 +29,9 @@ public class ExtensionLoader {
     private static final String DISABLED_FILE = "DISABLED";
 
     /**
-     * 加载扩展目录中的所有扩展
+     * 加载扩展文件夹中的所有扩展
      * 
-     * @param extensionsFolder 扩展目录
+     * @param extensionsFolder 扩展文件夹路径
      * @return 扩展事件列表
      */
     @NotNull
@@ -61,7 +62,7 @@ public class ExtensionLoader {
     /**
      * 加载单个扩展
      * 
-     * @param extensionFolder 扩展文件夹
+     * @param extensionFolder 扩展文件夹路径
      * @return 扩展事件
      */
     @Nullable
@@ -77,7 +78,7 @@ public class ExtensionLoader {
                 return null;
             }
 
-            // 验证扩展文件夹名称与ID是否匹配
+            // 验证扩展文件夹名称和ID是否匹配
             String folderName = extensionFolder.getFileName().toString();
             if (!folderName.equals(metadata.getId())) {
                 log.warn("Extension folder name '{}' does not match extension ID '{}'", folderName, metadata.getId());
@@ -97,7 +98,7 @@ public class ExtensionLoader {
     /**
      * 读取扩展元数据
      * 
-     * @param extensionFolder 扩展文件夹
+     * @param extensionFolder 扩展文件夹路径
      * @return 扩展元数据
      */
     @Nullable
@@ -127,10 +128,10 @@ public class ExtensionLoader {
     @Nullable
     private ExtensionMetadata parseExtensionXml(@NotNull Path xmlFile) {
         try {
-            // 简单的XML解析实现
+            // 读取XML文件内容
             String content = new String(Files.readAllBytes(xmlFile), StandardCharsets.UTF_8);
 
-            // 提取基本信息
+            // 提取XML字段值
             String id = extractXmlValue(content, "id");
             String name = extractXmlValue(content, "name");
             String version = extractXmlValue(content, "version");
@@ -159,7 +160,7 @@ public class ExtensionLoader {
      * 从XML内容中提取值
      * 
      * @param content XML内容
-     * @param tagName 标签名
+     * @param tagName 标签名称
      * @return 标签值
      */
     @Nullable
@@ -168,10 +169,10 @@ public class ExtensionLoader {
     }
 
     /**
-     * 从XML内容中提取值
+     * 从XML内容中提取值（带默认值）
      * 
      * @param content      XML内容
-     * @param tagName      标签名
+     * @param tagName      标签名称
      * @param defaultValue 默认值
      * @return 标签值
      */

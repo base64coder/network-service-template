@@ -1,13 +1,13 @@
 package com.dtc.core.bootstrap.ioc;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.config.ServerConfiguration;
-import com.dtc.core.config.ServerInformationImpl;
+import com.dtc.core.bootstrap.config.ServerConfiguration;
+import com.dtc.core.bootstrap.config.ServerInformationImpl;
 import com.google.inject.AbstractModule;
 
 /**
  * 系统信息模块
- * 绑定系统信息相关的服务
+ * 配置系统信息相关的依赖注入
  * 
  * @author Network Service Template
  */
@@ -21,7 +21,7 @@ public class SystemInformationModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        // 绑定服务器配置
+        // 绑定服务器配置实例
         bind(ServerConfiguration.class).toInstance(configuration);
 
         // 绑定系统信息实现

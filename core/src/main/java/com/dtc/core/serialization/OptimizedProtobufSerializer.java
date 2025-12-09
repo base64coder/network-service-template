@@ -22,7 +22,8 @@ import com.google.protobuf.Parser;
 import com.google.protobuf.ExtensionRegistryLite;
 
 /**
- * 优化的 Protobuf 序列化器 提供高性能的序列化/反序列化功能，包含多种性能优化策略
+ * 优化的 Protobuf 序列化器
+ * 提供高性能的序列化/反序列化功能，包括缓存和性能优化策略
  * 
  * @author Network Service Template
  */
@@ -31,7 +32,7 @@ public class OptimizedProtobufSerializer {
 
     private static final Logger log = LoggerFactory.getLogger(OptimizedProtobufSerializer.class);
 
-    // 缓存相关
+    // 缓存存储
     private final ConcurrentHashMap<Class<?>, Message.Builder> builderCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Class<?>, Parser<?>> parserCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Class<?>, Method> newBuilderMethodCache = new ConcurrentHashMap<>();
@@ -55,7 +56,7 @@ public class OptimizedProtobufSerializer {
     private final boolean enableValidation = true;
 
     /**
-     * 序列化消息为字节数组（优化版本）
+     * 序列化消息为字节数组（使用缓存优化）
      * 
      * @param message 要序列化的消息
      * @return 序列化后的字节数组
@@ -75,7 +76,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 序列化消息为字节数组（使用 MessageLite）
+     * 序列化消息为字节数组，支持MessageLite类型
      * 
      * @param message 要序列化的消息
      * @return 序列化后的字节数组
@@ -97,8 +98,8 @@ public class OptimizedProtobufSerializer {
     /**
      * 批量序列化消息
      * 
-     * @param messages 消息列表
-     * @return 序列化后的字节数组列表
+     * @param messages 消息数组
+     * @return 序列化后的字节数组数组
      */
     @NotNull
     public byte[][] serializeBatch(@NotNull Message[] messages) {
@@ -106,7 +107,7 @@ public class OptimizedProtobufSerializer {
         try {
             byte[][] results = new byte[messages.length][];
 
-            // 并行序列化
+            // 逐个序列化
             for (int i = 0; i < messages.length; i++) {
                 results[i] = messages[i].toByteArray();
             }
@@ -121,7 +122,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 反序列化字节数组为消息（优化版本）
+     * 反序列化字节数组为消息（使用缓存优化）
      * 
      * @param data         序列化的字节数组
      * @param messageClass 消息类型
@@ -132,7 +133,7 @@ public class OptimizedProtobufSerializer {
     public <T extends Message> T deserialize(@NotNull byte[] data, @NotNull Class<T> messageClass) {
         long startTime = System.nanoTime();
         try {
-            // 使用缓存的 Parser
+            // 使用缓存的Parser
             Parser<T> parser = getCachedParser(messageClass);
             T result = parser.parseFrom(data);
 
@@ -146,7 +147,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 反序列化字节数组为消息（使用 MessageLite）
+     * 反序列化字节数组为消息，支持MessageLite类型
      * 
      * @param data         序列化的字节数组
      * @param messageClass 消息类型
@@ -172,10 +173,10 @@ public class OptimizedProtobufSerializer {
     /**
      * 批量反序列化
      * 
-     * @param dataArray    字节数组列表
+     * @param dataArray    字节数组数组
      * @param messageClass 消息类型
      * @param <T>          消息类型
-     * @return 反序列化后的消息列表
+     * @return 反序列化后的消息数组
      */
     @NotNull
     public <T extends Message> T[] deserializeBatch(@NotNull byte[][] dataArray, @NotNull Class<T> messageClass) {
@@ -199,7 +200,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 获取缓存的 Parser
+     * 获取缓存的Parser
      */
     @SuppressWarnings("unchecked")
     @NotNull
@@ -216,7 +217,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 获取缓存的 MessageLite Parser
+     * 获取缓存的MessageLite Parser
      */
     @SuppressWarnings("unchecked")
     @NotNull
@@ -243,7 +244,7 @@ public class OptimizedProtobufSerializer {
                 // 使用 ByteBuddy 创建解析器
                 parserMethod = createByteBuddyParserMethod(messageClass);
                 if (parserMethod == null) {
-                    // 如果没有 parser() 方法，尝试使用默认的解析方式
+                    // 如果没有 parser() 方法，则尝试使用默认的解析器方法
                     log.warn("No parser() method found for class: {}, using fallback parser",
                             messageClass.getSimpleName());
                     return createFallbackParser(messageClass);
@@ -260,20 +261,20 @@ public class OptimizedProtobufSerializer {
     /**
      * 使用 ByteBuddy 创建解析器方法
      * 
-     * @param messageClass 消息类
+     * @param messageClass 消息类型
      * @return 解析器方法
      */
     @Nullable
     private <T extends Message> Method createByteBuddyParserMethod(@NotNull Class<T> messageClass) {
         try {
-            // 尝试获取原始的 parser 方法
+            // 尝试获取已有的 parser 方法
             try {
                 return messageClass.getMethod("parser");
             } catch (NoSuchMethodException e) {
                 log.debug("No parser() method found for class: {}, creating ByteBuddy parser",
                         messageClass.getSimpleName());
 
-                // 使用 ByteBuddy 创建动态解析器
+                // 使用 ByteBuddy 创建新的解析器
                 Class<?> parserClass = new ByteBuddy()
                         .subclass(Object.class)
                         .implement(Parser.class)
@@ -337,12 +338,12 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 创建备用 Parser（用于没有标准 parser() 方法的类）
+     * 创建备用 Parser，如果没有找到标准的 parser() 方法
      */
     @SuppressWarnings("unchecked")
     @NotNull
     private <T extends Message> Parser<T> createFallbackParser(@NotNull Class<T> messageClass) {
-        // 对于测试类，直接抛出异常，让测试失败
+        // 简单实现，直接抛出异常，实际应实现更复杂的逻辑
         throw new SerializationException("No parser() method found for class: " + messageClass.getSimpleName() +
                 ". This class is not a proper Protobuf generated class.", new RuntimeException("Invalid class"));
     }
@@ -365,7 +366,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 获取缓存的 Builder
+     * 获取缓存的Builder
      */
     @NotNull
     private Message.Builder getCachedBuilder(@NotNull Class<? extends Message> messageClass) {
@@ -398,7 +399,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 流式序列化（适用于大消息）
+     * 流式序列化消息，使用对象池优化
      * 
      * @param message 要序列化的消息
      * @return 序列化后的字节数组
@@ -423,7 +424,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 流式反序列化（适用于大消息）
+     * 流式反序列化消息，使用对象池优化
      * 
      * @param data         序列化的字节数组
      * @param messageClass 消息类型
@@ -478,7 +479,7 @@ public class OptimizedProtobufSerializer {
     }
 
     /**
-     * 清理缓存
+     * 清除缓存
      */
     public void clearCache() {
         builderCache.clear();

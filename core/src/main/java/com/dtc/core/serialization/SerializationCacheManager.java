@@ -16,7 +16,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * 序列化缓存管理器 提供智能的缓存管理和内存优化
+ * 序列化缓存管理器
+ * 提供序列化相关的缓存管理和统计功能
  * 
  * @author Network Service Template
  */
@@ -40,7 +41,7 @@ public class SerializationCacheManager {
     private final AtomicLong cacheMisses = new AtomicLong(0);
     private final AtomicLong cacheEvictions = new AtomicLong(0);
 
-    // 锁机制
+    // 读写锁
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
     // 配置参数
@@ -77,7 +78,7 @@ public class SerializationCacheManager {
     }
 
     /**
-     * 获取缓存的 Parser
+     * 获取缓存的Parser
      */
     @SuppressWarnings("unchecked")
     @Nullable
@@ -107,7 +108,7 @@ public class SerializationCacheManager {
     }
 
     /**
-     * 获取缓存的 Builder
+     * 获取缓存的Builder
      */
     @Nullable
     public Object getCachedBuilder(@NotNull Class<? extends Message> messageClass) {
@@ -172,8 +173,7 @@ public class SerializationCacheManager {
 
         while (running) {
             try {
-                Thread.sleep(cacheTtlMs / 2); // 每 TTL/2 时间清理一次
-
+                Thread.sleep(cacheTtlMs / 2); // 每TTL/2时间清理一次
                 long currentTime = System.currentTimeMillis();
                 int cleanedCount = 0;
 
@@ -225,7 +225,7 @@ public class SerializationCacheManager {
             return;
         }
 
-        // 找到最久未访问的条目
+        // 查找最久未访问的条目
         long oldestAccessTime = Long.MAX_VALUE;
         Object oldestKey = null;
 
@@ -275,7 +275,7 @@ public class SerializationCacheManager {
     }
 
     /**
-     * 清理所有缓存
+     * 清除所有缓存
      */
     public void clearAllCaches() {
         cacheLock.writeLock().lock();

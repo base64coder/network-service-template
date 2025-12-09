@@ -6,7 +6,7 @@ import com.google.inject.AbstractModule;
 
 /**
  * 持久化模块
- * 绑定持久化相关的服务
+ * 配置持久化相关的依赖注入
  * 
  * @author Network Service Template
  */

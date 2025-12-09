@@ -4,7 +4,8 @@ import com.dtc.api.annotations.NotNull;
 import java.nio.file.Path;
 
 /**
- * 扩展事件 表示扩展的状态变化
+ * 扩展事件
+ * 表示扩展状态变化的事件
  * 
  * @author Network Service Template
  */

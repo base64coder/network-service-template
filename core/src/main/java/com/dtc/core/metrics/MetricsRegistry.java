@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 指标注册表
- * 管理各种性能指标
+ * 管理和注册所有指标
  * 
  * @author Network Service Template
  */
@@ -24,10 +24,10 @@ public class MetricsRegistry {
     private final @NotNull Map<String, Long> gauges = new ConcurrentHashMap<>();
 
     /**
-     * 获取计数器
+     * 获取计数器指标
      * 
-     * @param name 计数器名称
-     * @return 计数器值
+     * @param name 指标名称
+     * @return 计数器指标值
      */
     @NotNull
     public AtomicLong getCounter(@NotNull String name) {
@@ -35,9 +35,9 @@ public class MetricsRegistry {
     }
 
     /**
-     * 增加计数器
+     * 增加计数器指标
      * 
-     * @param name  计数器名称
+     * @param name  指标名称
      * @param delta 增加值
      */
     public void incrementCounter(@NotNull String name, long delta) {
@@ -65,9 +65,9 @@ public class MetricsRegistry {
     }
 
     /**
-     * 获取所有计数器
+     * 获取所有计数器指标
      * 
-     * @return 计数器映射
+     * @return 计数器指标映射
      */
     @NotNull
     public Map<String, Long> getAllCounters() {

@@ -27,9 +27,9 @@ public class ValidationExample {
     /**
      * 示例方法：处理用户信息
      * 
-     * @param userId   用户ID（不能为null）
-     * @param username 用户名（不能为null）
-     * @param email    邮箱（可以为null）
+     * @param userId   用户ID，不能为null
+     * @param username 用户名，不能为null
+     * @param email    邮箱，可以为null
      * @return 处理结果
      */
     @NotNull
@@ -50,10 +50,10 @@ public class ValidationExample {
     /**
      * 示例方法：创建订单
      * 
-     * @param orderId    订单ID（不能为null）
-     * @param customerId 客户ID（不能为null）
-     * @param amount     金额（不能为null）
-     * @param notes      备注（可以为null）
+     * @param orderId    订单ID，不能为null
+     * @param customerId 客户ID，不能为null
+     * @param amount     金额，不能为null
+     * @param notes      备注，可以为null
      * @return 订单信息
      */
     @NotNull
@@ -76,9 +76,9 @@ public class ValidationExample {
     /**
      * 示例方法：发送消息
      * 
-     * @param recipient 接收者（不能为null）
-     * @param message   消息内容（不能为null）
-     * @param priority  优先级（可以为null）
+     * @param recipient 接收者，不能为null
+     * @param message   消息内容，不能为null
+     * @param priority  优先级，可以为null
      * @return 发送结果
      */
     @NotNull
@@ -99,14 +99,14 @@ public class ValidationExample {
     /**
      * 示例方法：获取用户信息
      * 
-     * @param userId 用户ID（不能为null）
-     * @return 用户信息（可能为null）
+     * @param userId 用户ID，不能为null
+     * @return 用户信息，可能为null
      */
     @Nullable
     public String getUserInfo(@NotNull String userId) {
         log.info("Getting user info for: {}", userId);
 
-        // 模拟查找用户
+        // 简单查找用户
         if ("admin".equals(userId)) {
             return "Admin User - Full Access";
         } else if ("user".equals(userId)) {
@@ -127,7 +127,7 @@ public class ValidationExample {
             String result1 = processUser("123", "John Doe", "john@example.com");
             log.info("Result 1: {}", result1);
 
-            // 正常调用（email为null）
+            // 正常调用，email为null
             String result2 = processUser("456", "Jane Smith", null);
             log.info("Result 2: {}", result2);
 

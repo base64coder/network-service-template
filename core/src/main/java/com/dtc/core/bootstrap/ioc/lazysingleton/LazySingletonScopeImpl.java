@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * 懒加载单例作用域实现
+ * 延迟加载单例作用域实现
  * 
  * @author Network Service Template
  */

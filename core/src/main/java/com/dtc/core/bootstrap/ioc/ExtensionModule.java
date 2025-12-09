@@ -8,7 +8,7 @@ import com.google.inject.AbstractModule;
 
 /**
  * 扩展系统模块
- * 绑定扩展系统相关的服务
+ * 配置扩展系统相关的依赖注入
  * 
  * @author Network Service Template
  */

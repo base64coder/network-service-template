@@ -12,10 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 
 /**
- * 默认Bean定义实现
- * 
- * @author Network Service Template
- */
+     * é»è®¤Beanå®ä¹å®ç°
+@author Network Service Template
+/
 public class DefaultBeanDefinition implements BeanDefinition {
     
     private String beanName;
@@ -31,17 +30,16 @@ public class DefaultBeanDefinition implements BeanDefinition {
     private Map<String, Object> annotationMetadata = new ConcurrentHashMap<>();
     
     /**
-     * 构造函数
-     */
+     * æé å½æ°
+/
     public DefaultBeanDefinition() {
     }
     
     /**
-     * 构造函数
-     * 
-     * @param beanName Bean名称
-     * @param beanClass Bean类型
-     */
+     * æé å½æ°
+@param beanName Beanåç§°
+@param beanClass Beanç±»å
+/
     public DefaultBeanDefinition(String beanName, Class<?> beanClass) {
         this.beanName = beanName;
         this.beanClass = beanClass;

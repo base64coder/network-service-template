@@ -28,10 +28,9 @@ public class AuthorizationService {
     public boolean hasPermission(@NotNull String username, @NotNull String resource, @NotNull String action) {
         log.debug("Checking permission for user: {} on resource: {} action: {}", username, resource, action);
 
-        // 这里应该实现具体的权限检查逻辑
-        // 例如：RBAC、ABAC等权限模型
-
-        return true; // 简化实现，总是返回有权限
+        // 可以通过路由管理器实现权限检查逻辑
+        // 例如：RBAC或ABAC等权限模型
+        return true; // 简单实现，总是返回有权限
     }
 
     /**

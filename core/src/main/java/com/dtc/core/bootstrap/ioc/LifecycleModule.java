@@ -5,7 +5,7 @@ import com.google.inject.AbstractModule;
 
 /**
  * 生命周期模块
- * 提供生命周期管理功能
+ * 注册生命周期管理器
  * 
  * @author Network Service Template
  */

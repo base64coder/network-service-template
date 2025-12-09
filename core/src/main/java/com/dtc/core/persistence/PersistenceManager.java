@@ -9,9 +9,8 @@ import javax.inject.Singleton;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 持久化管理器
- * 管理数据持久化
- * 
+ * é¸ä½·ç®éæ «î¸éåæ«
+ * ç» ï¼æéçåµé¸ä½·ç®é? * 
  * @author Network Service Template
  */
 @Singleton
@@ -28,9 +27,8 @@ public class PersistenceManager {
     }
 
     /**
-     * 启动持久化系统
-     * 
-     * @return 启动完成的Future
+     * éîå§©é¸ä½·ç®éæ «é´ç¼?     * 
+     * @return éîå§©ç¹å±¾åé¨å¢uture
      */
     @NotNull
     public CompletableFuture<Void> start() {
@@ -53,9 +51,8 @@ public class PersistenceManager {
     }
 
     /**
-     * 停止持久化系统
-     * 
-     * @return 停止完成的Future
+     * éæ»îé¸ä½·ç®éæ «é´ç¼?     * 
+     * @return éæ»îç¹å±¾åé¨å¢uture
      */
     @NotNull
     public CompletableFuture<Void> stop() {
@@ -78,9 +75,8 @@ public class PersistenceManager {
     }
 
     /**
-     * 是否已启动
-     * 
-     * @return 是否已启动
+     * éîæå®¸ææé?     * 
+     * @return éîæå®¸ææé
      */
     public boolean isStarted() {
         return started;

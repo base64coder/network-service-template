@@ -22,8 +22,11 @@ public enum ServiceConfig {
     // TCP 服务配置
     TCP("TCP", "TCP", 9999, 4, 70, "TCP协议服务，支持gRPC"),
 
+    // UDP 服务配置
+    UDP("UDP", "UDP", 9997, 5, 65, "UDP协议服务，用于实时通信、物联网、游戏服务器"),
+
     // Custom 服务配置
-    CUSTOM("CustomProtocol", "CustomProtocol", 9998, 5, 60, "自定义协议服务");
+    CUSTOM("CustomProtocol", "CustomProtocol", 9998, 6, 60, "自定义协议服务");
 
     // 服务标识符
     private final String serviceId;

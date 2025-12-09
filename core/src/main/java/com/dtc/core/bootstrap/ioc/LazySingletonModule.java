@@ -4,8 +4,8 @@ import com.dtc.core.bootstrap.ioc.lazysingleton.LazySingletonScope;
 import com.google.inject.AbstractModule;
 
 /**
- * 懒加载单例模块
- * 提供懒加载单例作用域支持
+ * 延迟单例模块
+ * 注册延迟单例作用域
  * 
  * @author Network Service Template
  */
@@ -13,7 +13,7 @@ public class LazySingletonModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        // 安装懒加载单例作用域
+        // 安装延迟单例作用域
         install(new LazySingletonScope());
     }
 }

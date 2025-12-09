@@ -8,9 +8,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
- * 安全管理器
- * 管理安全相关的功能
- * 
+ * ç¹å¤åç» ï¼æé£? * ç» ï¼æç¹å¤åé©ç¨¿å§é¨å«å§é³? * 
  * @author Network Service Template
  */
 @Singleton
@@ -32,9 +30,9 @@ public class SecurityManager {
     }
 
     /**
-     * 获取认证服务
+     * é¾å³°å½çãçéå¶å§
      * 
-     * @return 认证服务
+     * @return çãçéå¶å§
      */
     @NotNull
     public AuthenticationService getAuthenticationService() {
@@ -42,9 +40,9 @@ public class SecurityManager {
     }
 
     /**
-     * 获取授权服务
+     * é¾å³°å½éºå æ½éå¶å§
      * 
-     * @return 授权服务
+     * @return éºå æ½éå¶å§
      */
     @NotNull
     public AuthorizationService getAuthorizationService() {

@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 健康检查器
- * 定期执行健康检查
+ * 负责定期健康检查
  * 
  * @author Network Service Template
  */

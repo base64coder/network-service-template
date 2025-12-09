@@ -2,10 +2,10 @@ package com.dtc.core;
 
 import com.dtc.api.ServiceConfig;
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.bootstrap.NetworkServiceLauncher;
-import com.dtc.core.bootstrap.ServerStatusDisplay;
+import com.dtc.core.bootstrap.launcher.NetworkServiceLauncher;
+import com.dtc.core.bootstrap.launcher.ServerStatusDisplay;
 import com.dtc.core.bootstrap.ioc.GuiceContainerFactory;
-import com.dtc.core.config.ServerConfiguration;
+import com.dtc.core.bootstrap.config.ServerConfiguration;
 import com.dtc.core.extensions.ExtensionBootstrap;
 import com.dtc.core.extensions.ExtensionManager;
 import com.dtc.core.messaging.NetworkMessageHandler;
@@ -18,7 +18,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 网络服务主类 负责启动和管理网络服务
+ * 网络服务主类
+ * 负责启动和管理网络服务
  * 
  * @author Network Service Template
  */

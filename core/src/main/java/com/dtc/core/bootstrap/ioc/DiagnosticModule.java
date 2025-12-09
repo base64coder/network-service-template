@@ -6,7 +6,7 @@ import com.google.inject.AbstractModule;
 
 /**
  * 诊断模块
- * 绑定诊断相关的服务
+ * 绑定诊断服务和健康检查器
  * 
  * @author Network Service Template
  */

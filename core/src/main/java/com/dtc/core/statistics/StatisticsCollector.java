@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 统一统计收集器
+ * 统计信息收集器
  * 负责收集和管理所有组件的统计信息
  * 
  * @author Network Service Template
@@ -45,19 +45,19 @@ public class StatisticsCollector {
     public void onConnectionEstablished() {
         activeConnections.incrementAndGet();
         totalClients.incrementAndGet();
-        log.debug("🔌 New connection established. Active connections: {}", activeConnections.get());
+        log.debug("🔍 New connection established. Active connections: {}", activeConnections.get());
     }
 
     /**
-     * 连接断开
+     * 连接关闭
      */
     public void onConnectionClosed() {
         activeConnections.decrementAndGet();
-        log.debug("🔌 Connection closed. Active connections: {}", activeConnections.get());
+        log.debug("🔍 Connection closed. Active connections: {}", activeConnections.get());
     }
 
     /**
-     * 获取活跃连接数
+     * 获取活动连接数
      */
     public int getActiveConnections() {
         return activeConnections.get();
@@ -122,7 +122,7 @@ public class StatisticsCollector {
     }
 
     /**
-     * 获取活跃请求数
+     * 获取活动请求数
      */
     public long getActiveRequestCount() {
         return activeRequestCount.get();
