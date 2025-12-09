@@ -71,7 +71,7 @@ public class DefaultEnvironment implements Environment {
     }
     
     /**
-     * è®¾ç½®éç½®å±æ§
+     * 设置éç½®å±æ§
 @param key å±æ§é®
 @param value å±æ§å¼
 /
@@ -84,7 +84,7 @@ public class DefaultEnvironment implements Environment {
      * åå§åé»è®¤éç½®
 /
     private void initializeDefaultProperties() {
-        // è®¾ç½®é»è®¤éç½®
+        // 设置é»è®¤éç½®
         setProperty("application.name", "Network Service Template");
         setProperty("application.version", "1.0.0");
         setProperty("server.port", 8080);
