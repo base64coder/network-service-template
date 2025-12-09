@@ -62,9 +62,9 @@ public class DynamicDataSourceProvider implements DataSourceProvider, AutoClosea
         currentProvider.set(newProvider);
         
         // 关闭旧数据源
-        if (oldProvider instanceof AutoCloseable) {
+        if (oldProvider instanceof AutoCloseable closeable) {
             try {
-                ((AutoCloseable) oldProvider).close();
+                closeable.close();
             } catch (Exception e) {
                 log.error("Failed to close old DataSourceProvider", e);
             }
@@ -106,9 +106,9 @@ public class DynamicDataSourceProvider implements DataSourceProvider, AutoClosea
     @Override
     public void close() {
         DataSourceProvider provider = currentProvider.get();
-        if (provider instanceof AutoCloseable) {
+        if (provider instanceof AutoCloseable closeable) {
             try {
-                ((AutoCloseable) provider).close();
+                closeable.close();
             } catch (Exception e) {
                 log.error("Failed to close DataSourceProvider", e);
             }

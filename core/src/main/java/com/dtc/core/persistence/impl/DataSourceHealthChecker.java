@@ -1,14 +1,16 @@
 package com.dtc.core.persistence.impl;
 
-import com.dtc.api.annotations.NotNull;
-import com.dtc.core.persistence.DataSourceProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.sql.Connection;
-import java.sql.SQLException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dtc.api.annotations.NotNull;
+import com.dtc.core.persistence.DataSourceProvider;
 
 /**
  * 数据源健康检查器
