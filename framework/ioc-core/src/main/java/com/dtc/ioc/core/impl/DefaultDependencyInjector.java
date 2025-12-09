@@ -15,10 +15,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 /**
-     * é»è®¤ä¾èµæ³¨å¥å¨å®ç°
-åé´Guiceçé«æ§è½ä¾èµæ³¨å¥æºå¶
-@author Network Service Template
-/
+ * 默认依赖注入器实现
+ * 借鉴 Guice 的高性能依赖注入机制
+ * 
+ * @author Network Service Template
+ */
 public class DefaultDependencyInjector implements DependencyInjector {
     
     private static final Logger log = LoggerFactory.getLogger(DefaultDependencyInjector.class);
@@ -32,18 +33,18 @@ public class DefaultDependencyInjector implements DependencyInjector {
     @Override
     public void injectDependencies(Object bean, BeanDefinition definition) {
         try {
-            log.debug("ð§ Injecting dependencies for bean: {}", definition.getBeanName());
+            log.debug("Injecting dependencies for bean: {}", definition.getBeanName());
             
-            // æ³¨å¥å­æ®µä¾èµ
+            // 注入字段依赖
             injectFieldDependencies(bean, definition.getBeanClass());
             
-            // æ³¨å¥æ¹æ³ä¾èµ
+            // 注入方法依赖
             injectMethodDependencies(bean, definition.getBeanClass());
             
-            log.debug("â Dependencies injected successfully for bean: {}", definition.getBeanName());
+            log.debug("Dependencies injected successfully for bean: {}", definition.getBeanName());
             
         } catch (Exception e) {
-            log.error("â Error injecting dependencies for bean: {}", definition.getBeanName(), e);
+            log.error("Error injecting dependencies for bean: {}", definition.getBeanName(), e);
             throw new RuntimeException("Failed to inject dependencies", e);
         }
     }
@@ -59,10 +60,10 @@ public class DefaultDependencyInjector implements DependencyInjector {
                     if (dependency != null) {
                         field.setAccessible(true);
                         field.set(bean, dependency);
-                        log.debug("ð§ Injected field dependency: {} -> {}", field.getName(), dependency.getClass().getSimpleName());
+                        log.debug("Injected field dependency: {} -> {}", field.getName(), dependency.getClass().getSimpleName());
                     }
                 } catch (Exception e) {
-                    log.error("â Error injecting field dependency: {}", field.getName(), e);
+                    log.error("Error injecting field dependency: {}", field.getName(), e);
                 }
             }
         }
@@ -74,7 +75,7 @@ public class DefaultDependencyInjector implements DependencyInjector {
         try {
             return constructor.newInstance(args);
         } catch (Exception e) {
-            log.error("â Error creating bean with constructor", e);
+            log.error("Error creating bean with constructor", e);
             return null;
         }
     }
@@ -89,33 +90,33 @@ public class DefaultDependencyInjector implements DependencyInjector {
                     Object[] args = resolveMethodParameters(method);
                     method.setAccessible(true);
                     method.invoke(bean, args);
-                    log.debug("ð§ Injected method dependency: {}", method.getName());
+                    log.debug("Injected method dependency: {}", method.getName());
                 } catch (Exception e) {
-                    log.error("â Error injecting method dependency: {}", method.getName(), e);
+                    log.error("Error injecting method dependency: {}", method.getName(), e);
                 }
             }
         }
     }
     
     /**
-     * æ£æ¥å­æ®µæ¯å¦å¯æ³¨å¥
-/
+     * 检查字段是否可注入
+     */
     private boolean isInjectableField(Field field) {
-        // æ£æ¥æ¯å¦æ@Autowiredæ³¨è§£
+        // 检查是否有 @Autowired 注解
         return field.isAnnotationPresent(Autowired.class);
     }
     
     /**
-     * æ£æ¥æ¹æ³æ¯å¦å¯æ³¨å¥
-/
+     * 检查方法是否可注入
+     */
     private boolean isInjectableMethod(Method method) {
-        // æ£æ¥æ¯å¦æ@Autowiredæ³¨è§£
+        // 检查是否有 @Autowired 注解
         return method.isAnnotationPresent(Autowired.class);
     }
     
     /**
-     * è§£æä¾èµ
-/
+     * 解析依赖
+     */
     @Nullable
     private Object resolveDependency(Class<?> dependencyType) {
         try {
@@ -127,8 +128,8 @@ public class DefaultDependencyInjector implements DependencyInjector {
     }
     
     /**
-     * è§£ææ¹æ³åæ°
-/
+     * 解析方法参数
+     */
     @NotNull
     private Object[] resolveMethodParameters(Method method) {
         Parameter[] parameters = method.getParameters();

@@ -6,13 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * åæé æ³¨è§£
-æ è¯Beanåå§ååè°ç¨çæ¹æ³
-åé´Springç@PostConstructæ³¨è§£
-@author Network Service Template
-/
+ * 后构造注解
+ * 标识 Bean 初始化后调用的方法
+ * 借鉴 Spring 的 @PostConstruct 注解
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PostConstruct {
 }
-

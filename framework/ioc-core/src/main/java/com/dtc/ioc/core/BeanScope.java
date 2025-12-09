@@ -1,57 +1,34 @@
 package com.dtc.ioc.core;
 
 /**
-     * Beanä½ç¨åæä¸¾
-åé´Springçä½ç¨åè®¾è®¡
-@author Network Service Template
-/
+ * Bean 作用域枚举
+ * 借鉴 Spring Bean Scope 的设计
+ * 
+ * @author Network Service Template
+ */
 public enum BeanScope {
     
     /**
-     * åä¾ä½ç¨å - å®¹å¨ä¸­åªæä¸ä¸ªå®ä¾
-/
-    SINGLETON("singleton"),
+     * 单例作用域
+     * 整个容器中只有一个实例
+     */
+    SINGLETON,
     
     /**
-     * ååä½ç¨å - æ¯æ¬¡è·åé½åå»ºæ°å®ä¾
-/
-    PROTOTYPE("prototype"),
+     * 原型作用域
+     * 每次获取都创建新实例
+     */
+    PROTOTYPE,
     
     /**
-     * è¯·æ±ä½ç¨å - æ¯ä¸ªHTTPè¯·æ±ä¸ä¸ªå®ä¾
-/
-    REQUEST("request"),
+     * 请求作用域
+     * 每个 HTTP 请求一个实例
+     */
+    REQUEST,
     
     /**
-     * ä¼è¯ä½ç¨å - æ¯ä¸ªç¨æ·ä¼è¯ä¸ä¸ªå®ä¾
-/
-    SESSION("session");
-    
-    private final String value;
-    
-    BeanScope(String value) {
-        this.value = value;
-    }
-    
-    /**
-     * è·åä½ç¨åå¼
-@return ä½ç¨åå¼
-/
-    public String getValue() {
-        return value;
-    }
-    
-    /**
-     * æ ¹æ®å¼è·åä½ç¨å
-@param value ä½ç¨åå¼
-@return ä½ç¨å
-/
-    public static BeanScope fromValue(String value) {
-        for (BeanScope scope : values()) {
-            if (scope.value.equals(value)) {
-                return scope;
-            }
-        }
-        throw new IllegalArgumentException("Unknown bean scope: " + value);
-    }
+     * 会话作用域
+     * 每个 HTTP 会话一个实例
+     */
+    SESSION
 }

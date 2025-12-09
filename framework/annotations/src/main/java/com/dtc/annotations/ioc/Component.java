@@ -6,20 +6,21 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * ç»ä»¶æ³¨è§£
-æ è¯ä¸ä¸ªç±»ä¸ºå®¹å¨ç®¡ççç»ä»¶
-åé´Springç@Componentæ³¨è§£
-@author Network Service Template
-/
+ * 组件注解
+ * 标识一个类为容器管理的组件
+ * 借鉴 Spring 的 @Component 注解
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Component {
     
     /**
-     * Beanåç§°
-å¦æä¸ºç©ºï¼åä½¿ç¨ç±»åï¼é¦å­æ¯å°åï¼
-@return Beanåç§°
-/
+     * Bean 名称
+     * 如果为空，则使用类名（首字母小写）
+     * 
+     * @return Bean 名称
+     */
     String value() default "";
 }
-

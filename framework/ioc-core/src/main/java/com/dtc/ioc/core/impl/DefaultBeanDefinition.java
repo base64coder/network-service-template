@@ -4,17 +4,17 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.ioc.core.BeanDefinition;
 import com.dtc.ioc.core.BeanScope;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
-     * é»è®¤Beanå®ä¹å®ç°
-@author Network Service Template
-/
+ * 默认 Bean 定义实现
+ * 借鉴 Spring BeanDefinition 的设计
+ * 
+ * @author Network Service Template
+ */
 public class DefaultBeanDefinition implements BeanDefinition {
     
     private String beanName;
@@ -26,21 +26,13 @@ public class DefaultBeanDefinition implements BeanDefinition {
     private String destroyMethodName;
     private Constructor<?> constructor;
     private Method factoryMethod;
-    private Map<String, Object> propertyValues = new ConcurrentHashMap<>();
-    private Map<String, Object> annotationMetadata = new ConcurrentHashMap<>();
+    private Map<String, Object> propertyValues = new HashMap<>();
+    private Map<String, Object> annotationMetadata = new HashMap<>();
     
-    /**
-     * æé å½æ°
-/
     public DefaultBeanDefinition() {
     }
     
-    /**
-     * æé å½æ°
-@param beanName Beanåç§°
-@param beanClass Beanç±»å
-/
-    public DefaultBeanDefinition(String beanName, Class<?> beanClass) {
+    public DefaultBeanDefinition(@NotNull String beanName, @NotNull Class<?> beanClass) {
         this.beanName = beanName;
         this.beanClass = beanClass;
     }
@@ -97,11 +89,11 @@ public class DefaultBeanDefinition implements BeanDefinition {
     @Override
     @NotNull
     public List<String> getDependsOn() {
-        return dependsOn;
+        return new ArrayList<>(dependsOn);
     }
     
     public void setDependsOn(@NotNull List<String> dependsOn) {
-        this.dependsOn = dependsOn;
+        this.dependsOn = dependsOn != null ? new ArrayList<>(dependsOn) : new ArrayList<>();
     }
     
     @Override
@@ -147,20 +139,30 @@ public class DefaultBeanDefinition implements BeanDefinition {
     @Override
     @NotNull
     public Map<String, Object> getPropertyValues() {
-        return propertyValues;
+        return new HashMap<>(propertyValues);
+    }
+    
+    public void setPropertyValue(@NotNull String name, @NotNull Object value) {
+        this.propertyValues.put(name, value);
     }
     
     public void setPropertyValues(@NotNull Map<String, Object> propertyValues) {
-        this.propertyValues = propertyValues;
+        this.propertyValues = new HashMap<>(propertyValues);
     }
     
     @Override
     @NotNull
     public Map<String, Object> getAnnotationMetadata() {
-        return annotationMetadata;
+        return new HashMap<>(annotationMetadata);
     }
     
     public void setAnnotationMetadata(@NotNull Map<String, Object> annotationMetadata) {
-        this.annotationMetadata = annotationMetadata;
+        this.annotationMetadata = new HashMap<>(annotationMetadata);
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("DefaultBeanDefinition{beanName='%s', beanClass=%s, scope=%s, lazyInit=%s}",
+                beanName, beanClass != null ? beanClass.getName() : "null", scope, lazyInit);
     }
 }

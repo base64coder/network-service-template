@@ -6,13 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * é¢éæ¯æ³¨è§£
-æ è¯Beanéæ¯åè°ç¨çæ¹æ³
-åé´Springç@PreDestroyæ³¨è§£
-@author Network Service Template
-/
+ * 预销毁注解
+ * 标识 Bean 销毁前调用的方法
+ * 借鉴 Spring 的 @PreDestroy 注解
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PreDestroy {
 }
-

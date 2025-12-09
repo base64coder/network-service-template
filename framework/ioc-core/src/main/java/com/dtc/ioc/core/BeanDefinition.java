@@ -8,98 +8,112 @@ import java.util.List;
 import java.util.Map;
 
 /**
-     * Beanå®ä¹æ¥å£
-æè¿°Beançåæ°æ®ä¿¡æ¯
-åé´Spring BeanDefinitionçè®¾è®¡
-@author Network Service Template
-/
+ * Bean 定义接口
+ * 描述 Bean 的元数据信息
+ * 借鉴 Spring BeanDefinition 的设计
+ * 
+ * @author Network Service Template
+ */
 public interface BeanDefinition {
     
     /**
-     * è·åBeanåç§°
-@return Beanåç§°
-/
+     * 获取 Bean 名称
+     * 
+     * @return Bean 名称
+     */
     @NotNull
     String getBeanName();
     
     /**
-     * è·åBeanç±»å
-@return Beanç±»å
-/
+     * 获取 Bean 类型
+     * 
+     * @return Bean 类型
+     */
     @NotNull
     Class<?> getBeanClass();
     
     /**
-     * è·åä½ç¨å
-@return ä½ç¨å
-/
+     * 获取作用域
+     * 
+     * @return 作用域
+     */
     @NotNull
     BeanScope getScope();
     
     /**
-     * æ¯å¦ä¸ºåä¾
-@return æ¯å¦ä¸ºåä¾
-/
+     * 是否为单例
+     * 
+     * @return 是否为单例
+     */
     boolean isSingleton();
     
     /**
-     * æ¯å¦ä¸ºåå
-@return æ¯å¦ä¸ºåå
-/
+     * 是否为原型
+     * 
+     * @return 是否为原型
+     */
     boolean isPrototype();
     
     /**
-     * æ¯å¦ä¸ºæå è½½
-@return æ¯å¦ä¸ºæå è½½
-/
+     * 是否为懒加载
+     * 
+     * @return 是否为懒加载
+     */
     boolean isLazyInit();
     
     /**
-     * è·åä¾èµçBeanåç§°åè¡¨
-@return ä¾èµåè¡¨
-/
+     * 获取依赖的 Bean 名称列表
+     * 
+     * @return 依赖列表
+     */
     @NotNull
     List<String> getDependsOn();
     
     /**
-     * è·ååå§åæ¹æ³åç§°
-@return åå§åæ¹æ³åç§°
-/
+     * 获取初始化方法名称
+     * 
+     * @return 初始化方法名称
+     */
     @Nullable
     String getInitMethodName();
     
     /**
-     * è·åéæ¯æ¹æ³åç§°
-@return éæ¯æ¹æ³åç§°
-/
+     * 获取销毁方法名称
+     * 
+     * @return 销毁方法名称
+     */
     @Nullable
     String getDestroyMethodName();
     
     /**
-     * è·åæé å½æ°
-@return æé å½æ°
-/
+     * 获取构造函数
+     * 
+     * @return 构造函数
+     */
     @Nullable
     Constructor<?> getConstructor();
     
     /**
-     * è·åå·¥åæ¹æ³
-@return å·¥åæ¹æ³
-/
+     * 获取工厂方法
+     * 
+     * @return 工厂方法
+     */
     @Nullable
     Method getFactoryMethod();
     
     /**
-     * è·åå±æ§å¼
-@return å±æ§å¼æ å°
-/
+     * 获取属性值
+     * 
+     * @return 属性值映射
+     */
     @NotNull
     Map<String, Object> getPropertyValues();
     
     /**
-     * è·åæ³¨è§£åæ°æ®
-@return æ³¨è§£åæ°æ®æ å°
-/
+     * 获取注解元数据
+     * 
+     * @return 注解元数据映射
+     */
     @NotNull
     Map<String, Object> getAnnotationMetadata();
 }

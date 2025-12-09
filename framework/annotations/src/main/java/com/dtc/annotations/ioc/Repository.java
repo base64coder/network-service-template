@@ -7,14 +7,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * ä»å¨æ³¨è§£
-æ è¯ä¸ä¸ªç±»ä¸ºæ°æ®è®¿é®å±ç»ä»¶
-åé´Springç@Repositoryæ³¨è§£
-<p>è¡¨ç¤ºä¸ä¸ªç±»æ¯"ä»åº"ï¼å¨é¢åé©±å¨è®¾è®¡ï¼DDDï¼ä¸­å®ä¹ä¸º"å°è£å­å¨ãæ£ç´¢åæç´¢è¡ä¸ºçæºå¶ï¼
-æ¨¡æå¯¹è±¡éå"ã
-<p>æ­¤æ³¨è§£ä½ä¸º{@link Component @Component}çç¹åï¼åè®¸éè¿ç±»è·¯å¾æ«æèªå¨æ£æµå®ç°ç±»ã
-@author Network Service Template
-/
+ * 仓储注解
+ * 标识一个类为数据访问层组件
+ * 借鉴 Spring 的 @Repository 注解
+ * <p>表示一个类是"仓库"，在领域驱动设计（DDD）中定义为"封装存储、检索和搜索行为的机制，
+ * 模拟对象集合"。
+ * <p>此注解作为 {@link Component @Component} 的特化，允许通过类路径扫描自动检测实现类。
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -22,10 +23,10 @@ import java.lang.annotation.Target;
 public @interface Repository {
     
     /**
-     * Beanåç§°
-å¦æä¸ºç©ºï¼åä½¿ç¨ç±»åï¼é¦å­æ¯å°åï¼
-@return Beanåç§°
-/
+     * Bean 名称
+     * 如果为空，则使用类名（首字母小写）
+     * 
+     * @return Bean 名称
+     */
     String value() default "";
 }
-

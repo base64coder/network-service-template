@@ -6,20 +6,21 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * å¼æ³¨è§£
-ç¨äºæ³¨å¥éç½®å¼
-åé´Springç@Valueæ³¨è§£
-@author Network Service Template
-/
+ * 值注解
+ * 用于注入配置值
+ * 借鉴 Spring 的 @Value 注解
+ * 
+ * @author Network Service Template
+ */
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Value {
     
     /**
-     * éç½®å¼è¡¨è¾¾å¼
-æ¯æ${property.name}æ ¼å¼
-@return éç½®å¼è¡¨è¾¾å¼
-/
+     * 配置值表达式
+     * 支持 ${property.name} 格式
+     * 
+     * @return 配置值表达式
+     */
     String value();
 }
-

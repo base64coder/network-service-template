@@ -6,21 +6,22 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * èªå¨è£éæ³¨è§£
-æ è¯éè¦èªå¨æ³¨å¥çä¾èµ
-åé´Springç@Autowiredæ³¨è§£
-@author Network Service Template
-/
+ * 自动装配注解
+ * 标识需要自动注入的依赖
+ * 借鉴 Spring 的 @Autowired 注解
+ * 
+ * @author Network Service Template
+ */
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Autowired {
     
     /**
-     * æ¯å¦å¿é
-å¦æä¸ºtrueï¼åä¾èµå¿é¡»å­å¨ï¼å¦åæåºå¼å¸¸
-å¦æä¸ºfalseï¼åä¾èµå¯ä»¥ä¸ºnull
-@return æ¯å¦å¿é
-/
+     * 是否必需
+     * 如果为 true，则依赖必须存在，否则抛出异常
+     * 如果为 false，则依赖可以为 null
+     * 
+     * @return 是否必需
+     */
     boolean required() default true;
 }
-

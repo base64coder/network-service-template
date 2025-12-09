@@ -14,6 +14,11 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.core.network.http.middleware.HttpMiddleware;
 import com.dtc.core.network.http.route.HttpRoute;
+import com.dtc.core.web.filter.FilterRegistry;
+import com.dtc.core.web.filter.FilterChain;
+import com.dtc.core.web.filter.DefaultFilterChain;
+import com.dtc.core.web.interceptor.InterceptorRegistry;
+import com.dtc.core.web.HandlerMethod;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -29,15 +34,21 @@ public class HttpRequestHandler{
 
     private final HttpRouteManager routeManager;
     private final HttpMiddlewareManager middlewareManager;
+    private final FilterRegistry filterRegistry;
+    private final InterceptorRegistry interceptorRegistry;
     private final ObjectMapper objectMapper;
     private final AtomicLong processedRequests = new AtomicLong(0);
     private final AtomicLong errorCount = new AtomicLong(0);
 
     @Inject
     public HttpRequestHandler(@NotNull HttpRouteManager routeManager,
-            @NotNull HttpMiddlewareManager middlewareManager) {
+            @NotNull HttpMiddlewareManager middlewareManager,
+            @NotNull FilterRegistry filterRegistry,
+            @NotNull InterceptorRegistry interceptorRegistry) {
         this.routeManager = routeManager;
         this.middlewareManager = middlewareManager;
+        this.filterRegistry = filterRegistry;
+        this.interceptorRegistry = interceptorRegistry;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -49,11 +60,71 @@ public class HttpRequestHandler{
      */
     @NotNull
     public HttpResponseEx handleRequest(@NotNull HttpRequestEx request) {
+        HttpResponseEx response = null;
+        Exception exception = null;
+        Object handler = null;
+        
         try {
             processedRequests.incrementAndGet();
 
             log.debug("Processing HTTP request: {} {}", request.getMethod(), request.getPath());
 
+            // 创建响应对象（用于 Filter 和 Interceptor）
+            final HttpResponseEx[] finalResponse = {new HttpResponseEx.Builder().statusCode(200).build()};
+
+            // 执行 Filter 链（在请求处理之前）
+            FilterChain targetChain = (req, resp) -> {
+                // Filter 链执行完毕后，执行实际的请求处理逻辑
+                finalResponse[0] = processRequestInternal(req);
+            };
+            
+            filterRegistry.doFilter(request, finalResponse[0], targetChain);
+            response = finalResponse[0];
+
+            // 如果 Filter 链已经设置了响应，直接返回
+            if (response.getStatusCode() != 200 || (response.getBody() != null && !response.getBody().isEmpty())) {
+                return response;
+            }
+
+            // 执行实际的请求处理
+            response = processRequestInternal(request);
+            
+            log.debug("HTTP request processed successfully: {} {} -> {}", request.getMethod(), request.getPath(),
+                    response.getStatusCode());
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("Error processing HTTP request: {} {}", request.getMethod(), request.getPath(), e);
+            errorCount.incrementAndGet();
+            exception = e;
+            if (response == null) {
+                response = createInternalServerErrorResponse(e.getMessage());
+            }
+            return response;
+        } finally {
+            // 执行拦截器的 afterCompletion
+            if (handler instanceof HandlerMethod) {
+                HandlerMethod handlerMethod = (HandlerMethod) handler;
+                try {
+                    interceptorRegistry.applyAfterCompletion(request, response, handlerMethod, exception);
+                } catch (Exception e) {
+                    log.error("Error in interceptor afterCompletion", e);
+                }
+            }
+        }
+    }
+    
+    /**
+     * 内部请求处理方法（在 Filter 链之后执行）
+     */
+    @NotNull
+    private HttpResponseEx processRequestInternal(@NotNull HttpRequestEx request) {
+        Exception exception = null;
+        Object handler = null;
+        HttpResponseEx response = null;
+        
+        try {
             // 执行前置中间件
             HttpResponseEx preResponse = executePreMiddleware(request);
             if (preResponse != null) {
@@ -69,24 +140,56 @@ public class HttpRequestHandler{
             // 提取路径参数
             extractPathParameters(request, route);
 
+            // 获取处理器对象（用于 Interceptor）
+            handler = route.getHandler();
+            
+            // 创建响应对象（用于 Interceptor）
+            response = new HttpResponseEx.Builder().statusCode(200).build();
+            
+            // 执行拦截器的 preHandle
+            if (handler instanceof HandlerMethod) {
+                HandlerMethod handlerMethod = (HandlerMethod) handler;
+                if (!interceptorRegistry.applyPreHandle(request, response, handlerMethod)) {
+                    log.debug("Interceptor preHandle returned false, stopping execution");
+                    return response;
+                }
+            }
+
             // 执行路由处理器
-            HttpResponseEx response = route.getHandler().handle(request);
-            if (response == null) {
-                response = createInternalServerErrorResponse("Route handler returned null");
+            HttpResponseEx routeResponse = route.getHandler().handle(request);
+            if (routeResponse == null) {
+                routeResponse = createInternalServerErrorResponse("Route handler returned null");
+            }
+            response = routeResponse;
+
+            // 执行拦截器的 postHandle
+            if (handler instanceof HandlerMethod) {
+                HandlerMethod handlerMethod = (HandlerMethod) handler;
+                interceptorRegistry.applyPostHandle(request, response, handlerMethod, response);
             }
 
             // 执行后置中间件
             response = executePostMiddleware(request, response);
 
-            log.debug("HTTP request processed successfully: {} {} -> {}", request.getMethod(), request.getPath(),
-                    response.getStatusCode());
-
             return response;
 
         } catch (Exception e) {
-            log.error("Error processing HTTP request: {} {}", request.getMethod(), request.getPath(), e);
-            errorCount.incrementAndGet();
-            return createInternalServerErrorResponse(e.getMessage());
+            log.error("Error in processRequestInternal", e);
+            exception = e;
+            if (response == null) {
+                response = createInternalServerErrorResponse(e.getMessage());
+            }
+            return response;
+        } finally {
+            // 执行拦截器的 afterCompletion
+            if (handler instanceof HandlerMethod) {
+                HandlerMethod handlerMethod = (HandlerMethod) handler;
+                try {
+                    interceptorRegistry.applyAfterCompletion(request, response, handlerMethod, exception);
+                } catch (Exception e) {
+                    log.error("Error in interceptor afterCompletion", e);
+                }
+            }
         }
     }
 
