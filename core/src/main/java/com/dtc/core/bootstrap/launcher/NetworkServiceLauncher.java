@@ -28,19 +28,22 @@ public class NetworkServiceLauncher {
     private final @NotNull ExtensionBootstrap extensionBootstrap;
     private final @NotNull ExtensionManager extensionManager;
     private final @NotNull StartupBanner startupBanner;
+    private final @NotNull java.util.Set<StartupHook> startupHooks;
 
     private volatile boolean started = false;
 
     @Inject
     public NetworkServiceLauncher(@NotNull ServerConfiguration configuration, @NotNull Injector injector,
             @NotNull NettyBootstrap nettyBootstrap, @NotNull ExtensionBootstrap extensionBootstrap,
-            @NotNull ExtensionManager extensionManager, @NotNull StartupBanner startupBanner) {
+            @NotNull ExtensionManager extensionManager, @NotNull StartupBanner startupBanner,
+            @NotNull java.util.Set<StartupHook> startupHooks) {
         this.configuration = configuration;
         this.injector = injector;
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.extensionManager = extensionManager;
         this.startupBanner = startupBanner;
+        this.startupHooks = startupHooks;
     }
 
     /**
@@ -75,6 +78,18 @@ public class NetworkServiceLauncher {
                 log.info("🔌 启动扩展系统...");
                 extensionBootstrap.startExtensionSystem().join();
                 log.info("✅ 扩展系统启动完成");
+
+                // 3. 执行启动钩子
+                if (!startupHooks.isEmpty()) {
+                    log.info("🪝 执行启动钩子...");
+                    for (StartupHook hook : startupHooks) {
+                        try {
+                            hook.onServerStartup();
+                        } catch (Exception e) {
+                            log.error("Failed to execute startup hook: " + hook.getClass().getName(), e);
+                        }
+                    }
+                }
 
                 started = true;
 

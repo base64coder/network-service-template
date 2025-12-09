@@ -70,6 +70,12 @@ public class GuiceContainerFactory {
                     /* 验证模块 */
                     new ValidationModule());
 
+            // 动态加载外部模块
+            java.util.ServiceLoader.load(ModuleProvider.class).forEach(provider -> {
+                log.info("Loading modules from provider: {}", provider.getClass().getName());
+                modules.addAll(provider.getModules());
+            });
+
             return Guice.createInjector(Stage.PRODUCTION, modules.build());
 
         } catch (Exception e) {
