@@ -32,6 +32,7 @@
         <bytebuddy.version>1.14.4</bytebuddy.version>
         <grpc.version>1.50.2</grpc.version>
         <javax.annotation.version>1.3.2</javax.annotation.version>
+        <hikaricp.version>5.0.1</hikaricp.version>
 
         <!-- 测试覆盖率 -->
         <jacoco.version>0.8.8</jacoco.version>
@@ -93,12 +94,6 @@
                 <artifactId>aop-aspects</artifactId>
                 <version>${aop-aspects.version}</version>
             </dependency>
-            <!-- ioc-core 已废弃，统一使用 Google Guice -->
-            <!-- <dependency>
-                <groupId>com.dtc</groupId>
-                <artifactId>ioc-core</artifactId>
-                <version>${project.version}</version>
-            </dependency> -->
             <!-- Guice -->
             <dependency>
                 <groupId>com.google.inject</groupId>
@@ -196,6 +191,13 @@
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
                 <version>${bytebuddy.version}</version>
+            </dependency>
+
+            <!-- HikariCP -->
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikaricp.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

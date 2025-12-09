@@ -1,7 +1,8 @@
 package com.dtc.core.persistence.query;
 
-import com.dtc.api.annotations.NotNull;
 import java.util.List;
+
+import com.dtc.api.annotations.NotNull;
 
 /**
  * 分页对象

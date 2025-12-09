@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dtc.api.annotations.NotNull;
+import com.dtc.core.persistence.DataSourceConfig;
 
 /**
  * 服务器配置类
@@ -26,6 +27,7 @@ public class ServerConfiguration {
     private final @NotNull Map<String, String> environmentVariables;
     private final @NotNull List<ListenerConfiguration> listeners;
     private final boolean embedded;
+    private final @NotNull DataSourceConfig dataSourceConfig;
 
     private ServerConfiguration(Builder builder) {
         this.serverName = builder.serverName;
@@ -38,6 +40,7 @@ public class ServerConfiguration {
         this.environmentVariables = new HashMap<>(builder.environmentVariables);
         this.listeners = new ArrayList<>(builder.listeners);
         this.embedded = builder.embedded;
+        this.dataSourceConfig = builder.dataSourceConfig != null ? builder.dataSourceConfig : new DataSourceConfig();
     }
 
     @NotNull
@@ -88,6 +91,11 @@ public class ServerConfiguration {
     public boolean isEmbedded() {
         return embedded;
     }
+    
+    @NotNull
+    public DataSourceConfig getDataSourceConfig() {
+        return dataSourceConfig;
+    }
 
     public static Builder builder() {
         return new Builder();
@@ -104,6 +112,7 @@ public class ServerConfiguration {
         private Map<String, String> environmentVariables = new HashMap<>();
         private List<ListenerConfiguration> listeners = new ArrayList<>();
         private boolean embedded = false;
+        private DataSourceConfig dataSourceConfig;
 
         public Builder serverName(@NotNull String serverName) {
             this.serverName = serverName;
@@ -158,6 +167,11 @@ public class ServerConfiguration {
         public Builder addListener(@NotNull String type, int port, @NotNull String bindAddress, boolean enabled,
                 @NotNull String name, String description) {
             this.listeners.add(new ListenerConfiguration(type, port, bindAddress, enabled, name, description));
+            return this;
+        }
+        
+        public Builder dataSourceConfig(@NotNull DataSourceConfig dataSourceConfig) {
+            this.dataSourceConfig = dataSourceConfig;
             return this;
         }
 

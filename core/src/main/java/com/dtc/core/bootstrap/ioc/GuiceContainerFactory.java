@@ -1,5 +1,8 @@
 package com.dtc.core.bootstrap.ioc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.core.bootstrap.config.ServerConfiguration;
@@ -8,8 +11,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Guice 容器工厂
@@ -44,6 +45,8 @@ public class GuiceContainerFactory {
                     new LifecycleModule(),
                     /* 配置模块 */
                     new ConfigurationModule(configuration),
+                    /* 持久化模块 */
+                    new PersistenceModule(),
                     /* Netty 服务器模块 */
                     new NettyModule(),
                     /* 网络服务主模块 */
