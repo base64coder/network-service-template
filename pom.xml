@@ -38,6 +38,7 @@
         <jakarta.validation.version>3.0.2</jakarta.validation.version>
         <jakarta.transaction.version>2.0.1</jakarta.transaction.version>
         <hikaricp.version>5.0.1</hikaricp.version>
+        <h2.version>2.2.224</h2.version>
 
         <!-- 测试覆盖率 -->
         <jacoco.version>0.8.11</jacoco.version>
@@ -218,6 +219,13 @@
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${hikaricp.version}</version>
+            </dependency>
+
+            <!-- H2 Database -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
             </dependency>
 
             <!-- SOFAJRaft (Raft一致性算法实现) -->
