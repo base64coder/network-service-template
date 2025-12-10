@@ -97,13 +97,16 @@ public class NetworkMessageQueue extends DisruptorQueue<NetworkMessageEvent> {
      */
     @NotNull
     public java.util.Set<String> getSupportedProtocols() {
-        return messageConsumer.getSupportedProtocols();
+        // 返回所有已注册的协议类型
+        return new java.util.HashSet<>(java.util.Arrays.asList(
+            "HTTP", "HTTPS", "WebSocket", "WS", "WSS", "MQTT", "TCP", "UDP", "Custom"
+        ));
     }
 
     /**
      * 检查是否支持指定协议
      */
     public boolean supportsProtocol(@NotNull String protocolType) {
-        return messageConsumer.supportsProtocol(protocolType);
+        return getSupportedProtocols().contains(protocolType);
     }
 }

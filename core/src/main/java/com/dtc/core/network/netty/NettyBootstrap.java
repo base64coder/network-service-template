@@ -45,7 +45,7 @@ public class NettyBootstrap {
                 log.info("启动 Netty 服务器...");
                 nettyServer.start();
                 started = true;
-                log.info("Netty 服务器启动成功 - 监听端口：{}", nettyServer.getPort());
+                log.info("Netty 服务器启动成功");
             } catch (Exception e) {
                 log.error("Netty 服务器启动失败", e);
                 throw new RuntimeException("Failed to start Netty server", e);

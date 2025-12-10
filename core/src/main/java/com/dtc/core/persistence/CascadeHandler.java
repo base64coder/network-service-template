@@ -235,7 +235,7 @@ public class CascadeHandler {
     private void updateRelatedEntity(@NotNull Object related, @NotNull BaseRepository<?, ?> repository) {
         try {
             BaseRepository<Object, Object> repo = (BaseRepository<Object, Object>) repository;
-            repo.update(related);
+            repo.save(related);
         } catch (Exception e) {
             log.error("Failed to update related entity", e);
         }

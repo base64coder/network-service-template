@@ -27,20 +27,15 @@ public class DefaultFilterChain implements FilterChain {
     }
     
     @Override
-    public void doFilter(@NotNull HttpRequestEx request, @NotNull HttpResponseEx response) throws Exception {
+    public void doFilter(@NotNull HttpRequestEx request, @NotNull HttpResponseEx response) {
         if (currentIndex < filters.size()) {
             Filter filter = filters.get(currentIndex);
             currentIndex++;
             
-            try {
-                boolean continueChain = filter.doFilter(request, response, this);
-                if (!continueChain) {
-                    log.debug("Filter {} interrupted the chain", filter.getName());
-                    return;
-                }
-            } catch (Exception e) {
-                log.error("Error in filter: {}", filter.getName(), e);
-                throw e; // 重新抛出异常，让上层处理
+            boolean continueChain = filter.doFilter(request, response, this);
+            if (!continueChain) {
+                log.debug("Filter {} interrupted the chain", filter.getName());
+                return;
             }
         } else {
             // 所有过滤器执行完毕，执行目标处理器

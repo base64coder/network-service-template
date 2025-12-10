@@ -697,11 +697,11 @@ public class ExtensionLifecycleHandler {
             Object[] dependencies = new Object[8];
 
             try {
-                dependencies[0] = injector.getInstance(com.dtc.core.http.HttpServer.class);
-                dependencies[1] = injector.getInstance(com.dtc.core.http.HttpRequestHandler.class);
-                dependencies[2] = injector.getInstance(com.dtc.core.http.HttpResponseHandler.class);
-                dependencies[3] = injector.getInstance(com.dtc.core.http.HttpRouteManager.class);
-                dependencies[4] = injector.getInstance(com.dtc.core.http.HttpMiddlewareManager.class);
+                dependencies[0] = injector.getInstance(com.dtc.core.network.http.HttpServer.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.network.http.HttpRequestHandler.class);
+                dependencies[2] = injector.getInstance(com.dtc.core.network.http.HttpResponseHandler.class);
+                dependencies[3] = injector.getInstance(com.dtc.core.network.http.HttpRouteManager.class);
+                dependencies[4] = injector.getInstance(com.dtc.core.network.http.HttpMiddlewareManager.class);
                 dependencies[5] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
                 dependencies[6] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
                 dependencies[7] = injector; // 传递 Injector 给扩展以便扩展可以获取其他依赖
@@ -734,9 +734,9 @@ public class ExtensionLifecycleHandler {
             Object[] dependencies = new Object[5];
 
             try {
-                dependencies[0] = injector.getInstance(com.dtc.core.mqtt.MqttServer.class);
-                dependencies[1] = injector.getInstance(com.dtc.core.mqtt.MqttMessageHelper.class);
-                dependencies[2] = injector.getInstance(com.dtc.core.mqtt.MqttConnectionManager.class);
+                dependencies[0] = injector.getInstance(com.dtc.core.network.mqtt.MqttServer.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.network.mqtt.MqttMessageHelper.class);
+                dependencies[2] = injector.getInstance(com.dtc.core.network.mqtt.MqttConnectionManager.class);
                 dependencies[3] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
                 dependencies[4] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
 
@@ -768,10 +768,10 @@ public class ExtensionLifecycleHandler {
             Object[] dependencies = new Object[6];
 
             try {
-                dependencies[0] = injector.getInstance(com.dtc.core.tcp.TcpServer.class);
-                dependencies[1] = injector.getInstance(com.dtc.core.tcp.TcpMessageHelper.class);
-                dependencies[2] = injector.getInstance(com.dtc.core.tcp.TcpConnectionManager.class);
-                dependencies[3] = injector.getInstance(com.dtc.core.tcp.TcpProtocolHandler.class);
+                dependencies[0] = injector.getInstance(com.dtc.core.network.tcp.TcpServer.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.network.tcp.TcpMessageHelper.class);
+                dependencies[2] = injector.getInstance(com.dtc.core.network.tcp.TcpConnectionManager.class);
+                dependencies[3] = injector.getInstance(com.dtc.core.network.tcp.TcpProtocolHandler.class);
                 dependencies[4] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
                 dependencies[5] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
 
@@ -803,9 +803,9 @@ public class ExtensionLifecycleHandler {
             Object[] dependencies = new Object[5];
 
             try {
-                dependencies[0] = injector.getInstance(com.dtc.core.websocket.WebSocketServer.class);
-                dependencies[1] = injector.getInstance(com.dtc.core.websocket.WebSocketMessageHelper.class);
-                dependencies[2] = injector.getInstance(com.dtc.core.websocket.WebSocketConnectionManager.class);
+                dependencies[0] = injector.getInstance(com.dtc.core.network.websocket.WebSocketServer.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.network.websocket.WebSocketMessageHelper.class);
+                dependencies[2] = injector.getInstance(com.dtc.core.network.websocket.WebSocketConnectionManager.class);
                 dependencies[3] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);
                 dependencies[4] = injector.getInstance(com.dtc.core.statistics.StatisticsCollector.class);
 
@@ -838,7 +838,7 @@ public class ExtensionLifecycleHandler {
 
             try {
                 dependencies[0] = injector.getInstance(CustomServer.class);
-                dependencies[1] = injector.getInstance(com.dtc.core.custom.CustomMessageHelper.class);
+                dependencies[1] = injector.getInstance(com.dtc.core.network.custom.CustomMessageHelper.class);
                 dependencies[2] = injector.getInstance(CustomConnectionManager.class);
                 dependencies[3] = injector.getInstance(CustomCodecFactory.class);
                 dependencies[4] = injector.getInstance(com.dtc.core.messaging.NetworkMessageQueue.class);

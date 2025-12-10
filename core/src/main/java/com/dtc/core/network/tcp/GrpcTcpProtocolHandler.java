@@ -1,8 +1,8 @@
 package com.dtc.core.network.tcp;
 
 import com.dtc.api.annotations.NotNull;
-import com.dtc.core.network.tcp.proto.TcpServiceGrpc;
-import com.dtc.core.network.tcp.proto.TcpServiceProto;
+import com.dtc.core.tcp.proto.TcpServiceGrpc;
+import com.dtc.core.tcp.proto.TcpServiceProto;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;

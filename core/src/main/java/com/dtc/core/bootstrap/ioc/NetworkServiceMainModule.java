@@ -31,10 +31,12 @@ public class NetworkServiceMainModule extends AbstractModule {
         // 绑定Injector自身（用于在扩展中获取Injector实例）
         // 注意：这需要在创建Injector后通过requestInjection或Provider方式绑定
         // 由于Guice的限制，我们使用Provider模式
-        bind(com.google.inject.Injector.class).toProvider(() -> {
-            // 这里返回当前Injector，但需要在创建后设置
-            // 实际使用时，扩展可以通过其他方式获取Injector
-            throw new UnsupportedOperationException("Injector should be obtained from NetworkService");
-        });
+        bind(com.google.inject.Injector.class).toProvider(
+            (com.google.inject.Provider<com.google.inject.Injector>) () -> {
+                // 这里返回当前Injector，但需要在创建后设置
+                // 实际使用时，扩展可以通过其他方式获取Injector
+                throw new UnsupportedOperationException("Injector should be obtained from NetworkService");
+            }
+        );
     }
 }

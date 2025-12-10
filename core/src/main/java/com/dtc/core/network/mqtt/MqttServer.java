@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Singleton;
 
 /**
- * MQTT éå¶å§é£ã¥çé? * çç»çç» ï¼æ MQTT éå¿îæ©ç´å¸´éå±¾ç§·é­îî©é? * 
+ * MQTT 服务器
+ * 用于实现 MQTT 协议的网络服务器，可以基于 NettyServer 进行扩展
+ * 
  * @author Network Service Template
  */
 @Singleton
@@ -15,32 +17,33 @@ public class MqttServer {
 
     private static final Logger log = LoggerFactory.getLogger(MqttServer.class);
 
-    // å¨ã¦å°éæ­QTTéå¶å§é£ã¥æéã§æ±NettyServerç¼ç¶ç«´ç» ï¼æ
-    // private volatile boolean started = false; // å®¸æç°¾å¯®?    private int port = 1883;
+    // 注意：MQTT服务器可以基于 NettyServer 进行扩展
+    // private volatile boolean started = false; // 待实现
+    private int port = 1883;
     private String host = "0.0.0.0";
 
     public MqttServer() {
         log.info("Creating MQTT Server instance");
     }
 
-    // å¨ã¦å°éæ­QTTéå¶å§é£ã¥æé?éæ»îé¢ç¢ettyServerç¼ç¶ç«´ç» ï¼æ
-    // start(), stop(), isStarted() éè§ç¡¶å®¸è¬Ð©é?
+    // 注意：MQTT服务器可以基于 NettyServer 进行扩展
+    // start(), stop(), isStarted() 等方法待实现
     /**
-     * é¾å³°å½éå¶å§é£ã§î¬é
+     * 获取服务器端口
      */
     public int getPort() {
         return port;
     }
 
     /**
-     * çå§çéå¶å§é£ã§î¬é
+     * 设置服务器端口
      */
     public void setPort(int port) {
         this.port = port;
     }
 
     /**
-     * é¾å³°å½éå¶å§é£ã¤å¯é
+     * 获取服务器主机地址
      */
     @NotNull
     public String getHost() {
@@ -48,7 +51,7 @@ public class MqttServer {
     }
 
     /**
-     * çå§çéå¶å§é£ã¤å¯é
+     * 设置服务器主机地址
      */
     public void setHost(@NotNull String host) {
         this.host = host;
