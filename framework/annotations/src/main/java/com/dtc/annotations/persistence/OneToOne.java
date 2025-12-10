@@ -8,11 +8,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * ä¸å¯¹ä¸å³èå³ç³»æ³¨è§£
-æ è¯å®ä½ç±»ä¹é´çä¸å¯¹ä¸å³ç³»
-åé´MyBatis-Flexç@RelationOneToOneåHibernateç@OneToOne
-@author Network Service Template
-/
+ * 一对一关联关系注解
+ * 标识实体类之间的一对一关系
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -20,66 +20,65 @@ import java.lang.annotation.Target;
 public @interface OneToOne {
     
     /**
-     * å½åå®ä½ç±»çå³èå­æ®µ
-å¦æä¸ºç©ºï¼åä½¿ç¨å½åå­æ®µåå¯¹åºçä¸åçº¿å­æ®µå
-@return å­æ®µå
-/
+     * 当前实体类的关联字段
+     * 如果为空，则使用当前字段名对应的下划线字段名
+     * @return 字段名
+     */
     String selfField() default "";
     
     /**
-     * ç®æ å®ä½ç±»çå³èå­æ®µ
-@return å­æ®µå
-/
+     * 目标实体类的关联字段
+     * @return 字段名
+     */
     String targetField();
     
     /**
-     * ç®æ å®ä½ç±»å¯¹åºçè¡¨å
-å¦æç®æ å®ä½ç±»ä½¿ç¨äº@Tableæ³¨è§£ï¼å¯ä»¥çç¥
-@return è¡¨å
-/
+     * 目标实体类对应的表名
+     * 如果目标实体类使用了@Table注解，可以省略
+     * @return 表名
+     */
     String targetTable() default "";
     
     /**
-     * æ¯å¦ç«å³å è½½ï¼EAGERï¼è¿æ¯å»¶è¿å è½½ï¼LAZYï¼
-@return å è½½ç­ç¥
-/
+     * 是否立即加载（EAGER）还是延迟加载（LAZY）
+     * @return 加载策略
+     */
     FetchType fetch() default FetchType.LAZY;
     
     /**
-     * çº§èæä½ç±»å
-@return çº§èç±»åæ°ç»
-/
+     * 级联操作类型
+     * @return 级联类型数组
+     */
     CascadeType[] cascade() default {};
     
     /**
-     * æ¯å¦å¯é
-å¦æä¸ºfalseï¼å³èå¿é¡»å­å¨
-@return æ¯å¦å¯é
-/
+     * 是否可选
+     * 如果为false，关联必须存在
+     * @return 是否可选
+     */
     boolean optional() default true;
     
     /**
-     * ä¸­é´è¡¨åç§°ï¼ç¨äºéè¿ä¸­é´è¡¨ç»´æ¤ä¸å¯¹ä¸å³ç³»ï¼
-@return ä¸­é´è¡¨å
-/
+     * 中间表名称（用于通过中间表维护一对一关系）
+     * @return 中间表名
+     */
     String joinTable() default "";
     
     /**
-     * ä¸­é´è¡¨ä¸å½åè¡¨çå³èå­æ®µ
-@return å­æ®µå
-/
+     * 中间表与当前表的关联字段
+     * @return 字段名
+     */
     String joinSelfColumn() default "";
     
     /**
-     * ä¸­é´è¡¨ä¸ç®æ è¡¨çå³èå­æ®µ
-@return å­æ®µå
-/
+     * 中间表与目标表的关联字段
+     * @return 字段名
+     */
     String joinTargetColumn() default "";
     
     /**
-     * æ¥è¯¢æ¶çé¢å¤æ¡ä»¶
-@return SQLæ¡ä»¶
-/
+     * 查询时的额外条件
+     * @return SQL条件
+     */
     String extraCondition() default "";
 }
-

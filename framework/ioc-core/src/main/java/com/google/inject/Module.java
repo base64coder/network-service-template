@@ -1,8 +1,9 @@
 package com.google.inject;
 
 /**
- * Compatibility interface for com.google.inject.Module.
+ * 兼容性接口，用于兼容 com.google.inject.Module
+ * 
+ * @author Network Service Template
  */
-public interface Module extends com.dtc.ioc.core.IoCModule {
+public interface Module extends com.dtc.ioc.core.NetModule {
 }
-

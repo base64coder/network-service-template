@@ -5,125 +5,126 @@ import com.dtc.api.annotations.Nullable;
 import java.util.Map;
 
 /**
-     * ç½ç»åºç¨ä¸ä¸ææ¥å£
-åé´Spring ApplicationContextåGuice Injectorçä¼ç¹
-@author Network Service Template
-/
+ * Network Application Context Interface
+ * Combines advantages of Spring ApplicationContext with module-based configuration
+ * 
+ * @author Network Service Template
+ */
 public interface NetworkApplicationContext {
     
     /**
-     * è·åBeanå®ä¾
-@param beanType Beanç±»å
-@return Beanå®ä¾
-/
+     * Get Bean instance by type
+     * @param beanType Bean type
+     * @return Bean instance
+     */
     @Nullable
     <T> T getBean(Class<T> beanType);
     
     /**
-     * æ ¹æ®åç§°è·åBeanå®ä¾
-@param beanName Beanåç§°
-@return Beanå®ä¾
-/
+     * Get Bean instance by name
+     * @param beanName Bean name
+     * @return Bean instance
+     */
     @Nullable
     Object getBean(String beanName);
     
     /**
-     * æ ¹æ®åç§°åç±»åè·åBeanå®ä¾
-@param beanName Beanåç§°
-@param beanType Beanç±»å
-@return Beanå®ä¾
-/
+     * Get Bean instance by name and type
+     * @param beanName Bean name
+     * @param beanType Bean type
+     * @return Bean instance
+     */
     @Nullable
     <T> T getBean(String beanName, Class<T> beanType);
     
     /**
-     * è·åæå®ç±»åçææBeanå®ä¾
-@param beanType Beanç±»å
-@return Beanå®ä¾æ å°
-/
+     * Get all Bean instances of specified type
+     * @param beanType Bean type
+     * @return Bean instance map
+     */
     @NotNull
     <T> Map<String, T> getBeansOfType(Class<T> beanType);
     
     /**
-     * æ£æ¥Beanæ¯å¦å­å¨
-@param beanName Beanåç§°
-@return æ¯å¦å­å¨
-/
+     * Check if Bean exists
+     * @param beanName Bean name
+     * @return Whether exists
+     */
     boolean containsBean(String beanName);
     
     /**
-     * æ£æ¥Beanæ¯å¦ä¸ºåä¾
-@param beanName Beanåç§°
-@return æ¯å¦ä¸ºåä¾
-/
+     * Check if Bean is singleton
+     * @param beanName Bean name
+     * @return Whether is singleton
+     */
     boolean isSingleton(String beanName);
     
     /**
-     * è·åBeançç±»å
-@param beanName Beanåç§°
-@return Beanç±»å
-/
+     * Get Bean type
+     * @param beanName Bean name
+     * @return Bean type
+     */
     @Nullable
     Class<?> getType(String beanName);
     
     /**
-     * è·åææBeanåç§°
-@return Beanåç§°æ°ç»
-/
+     * Get all Bean names
+     * @return Bean name array
+     */
     @NotNull
     String[] getBeanDefinitionNames();
     
     /**
-     * å·æ°å®¹å¨
-/
+     * Refresh container
+     */
     void refresh();
     
     /**
-     * å³é­å®¹å¨
-/
+     * Close container
+     */
     void close();
     
     /**
-     * æ£æ¥å®¹å¨æ¯å¦æ´»è·
-@return æ¯å¦æ´»è·
-/
+     * Check if container is active
+     * @return Whether is active
+     */
     boolean isActive();
     
     /**
-     * æ³¨åBeanå®ä¹
-@param beanName Beanåç§°
-@param beanClass Beanç±»å
-/
+     * Register Bean definition
+     * @param beanName Bean name
+     * @param beanClass Bean type
+     */
     void registerBean(String beanName, Class<?> beanClass);
     
     /**
-     * æ³¨åBeanå®ä¾
-@param beanName Beanåç§°
-@param beanInstance Beanå®ä¾
-/
+     * Register Bean instance
+     * @param beanName Bean name
+     * @param beanInstance Bean instance
+     */
     void registerBean(String beanName, Object beanInstance);
     
     /**
-     * åå¸åºç¨äºä»¶
-@param event åºç¨äºä»¶
-/
+     * Publish application event
+     * @param event Application event
+     */
     void publishEvent(ApplicationEvent event);
     
     /**
-     * æ·»å åºç¨çå¬å¨
-@param listener åºç¨çå¬å¨
-/
+     * Add application listener
+     * @param listener Application listener
+     */
     void addApplicationListener(ApplicationListener<?> listener);
     
     /**
-     * æ·»å Beanåå¤çå¨
-@param beanPostProcessor Beanåå¤çå¨
-/
+     * Add Bean post processor
+     * @param beanPostProcessor Bean post processor
+     */
     void addBeanPostProcessor(BeanPostProcessor beanPostProcessor);
     
     /**
-     * æ·»å Beanå·¥ååå¤çå¨
-@param beanFactoryPostProcessor Beanå·¥ååå¤çå¨
-/
+     * Add Bean factory post processor
+     * @param beanFactoryPostProcessor Bean factory post processor
+     */
     void addBeanFactoryPostProcessor(BeanFactoryPostProcessor beanFactoryPostProcessor);
 }

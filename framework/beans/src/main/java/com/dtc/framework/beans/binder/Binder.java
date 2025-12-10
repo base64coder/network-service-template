@@ -5,7 +5,7 @@ import com.dtc.framework.beans.provider.Provider;
 
 /**
  * Binder interface for configuring bindings in modules.
- * Inspired by Guice Binder.
+ * Binder interface for module-based dependency injection configuration.
  */
 public interface Binder {
     

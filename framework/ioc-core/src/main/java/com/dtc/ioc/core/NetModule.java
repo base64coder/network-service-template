@@ -3,12 +3,12 @@ package com.dtc.ioc.core;
 import com.dtc.api.annotations.NotNull;
 
 /**
- * IoC 模块接口
- * 提供模块化配置功能，类似 Guice 的 Module
+ * 网络模块接口
+ * 提供模块化配置功能，支持模块化依赖注入配置
  * 
  * @author Network Service Template
  */
-public interface IoCModule {
+public interface NetModule {
     
     /**
      * 配置模块
@@ -16,7 +16,7 @@ public interface IoCModule {
      * 
      * @param context 应用上下文
      */
-    void configure(@NotNull NetworkApplicationContext context);
+    void configure(@NotNull NetApplicationContext context);
     
     /**
      * 获取模块名称

@@ -4,19 +4,19 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 
 /**
-     * Beanè¡¨è¾¾å¼è§£æå¨æ¥å£
-è§£æBeanè¡¨è¾¾å¼
-åé´Spring BeanExpressionResolverçè®¾è®¡
-@author Network Service Template
-/
+ * Bean表达式解析器接口
+ * 解析Bean表达式
+ * 
+ * @author Network Service Template
+ */
 public interface BeanExpressionResolver {
     
     /**
-     * è§£æè¡¨è¾¾å¼
-@param value è¡¨è¾¾å¼å¼
-@param evalContext è¯ä¼°ä¸ä¸æ
-@return è§£æç»æ
-/
+     * 解析表达式
+     * @param value 表达式值
+     * @param evalContext 评估上下文
+     * @return 解析结果
+     */
     @Nullable
     Object evaluate(@NotNull String value, @NotNull BeanExpressionContext evalContext);
 }

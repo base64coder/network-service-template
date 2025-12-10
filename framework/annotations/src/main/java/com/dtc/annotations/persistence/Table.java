@@ -7,39 +7,38 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * æ°æ®åºè¡¨æ³¨è§£
-æ è¯å®ä½ç±»å¯¹åºçæ°æ®åºè¡¨
-åé´MyBatis-Flexç@Tableæ³¨è§£
-@author Network Service Template
-/
+ * 数据库表注解
+ * 标识实体类对应的数据库表
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Table {
     
     /**
-     * è¡¨åç§°
-@return è¡¨å
-/
+     * 表名称
+     * @return 表名
+     */
     String value();
     
     /**
-     * æ°æ®åºschemaï¼æ¨¡å¼ï¼
-@return schemaåç§°
-/
+     * 数据库schema（模式）
+     * @return schema名称
+     */
     String schema() default "";
     
     /**
-     * æ¯å¦å°é©¼å³°å±æ§è½¬æ¢ä¸ºä¸åçº¿å­æ®µ
-é»è®¤ä¸ºtrue
-@return æ¯å¦è½¬æ¢
-/
+     * 是否将驼峰属性转换为下划线字段
+     * 默认为true
+     * @return 是否转换
+     */
     boolean camelToUnderline() default true;
     
     /**
-     * è¡¨æ³¨é
-@return æ³¨éåå®¹
-/
+     * 表注释
+     * @return 注释内容
+     */
     String comment() default "";
 }
-

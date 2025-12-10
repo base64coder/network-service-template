@@ -11,22 +11,23 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
-     * ç®ååºç¨äºä»¶å¤æ­å¨å®ç°
-åé´Spring SimpleApplicationEventMulticasterçè®¾è®¡
-@author Network Service Template
-/
+ * 简单应用事件多播器实现
+ * 借鉴 SimpleApplicationEventMulticaster 的设计
+ * 
+ * @author Network Service Template
+ */
 public class SimpleApplicationEventMulticaster implements ApplicationEventMulticaster {
     
     private static final Logger log = LoggerFactory.getLogger(SimpleApplicationEventMulticaster.class);
     
-    // åºç¨çå¬å¨åè¡¨
+    // 应用监听器列表
     private final List<ApplicationListener<?>> applicationListeners = new CopyOnWriteArrayList<>();
     
     @Override
     public void addApplicationListener(@NotNull ApplicationListener<?> listener) {
         if (listener != null) {
             applicationListeners.add(listener);
-            log.debug("ð§ Application listener added: {}", listener.getClass().getSimpleName());
+            log.debug("⚙️ Application listener added: {}", listener.getClass().getSimpleName());
         }
     }
     
@@ -34,14 +35,14 @@ public class SimpleApplicationEventMulticaster implements ApplicationEventMultic
     public void removeApplicationListener(@NotNull ApplicationListener<?> listener) {
         if (listener != null) {
             applicationListeners.remove(listener);
-            log.debug("ð§ Application listener removed: {}", listener.getClass().getSimpleName());
+            log.debug("⚙️ Application listener removed: {}", listener.getClass().getSimpleName());
         }
     }
     
     @Override
     @SuppressWarnings("unchecked")
     public void multicastEvent(@NotNull ApplicationEvent event) {
-        log.debug("ð¢ Multicasting event: {}", event.getClass().getSimpleName());
+        log.debug("📢 Multicasting event: {}", event.getClass().getSimpleName());
         
         for (ApplicationListener listener : applicationListeners) {
             try {
@@ -49,18 +50,18 @@ public class SimpleApplicationEventMulticaster implements ApplicationEventMultic
                     listener.onApplicationEvent(event);
                 }
             } catch (Exception e) {
-                log.error("â Error in application listener: {}", listener.getClass().getSimpleName(), e);
+                log.error("❌ Error in application listener: {}", listener.getClass().getSimpleName(), e);
             }
         }
     }
     
     /**
-     * æ£æ¥çå¬å¨æ¯å¦æ¯æè¯¥äºä»¶
-/
+     * 检查监听器是否支持该事件
+     */
     @SuppressWarnings("unchecked")
     private boolean supportsEvent(ApplicationListener listener, ApplicationEvent event) {
         try {
-            // éè¿åå°æ£æ¥çå¬å¨æ¯å¦æ¯æè¯¥äºä»¶ç±»å
+            // 通过反射检查监听器是否支持该事件类型
             Class<?> listenerType = listener.getClass();
             java.lang.reflect.Type[] genericInterfaces = listenerType.getGenericInterfaces();
             
@@ -78,7 +79,7 @@ public class SimpleApplicationEventMulticaster implements ApplicationEventMultic
                 }
             }
             
-            // å¦ææ²¡ææ³åä¿¡æ¯ï¼é»è®¤æ¯æææäºä»¶
+            // 如果没有类型信息，默认支持所有事件
             return true;
             
         } catch (Exception e) {
@@ -90,6 +91,6 @@ public class SimpleApplicationEventMulticaster implements ApplicationEventMultic
     @Override
     public void removeAllListeners() {
         applicationListeners.clear();
-        log.debug("ðï¸ Removed all application listeners");
+        log.debug("🧹 Removed all application listeners");
     }
 }

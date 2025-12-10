@@ -13,7 +13,7 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.ioc.core.BeanDefinition;
 import com.dtc.ioc.core.DependencyInjector;
-import com.dtc.ioc.core.NetworkApplicationContext;
+import com.dtc.ioc.core.NetApplicationContext;
 
 /**
  * 默认依赖注入器实现
@@ -25,9 +25,9 @@ public class DefaultDependencyInjector implements DependencyInjector {
     
     private static final Logger log = LoggerFactory.getLogger(DefaultDependencyInjector.class);
     
-    private final NetworkApplicationContext container;
+    private final NetApplicationContext container;
     
-    public DefaultDependencyInjector(NetworkApplicationContext container) {
+    public DefaultDependencyInjector(NetApplicationContext container) {
         this.container = container;
     }
     

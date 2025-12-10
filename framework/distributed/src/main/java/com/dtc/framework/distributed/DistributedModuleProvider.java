@@ -1,7 +1,7 @@
 package com.dtc.framework.distributed;
 
 import com.dtc.core.bootstrap.ioc.ModuleProvider;
-import com.dtc.framework.beans.IoCModule; // Changed from Module
+import com.dtc.ioc.core.IoCModule; // Changed from Module
 import java.util.Collection;
 import java.util.Collections;
 

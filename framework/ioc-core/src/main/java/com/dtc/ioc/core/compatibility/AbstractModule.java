@@ -1,19 +1,19 @@
-package com.dtc.framework.beans.guice.compatibility;
+package com.dtc.ioc.core.compatibility;
 
-import com.dtc.framework.beans.binder.Binder;
-import com.dtc.framework.beans.impl.binder.DefaultBinder;
-import com.dtc.framework.beans.NetworkApplicationContext;
+import com.dtc.ioc.core.binder.Binder;
+import com.dtc.ioc.core.impl.binder.DefaultBinder;
+import com.dtc.ioc.core.NetApplicationContext;
 
 /**
- * AbstractModule compatibility class to ease migration from Guice.
- * Users can extend this class instead of com.google.inject.AbstractModule.
+ * AbstractModule compatibility class for module-based configuration.
+ * Provides a convenient base class for implementing network modules.
  */
-public abstract class AbstractModule implements com.dtc.ioc.core.IoCModule {
+public abstract class AbstractModule implements com.dtc.ioc.core.NetModule {
 
     protected Binder binder;
 
     @Override
-    public void configure(NetworkApplicationContext context) {
+    public void configure(NetApplicationContext context) {
         this.binder = new DefaultBinder(context);
         configure();
     }
@@ -24,7 +24,7 @@ public abstract class AbstractModule implements com.dtc.ioc.core.IoCModule {
         return binder.bind(type);
     }
 
-    protected void install(com.dtc.ioc.core.IoCModule module) {
+    protected void install(com.dtc.ioc.core.NetModule module) {
         binder.install(module);
     }
     
@@ -36,7 +36,7 @@ public abstract class AbstractModule implements com.dtc.ioc.core.IoCModule {
     public String getModuleVersion() { return "1.0.0"; }
     
     @Override
-    public String getModuleDescription() { return "Guice compatibility module"; }
+    public String getModuleDescription() { return "Compatibility module"; }
     
     @Override
     public String[] getDependencies() { return new String[0]; }

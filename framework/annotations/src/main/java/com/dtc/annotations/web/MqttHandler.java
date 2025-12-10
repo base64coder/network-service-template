@@ -7,35 +7,35 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * MQTTæ¶æ¯å¤çæ³¨è§£
-æ è¯ä¸ä¸ªæ¹æ³ç¨äºå¤çMQTTæ¶æ¯
-@author Network Service Template
-/
+ * MQTT消息处理注解
+ * 标识一个方法用于处理MQTT消息
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface MqttHandler {
     
     /**
-     * æ¶æ¯ç±»å
-æ¯æï¼CONNECT, PUBLISH, SUBSCRIBE, UNSUBSCRIBE, PING, DISCONNECT
-å¦æä¸ºç©ºï¼åå¤çææç±»åçæ¶æ¯
-@return æ¶æ¯ç±»å
-/
+     * 消息类型
+     * 支持：CONNECT, PUBLISH, SUBSCRIBE, UNSUBSCRIBE, PING, DISCONNECT
+     * 如果为空，则处理所有类型的消息
+     * @return 消息类型
+     */
     String messageType() default "";
     
     /**
-     * ä¸»é¢å¹éæ¨¡å¼ï¼ç¨äºPUBLISHæ¶æ¯ï¼
-æ¯æééç¬¦ï¼+ï¼åçº§ééç¬¦ï¼ã#ï¼å¤çº§ééç¬¦ï¼
-@return ä¸»é¢æ¨¡å¼
-/
+     * 主题匹配模式（用于PUBLISH消息）
+     * 支持通配符：+（单级通配符）、#（多级通配符）
+     * @return 主题模式
+     */
     String topic() default "";
     
     /**
-     * ä¼åçº§
-æ°å¼è¶å°ï¼ä¼åçº§è¶é«
-@return ä¼åçº§
-/
+     * 优先级
+     * 数值越小，优先级越高
+     * @return 优先级
+     */
     int priority() default 0;
 }
-

@@ -5,52 +5,52 @@ import com.dtc.api.annotations.NotNull;
 import java.lang.reflect.Method;
 
 /**
-     * è¿æ¥ç¹æ¥å£
-æä¾å¯¹è¿æ¥ç¹ä¿¡æ¯çè®¿é®
-@author Network Service Template
-/
+ * 连接点接口
+ * 提供对连接点信息的访问
+ * 
+ * @author Network Service Template
+ */
 public interface JoinPoint {
 
     /**
-     * è·åç®æ å¯¹è±¡
-@return ç®æ å¯¹è±¡
-/
+     * 获取目标对象
+     * @return 目标对象
+     */
     @NotNull
     Object getTarget();
 
     /**
-     * è·åä»£çå¯¹è±¡
-@return ä»£çå¯¹è±¡
-/
+     * 获取代理对象
+     * @return 代理对象
+     */
     @NotNull
     Object getThis();
 
     /**
-     * è·åæ¹æ³ç­¾å
-@return æ¹æ³ç­¾å
-/
+     * 获取签名
+     * @return 签名对象
+     */
     @NotNull
-    Method getSignature();
+    Signature getSignature();
 
     /**
-     * è·åæ¹æ³åæ°
-@return æ¹æ³åæ°æ°ç»
-/
+     * 获取方法参数
+     * @return 方法参数数组
+     */
     @NotNull
     Object[] getArgs();
 
     /**
-     * è·åæ¹æ³å
-@return æ¹æ³å
-/
+     * 获取方法名
+     * @return 方法名
+     */
     @NotNull
     String getMethodName();
 
     /**
-     * è·åç®æ ç±»
-@return ç®æ ç±»
-/
+     * 获取目标类
+     * @return 目标类
+     */
     @NotNull
     Class<?> getTargetClass();
 }
-

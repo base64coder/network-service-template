@@ -6,19 +6,19 @@ import org.slf4j.LoggerFactory;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.core.bootstrap.config.ServerConfiguration;
-import com.dtc.framework.beans.IoCModule;
-import com.dtc.framework.beans.NetworkApplicationContext;
-import com.dtc.framework.beans.context.AnnotationConfigApplicationContext;
+import com.dtc.ioc.core.NetModule;
+import com.dtc.ioc.core.NetApplicationContext;
+import com.dtc.ioc.core.context.AnnotationConfigApplicationContext;
 
 /**
- * IoC 容器工厂 (原 GuiceContainerFactory)
+ * IoC 容器工厂
  * 负责创建和配置依赖注入容器
  * 
  * @author Network Service Template
  */
-public class GuiceContainerFactory {
+public class IoCContainerFactory {
 
-    private static final Logger log = LoggerFactory.getLogger(GuiceContainerFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(IoCContainerFactory.class);
 
     /**
      * 创建网络服务主容器
@@ -27,7 +27,7 @@ public class GuiceContainerFactory {
      * @return 注入器 (ApplicationContext)
      */
     @Nullable
-    public static NetworkApplicationContext bootstrapInjector(@NotNull ServerConfiguration configuration) {
+    public static NetApplicationContext bootstrapInjector(@NotNull ServerConfiguration configuration) {
         log.info("Bootstrapping Network Service IoC container...");
 
         try {
@@ -56,8 +56,8 @@ public class GuiceContainerFactory {
             java.util.ServiceLoader.load(ModuleProvider.class).forEach(provider -> {
                 log.info("Loading modules from provider: {}", provider.getClass().getName());
                 provider.getModules().forEach(module -> {
-                     if (module instanceof IoCModule) {
-                         registerModule(context, (IoCModule) module);
+                     if (module instanceof NetModule) {
+                         registerModule(context, (NetModule) module);
                      }
                 });
             });
@@ -78,7 +78,7 @@ public class GuiceContainerFactory {
      * 创建扩展系统容器
      */
     @NotNull
-    public static NetworkApplicationContext extensionInjector(@NotNull ServerConfiguration configuration) {
+    public static NetApplicationContext extensionInjector(@NotNull ServerConfiguration configuration) {
         log.info("Bootstrapping Extension System IoC container...");
         
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -96,7 +96,7 @@ public class GuiceContainerFactory {
      * 创建持久化系统容器
      */
     @NotNull
-    public static NetworkApplicationContext persistenceInjector(@NotNull ServerConfiguration configuration) {
+    public static NetApplicationContext persistenceInjector(@NotNull ServerConfiguration configuration) {
         log.info("Bootstrapping Persistence System IoC container...");
 
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -110,7 +110,7 @@ public class GuiceContainerFactory {
         return context;
     }
     
-    private static void registerModule(NetworkApplicationContext context, IoCModule module) {
+    private static void registerModule(NetApplicationContext context, NetModule module) {
         module.configure(context);
     }
 }

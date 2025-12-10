@@ -2,7 +2,7 @@ package com.dtc.ioc.core.impl.binder;
 
 import com.dtc.ioc.core.BeanDefinition;
 import com.dtc.ioc.core.BeanScope;
-import com.dtc.ioc.core.NetworkApplicationContext;
+import com.dtc.ioc.core.NetApplicationContext;
 import com.dtc.ioc.core.binder.Binder;
 import com.dtc.ioc.core.binder.LinkedBindingBuilder;
 import com.dtc.ioc.core.binder.ScopedBindingBuilder;
@@ -11,9 +11,9 @@ import com.dtc.ioc.core.provider.Provider;
 
 public class DefaultBinder implements Binder {
 
-    private final NetworkApplicationContext context;
+    private final NetApplicationContext context;
 
-    public DefaultBinder(NetworkApplicationContext context) {
+    public DefaultBinder(NetApplicationContext context) {
         this.context = context;
     }
 
@@ -23,22 +23,21 @@ public class DefaultBinder implements Binder {
     }
 
     @Override
-    public void install(com.dtc.ioc.core.IoCModule module) {
+    public void install(com.dtc.ioc.core.NetModule module) {
         module.configure(context);
     }
 
     private static class BindingBuilderImpl<T> implements LinkedBindingBuilder<T> {
         private final Class<T> type;
-        private final NetworkApplicationContext context;
+        private final NetApplicationContext context;
         private final DefaultBeanDefinition definition;
 
-        public BindingBuilderImpl(Class<T> type, NetworkApplicationContext context) {
+        public BindingBuilderImpl(Class<T> type, NetApplicationContext context) {
             this.type = type;
             this.context = context;
-            this.definition = new DefaultBeanDefinition(type);
-            // Default to singleton if not specified? Or prototype? 
-            // Guice defaults to "no scope" (prototype-like), Spring defaults to Singleton.
-            // Let's stick to our framework default (Singleton usually).
+            String beanName = type.getSimpleName();
+            this.definition = new DefaultBeanDefinition(beanName, type);
+            // 默认使用单例作用域
             this.definition.setScope(BeanScope.SINGLETON);
         }
 
@@ -54,7 +53,8 @@ public class DefaultBinder implements Binder {
 
         @Override
         public void toInstance(T instance) {
-            context.registerSingleton(instance);
+            String beanName = type.getSimpleName();
+            context.registerBean(beanName, instance);
         }
 
         @Override

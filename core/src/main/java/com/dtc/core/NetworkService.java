@@ -4,7 +4,7 @@ import com.dtc.api.ServiceConfig;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.core.bootstrap.launcher.NetworkServiceLauncher;
 import com.dtc.core.bootstrap.launcher.ServerStatusDisplay;
-import com.dtc.core.bootstrap.ioc.GuiceContainerFactory;
+import com.dtc.core.bootstrap.ioc.IoCContainerFactory;
 import com.dtc.core.bootstrap.config.ServerConfiguration;
 import com.dtc.core.extensions.ExtensionBootstrap;
 import com.dtc.core.extensions.ExtensionManager;
@@ -43,7 +43,7 @@ public class NetworkService {
         this.configuration = config;
 
         // 使用分层设计初始化依赖注入容器
-        this.injector = GuiceContainerFactory.bootstrapInjector(configuration);
+        this.injector = IoCContainerFactory.bootstrapInjector(configuration);
         if (injector == null) {
             throw new RuntimeException("Failed to initialize dependency injection container");
         }

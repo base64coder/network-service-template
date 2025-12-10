@@ -4,27 +4,27 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 
 /**
-     * å¯æ§è¡çè¿æ¥ç¹æ¥å£
-ç¨äºç¯ç»éç¥ï¼å¯ä»¥æ§å¶æ¹æ³æ§è¡
-@author Network Service Template
-/
+ * 可执行的连接点接口
+ * 用于环绕通知，可以控制方法执行
+ * 
+ * @author Network Service Template
+ */
 public interface ProceedingJoinPoint extends JoinPoint {
 
     /**
-     * ç»§ç»­æ§è¡ç®æ æ¹æ³
-@return æ¹æ³è¿åå¼
-@throws Throwable å¦ææ¹æ³æ§è¡æåºå¼å¸¸
-/
+     * 继续执行目标方法
+     * @return 方法返回值
+     * @throws Throwable 如果方法执行抛出异常
+     */
     @Nullable
     Object proceed() throws Throwable;
 
     /**
-     * ä½¿ç¨æå®åæ°ç»§ç»­æ§è¡ç®æ æ¹æ³
-@param args æ¹æ³åæ°
-@return æ¹æ³è¿åå¼
-@throws Throwable å¦ææ¹æ³æ§è¡æåºå¼å¸¸
-/
+     * 使用指定参数继续执行目标方法
+     * @param args 方法参数
+     * @return 方法返回值
+     * @throws Throwable 如果方法执行抛出异常
+     */
     @Nullable
     Object proceed(@NotNull Object[] args) throws Throwable;
 }
-

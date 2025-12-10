@@ -3,33 +3,33 @@ package com.dtc.ioc.core;
 import com.dtc.api.annotations.NotNull;
 
 /**
-     * åºç¨äºä»¶å¤æ­å¨æ¥å£
-å¹¿æ­åºç¨äºä»¶
-åé´Spring ApplicationEventMulticasterçè®¾è®¡
-@author Network Service Template
-/
+ * 应用事件多播器接口
+ * 广播应用事件
+ * 
+ * @author Network Service Template
+ */
 public interface ApplicationEventMulticaster {
     
     /**
-     * æ·»å åºç¨çå¬å¨
-@param listener åºç¨çå¬å¨
-/
+     * 添加应用监听器
+     * @param listener 应用监听器
+     */
     void addApplicationListener(@NotNull ApplicationListener<?> listener);
     
     /**
-     * ç§»é¤åºç¨çå¬å¨
-@param listener åºç¨çå¬å¨
-/
+     * 移除应用监听器
+     * @param listener 应用监听器
+     */
     void removeApplicationListener(@NotNull ApplicationListener<?> listener);
     
     /**
-     * å¹¿æ­åºç¨äºä»¶
-@param event åºç¨äºä»¶
-/
+     * 广播应用事件
+     * @param event 应用事件
+     */
     void multicastEvent(@NotNull ApplicationEvent event);
     
     /**
-     * ç§»é¤ææçå¬å¨
-/
+     * 移除所有监听器
+     */
     void removeAllListeners();
 }

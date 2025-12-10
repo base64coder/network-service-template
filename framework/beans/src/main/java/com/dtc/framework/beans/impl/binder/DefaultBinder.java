@@ -37,7 +37,7 @@ public class DefaultBinder implements Binder {
             this.context = context;
             this.definition = new DefaultBeanDefinition(type);
             // Default to singleton if not specified? Or prototype? 
-            // Guice defaults to "no scope" (prototype-like), Spring defaults to Singleton.
+            // Default to singleton scope (can be overridden)
             // Let's stick to our framework default (Singleton usually).
             this.definition.setScope(BeanScope.SINGLETON);
         }

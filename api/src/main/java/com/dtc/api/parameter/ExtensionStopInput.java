@@ -6,56 +6,56 @@ import java.nio.file.Path;
 import java.util.Map;
 
 /**
- * Extension Stop Input Parameters
+ * 扩展停止输入参数
  * 
  * @author Network Service Template
  */
 public interface ExtensionStopInput {
 
     /**
-     * Get Extension ID
+     * 获取扩展ID
      * 
-     * @return Extension ID
+     * @return 扩展ID
      */
     @NotNull
     String getExtensionId();
 
     /**
-     * Get Extension Name
+     * 获取扩展名称
      * 
-     * @return Extension Name
+     * @return 扩展名称
      */
     @NotNull
     String getExtensionName();
 
     /**
-     * Get Extension Version
+     * 获取扩展版本
      * 
-     * @return Extension Version
+     * @return 扩展版本
      */
     @NotNull
     String getExtensionVersion();
 
     /**
-     * Get Extension Folder Path
+     * 获取扩展文件夹路径
      * 
-     * @return Extension Folder Path
+     * @return 扩展文件夹路径
      */
     @NotNull
     Path getExtensionFolderPath();
 
     /**
-     * Get Server Information
+     * 获取服务器信息
      * 
-     * @return Server Information
+     * @return 服务器信息
      */
     @NotNull
     ServerInformation getServerInformation();
 
     /**
-     * Get Configuration Parameters
+     * 获取配置参数
      * 
-     * @return Configuration Parameter Map
+     * @return 配置参数映射
      */
     @NotNull
     Map<String, String> getConfiguration();

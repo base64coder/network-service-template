@@ -36,7 +36,7 @@ public class MessageHandlerRegistry {
     /**
      * 扫描并注册消息处理器
      * 
-     * @param injector Guice注入器
+     * @param injector IoC注入器
      * @param basePackage 扫描的基础包路径
      */
     public void scanAndRegister(@NotNull Injector injector, @NotNull String basePackage) {

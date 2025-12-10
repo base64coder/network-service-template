@@ -28,7 +28,7 @@ import com.dtc.core.network.http.middleware.RateLimitMiddleware;
 import com.dtc.core.messaging.NetworkMessageEvent;
 import com.dtc.core.messaging.NetworkMessageQueue;
 import com.dtc.core.web.WebControllerScanner;
-import com.dtc.core.web.GuiceBeanProvider;
+import com.dtc.core.web.IoCBeanProvider;
 import com.google.inject.Injector;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -406,7 +406,7 @@ public class HttpExtension extends StatisticsAware implements ExtensionMain, Pro
 
                 // 创建Bean提供者并设置扫描包
                 // 默认扫描com包，可以通过配置指定
-                GuiceBeanProvider beanProvider = new GuiceBeanProvider(injector, "com");
+                IoCBeanProvider beanProvider = new IoCBeanProvider(injector, "com");
 
                 // 创建控制器扫描器
                 WebControllerScanner scanner = new WebControllerScanner(

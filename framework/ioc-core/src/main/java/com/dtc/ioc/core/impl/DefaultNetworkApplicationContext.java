@@ -15,41 +15,41 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Default Network Application Context Implementation
- * Combines advantages of Spring ApplicationContext and Guice Injector
+ * 默认网络应用上下文实现
+ * 提供应用上下文功能，支持模块化配置
  * 
  * @author Network Service Template
  */
-public class DefaultNetworkApplicationContext implements NetworkApplicationContext {
+public class DefaultNetworkApplicationContext implements NetApplicationContext {
     
     private static final Logger log = LoggerFactory.getLogger(DefaultNetworkApplicationContext.class);
     
-    // Bean Factory
+    // Bean工厂
     private final ConfigurableBeanFactory beanFactory;
     
-    // Environment Configuration
+    // 环境配置
     private final Environment environment;
     
-    // Application Listeners List
+    // 应用监听器列表
     private final List<ApplicationListener<?>> applicationListeners = new CopyOnWriteArrayList<>();
     
-    // Bean Post Processors List
+    // Bean后处理器列表
     private final List<BeanPostProcessor> beanPostProcessors = new CopyOnWriteArrayList<>();
     
-    // Bean Factory Post Processors List
+    // Bean工厂后处理器列表
     private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new CopyOnWriteArrayList<>();
     
-    // Application Event Multicaster
+    // 应用事件多播器
     private final ApplicationEventMulticaster eventMulticaster;
     
-    // Container State
+    // 容器状态
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final AtomicBoolean refreshed = new AtomicBoolean(false);
     
-    // Startup/Shutdown Monitor
+    // 启动关闭监控器
     private final Object startupShutdownMonitor = new Object();
     
-    // Startup Time
+    // 启动时间
     private long startupDate;
     
     public DefaultNetworkApplicationContext() {
@@ -66,7 +66,7 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
             throw new IllegalStateException("Application context is not active");
         }
         
-        // Find matching Bean definition
+        // 查找匹配的Bean定义
         for (BeanDefinition definition : beanFactory.getBeanDefinitions().values()) {
             if (beanType.isAssignableFrom(definition.getBeanClass())) {
                 return (T) getBean(definition.getBeanName());
@@ -101,13 +101,13 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
     public void registerBean(String beanName, Class<?> beanClass) {
         DefaultBeanDefinition definition = new DefaultBeanDefinition(beanName, beanClass);
         beanFactory.registerBeanDefinition(beanName, definition);
-        log.debug("Registered bean definition: {} -> {}", beanName, beanClass.getName());
+                log.debug("📦 Registered bean definition: {} -> {}", beanName, beanClass.getName());
     }
     
     @Override
     public void registerBean(String beanName, Object beanInstance) {
         beanFactory.registerSingleton(beanName, beanInstance);
-        log.debug("Registered bean instance: {} -> {}", beanName, beanInstance.getClass().getName());
+                log.debug("📦 Registered bean instance: {} -> {}", beanName, beanInstance.getClass().getName());
     }
     
     @Override
@@ -119,127 +119,127 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
             }
 
             try {
-                log.info("Refreshing Network Application Context...");
+                log.info("🔄 Refreshing Net Application Context...");
                 this.startupDate = System.currentTimeMillis();
 
-                // 1. Prepare Environment
+                // 1. 准备环境
                 prepareEnvironment();
 
-                // 2. Prepare BeanFactory
+                // 2. 准备BeanFactory
                 prepareBeanFactory(beanFactory);
 
-                // 3. Invoke BeanFactoryPostProcessor
+                // 3. 执行BeanFactoryPostProcessor
                 invokeBeanFactoryPostProcessors(beanFactory);
 
-                // 4. Register BeanPostProcessor
+                // 4. 注册BeanPostProcessor
                 registerBeanPostProcessors(beanFactory);
 
-                // 5. Initialize Application Event Multicaster
+                // 5. 初始化事件多播器
                 initApplicationEventMulticaster();
 
-                // 6. Register Listeners
+                // 6. 注册监听器
                 registerListeners();
 
-                // 7. Instantiate all non-lazy singleton beans
+                // 7. 实例化所有非懒加载的单例Bean
                 finishBeanFactoryInitialization(beanFactory);
 
-                // 8. Start Lifecycle Management
+                // 8. 启动生命周期管理
                 startLifecycleManagement();
 
                 active.set(true);
                 refreshed.set(true);
 
-                // 9. Publish ContextRefreshedEvent
+                // 9. 发布ContextRefreshedEvent
                 publishEvent(new ContextRefreshedEvent(this));
 
-                log.info("Network Application Context refreshed successfully in {} ms",
+                log.info("✅ Net Application Context refreshed successfully in {} ms",
                         (System.currentTimeMillis() - startupDate));
 
             } catch (Exception e) {
-                log.error("Failed to refresh Network Application Context", e);
+                log.error("❌ Failed to refresh Net Application Context", e);
                 throw new RuntimeException("Failed to refresh application context", e);
             }
         }
     }
     
     private void prepareEnvironment() {
-        log.info("Preparing environment...");
-        // Can load configuration files, set active profiles here
-        log.info("Environment prepared successfully");
+        log.info("⚙️ Preparing environment...");
+        // 可以在这里加载配置文件、设置活动配置文件等
+        log.info("✅ Environment prepared successfully");
     }
 
     private void prepareBeanFactory(ConfigurableBeanFactory beanFactory) {
-        log.info("Preparing BeanFactory...");
+        log.info("⚙️ Preparing BeanFactory...");
         beanFactory.setBeanClassLoader(Thread.currentThread().getContextClassLoader());
         beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver());
-        // Register built-in BeanPostProcessors
+        // 注册内置的BeanPostProcessor
         for (BeanPostProcessor bpp : beanPostProcessors) {
             beanFactory.addBeanPostProcessor(bpp);
         }
-        log.info("BeanFactory prepared successfully");
+        log.info("✅ BeanFactory prepared successfully");
     }
 
     private void invokeBeanFactoryPostProcessors(ConfigurableBeanFactory beanFactory) {
-        log.info("Invoking BeanFactoryPostProcessors...");
+        log.info("⚙️ Invoking BeanFactoryPostProcessors...");
         for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
             postProcessor.postProcessBeanFactory(beanFactory);
         }
-        log.info("BeanFactoryPostProcessors invoked successfully");
+        log.info("✅ BeanFactoryPostProcessors invoked successfully");
     }
 
     private void registerBeanPostProcessors(ConfigurableBeanFactory beanFactory) {
-        log.info("Registering BeanPostProcessors...");
-        // Register processors added via addBeanPostProcessor
+        log.info("⚙️ Registering BeanPostProcessors...");
+        // 注册通过addBeanPostProcessor添加的处理器
         for (BeanPostProcessor bpp : beanPostProcessors) {
             beanFactory.addBeanPostProcessor(bpp);
         }
-        // Find and register BeanPostProcessors from bean definitions
+        // 查找并注册通过Bean定义的BeanPostProcessor
         for (String beanName : beanFactory.getBeanDefinitionNames()) {
             BeanDefinition definition = beanFactory.getBeanDefinition(beanName);
             if (BeanPostProcessor.class.isAssignableFrom(definition.getBeanClass())) {
                 try {
                     BeanPostProcessor bpp = (BeanPostProcessor) getBean(beanName);
                     beanFactory.addBeanPostProcessor(bpp);
-                    log.debug("Registered BeanPostProcessor from bean definition: {}", beanName);
+                    log.debug("📦 Registered BeanPostProcessor from bean definition: {}", beanName);
                 } catch (Exception e) {
-                    log.error("Failed to register BeanPostProcessor from bean definition: {}", beanName, e);
+                    log.error("❌ Failed to register BeanPostProcessor from bean definition: {}", beanName, e);
                 }
             }
         }
-        log.info("BeanPostProcessors registered successfully");
+        log.info("✅ BeanPostProcessors registered successfully");
     }
 
     private void initApplicationEventMulticaster() {
-        log.info("Initializing ApplicationEventMulticaster...");
-        // Can configure event multicaster here, e.g., set task executor
-        log.info("ApplicationEventMulticaster initialized successfully");
+        log.info("⚙️ Initializing ApplicationEventMulticaster...");
+        // 可以在这里配置事件多播器，例如设置任务执行器
+        log.info("✅ ApplicationEventMulticaster initialized successfully");
     }
 
     private void registerListeners() {
-        log.info("Registering ApplicationListeners...");
+        log.info("⚙️ Registering ApplicationListeners...");
         for (ApplicationListener<?> listener : applicationListeners) {
             eventMulticaster.addApplicationListener(listener);
         }
-        // Find and register ApplicationListeners from bean definitions
+        // 查找并注册通过Bean定义的ApplicationListener
         for (String beanName : beanFactory.getBeanDefinitionNames()) {
             BeanDefinition definition = beanFactory.getBeanDefinition(beanName);
             if (ApplicationListener.class.isAssignableFrom(definition.getBeanClass())) {
                 try {
                     ApplicationListener<?> listener = (ApplicationListener<?>) getBean(beanName);
                     eventMulticaster.addApplicationListener(listener);
-                    log.debug("Registered ApplicationListener from bean definition: {}", beanName);
+                    log.debug("📦 Registered ApplicationListener from bean definition: {}", beanName);
                 } catch (Exception e) {
-                    log.error("Failed to register ApplicationListener from bean definition: {}", beanName, e);
+                    log.error("❌ Failed to register ApplicationListener from bean definition: {}", beanName, e);
                 }
             }
         }
-        log.info("ApplicationListeners registered successfully");
+        log.info("✅ ApplicationListeners registered successfully");
     }
 
     private void finishBeanFactoryInitialization(ConfigurableBeanFactory beanFactory) {
-        log.info("Finishing BeanFactory initialization (pre-instantiating singletons)...");
+        log.info("⚙️ Finishing BeanFactory initialization (pre-instantiating singletons)...");
         beanFactory.preInstantiateSingletons();
-        log.info("BeanFactory initialization finished successfully");
+        log.info("✅ BeanFactory initialization finished successfully");
     }
 
     @Override
@@ -250,20 +250,20 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
             }
 
             try {
-                log.info("Closing Network Application Context...");
+                log.info("🔄 Closing Net Application Context...");
 
-                // 1. Publish ContextClosedEvent
+                // 1. 发布ContextClosedEvent
                 publishEvent(new ContextClosedEvent(this));
 
-                // 2. Destroy all Beans
+                // 2. 销毁所有Bean
                 destroyAllBeans();
 
-                // 3. Stop Lifecycle Management
+                // 3. 停止生命周期管理
                 stopLifecycleManagement();
 
-                // 4. Clean up resources
-                beanFactory.destroySingletons(); // Clear singletons in BeanFactory
-                beanFactory.clearBeanDefinitions(); // Clear bean definitions
+                // 4. 清理资源
+                beanFactory.destroySingletons(); // 清理Bean工厂中的单例
+                beanFactory.clearBeanDefinitions(); // 清理Bean定义
                 applicationListeners.clear();
                 beanPostProcessors.clear();
                 beanFactoryPostProcessors.clear();
@@ -272,17 +272,17 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
                 active.set(false);
                 refreshed.set(false);
 
-                log.info("Network Application Context closed successfully");
+                log.info("✅ Net Application Context closed successfully");
 
             } catch (Exception e) {
-                log.error("Error closing Network Application Context", e);
+                log.error("❌ Error closing Net Application Context", e);
             }
         }
     }
 
     private void stopLifecycleManagement() {
-        log.info("Stopping lifecycle management...");
-        log.info("Lifecycle management stopped successfully");
+        log.info("🛑 Stopping lifecycle management...");
+        log.info("✅ Lifecycle management stopped successfully");
     }
 
     @Override
@@ -338,13 +338,13 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
     @Override
     public void addApplicationListener(ApplicationListener<?> listener) {
         applicationListeners.add(listener);
-        eventMulticaster.addApplicationListener(listener); // Immediately register to multicaster
+        eventMulticaster.addApplicationListener(listener); // 立即注册到多播器
     }
 
     @Override
     public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
         beanPostProcessors.add(beanPostProcessor);
-        beanFactory.addBeanPostProcessor(beanPostProcessor); // Immediately register to BeanFactory
+        beanFactory.addBeanPostProcessor(beanPostProcessor); // 立即注册到Bean工厂
     }
 
     @Override
@@ -353,19 +353,19 @@ public class DefaultNetworkApplicationContext implements NetworkApplicationConte
     }
 
     /**
-     * Start lifecycle management
+     * 启动生命周期管理
      */
     private void startLifecycleManagement() {
-        log.info("Starting lifecycle management...");
-        log.info("Lifecycle management started successfully");
+        log.info("🚀 Starting lifecycle management...");
+        log.info("✅ Lifecycle management started successfully");
     }
 
     /**
-     * Destroy all Beans
+     * 销毁所有Bean
      */
     private void destroyAllBeans() {
-        log.info("Destroying all beans...");
-        // BeanFactory will handle bean destruction
-        log.info("All beans destroyed successfully");
+        log.info("🔄 Destroying all beans...");
+        // Bean工厂会处理Bean的销毁
+        log.info("✅ All beans destroyed successfully");
     }
 }

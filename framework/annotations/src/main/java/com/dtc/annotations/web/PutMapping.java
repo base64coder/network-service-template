@@ -6,20 +6,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * PUTè¯·æ±æ å°æ³¨è§£
-ç¨äºæ å°PUTè¯·æ±å°å¤çæ¹æ³
-åé´Springç@PutMappingæ³¨è§£
-@author Network Service Template
-/
+ * PUT请求映射注解
+ * 用于映射PUT请求到处理方法
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @RequestMapping(method = RequestMapping.RequestMethod.PUT)
 public @interface PutMapping {
     
     /**
-     * è¯·æ±è·¯å¾
-@return è·¯å¾
-/
+     * 请求路径
+     * @return 路径
+     */
     String value() default "";
 }
-

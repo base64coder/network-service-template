@@ -6,19 +6,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * è¯·æ±ä½æ³¨è§£
-ç¨äºç»å®HTTPè¯·æ±ä½
-åé´Springç@RequestBodyæ³¨è§£
-@author Network Service Template
-/
+ * 请求体注解
+ * 用于绑定HTTP请求体
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequestBody {
     
     /**
-     * æ¯å¦å¿é
-@return æ¯å¦å¿é
-/
+     * 是否必需
+     * @return 是否必需
+     */
     boolean required() default true;
 }
-

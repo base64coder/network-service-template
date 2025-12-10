@@ -8,11 +8,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * ä¸»é®æ³¨è§£
-æ è¯å®ä½ç±»çä¸»é®å­æ®µ
-åé´MyBatis-Flexç@Idæ³¨è§£
-@author Network Service Template
-/
+ * 主键注解
+ * 标识实体类的主键字段
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -20,45 +20,44 @@ import java.lang.annotation.Target;
 public @interface Id {
     
     /**
-     * ä¸»é®çæç­ç¥
-@return çæç­ç¥
-/
+     * 主键生成策略
+     * @return 生成策略
+     */
     KeyType keyType() default KeyType.AUTO;
     
     /**
-     * ä¸»é®çæå¨åç§°ï¼å½keyTypeä¸ºGENERATORæ¶ä½¿ç¨ï¼
-@return çæå¨åç§°
-/
+     * 主键生成器名称（当keyType为GENERATOR时使用）
+     * @return 生成器名称
+     */
     String generator() default "";
     
     /**
-     * ä¸»é®çæç­ç¥æä¸¾
-/
+     * 主键生成策略枚举
+     */
     enum KeyType {
         /**
-     * æ°æ®åºèªå¢ï¼AUTO_INCREMENTï¼
-/
+         * 数据库自增（AUTO_INCREMENT）
+         */
         AUTO,
         
         /**
-     * æå¨èµå¼
-/
+         * 手动赋值
+         */
         NONE,
         
         /**
-     * UUIDçæ
-/
+         * UUID生成
+         */
         UUID,
         
         /**
-     * éªè±ç®æ³IDçæ
-/
+         * 雪花算法ID生成
+         */
         SNOWFLAKE,
         
         /**
-     * èªå®ä¹çæå¨
-/
+         * 自定义生成器
+         */
         GENERATOR
     }
 }
-

@@ -6,73 +6,73 @@ import com.dtc.api.annotations.Nullable;
 import java.nio.file.Path;
 import java.util.Map;
 
-/ææææ
-ææ æ©å±å¯å¨è¾å¥åæ°
-ææ 
-ææ @author Network Service Template
-ææ/
+/**
+ * 扩展启动输入参数
+ * 
+ * @author Network Service Template
+ */
 public interface ExtensionStartInput {
 
-    /ææææ
-ææ è·åæ©å±ID
-ææ 
-ææ @return æ©å±ID
-ææ/
+    /**
+     * 获取扩展ID
+     * 
+     * @return 扩展ID
+     */
     @NotNull
     String getExtensionId();
 
-    /ææææ
-ææ è·åæ©å±åç§°
-ææ 
-ææ @return æ©å±åç§°
-ææ/
+    /**
+     * 获取扩展名称
+     * 
+     * @return 扩展名称
+     */
     @NotNull
     String getExtensionName();
 
-    /ææææ
-ææ è·åæ©å±çæ¬
-ææ 
-ææ @return æ©å±çæ¬
-ææ/
+    /**
+     * 获取扩展版本
+     * 
+     * @return 扩展版本
+     */
     @NotNull
     String getExtensionVersion();
 
-    /ææææ
-ææ è·åæ©å±ä½è
-ææ 
-ææ @return æ©å±ä½è
-ææ/
+    /**
+     * 获取扩展作者
+     * 
+     * @return 扩展作者
+     */
     @Nullable
     String getExtensionAuthor();
 
-    /ææææ
-ææ è·åæ©å±ä¼åçº§
-ææ 
-ææ @return æ©å±ä¼åçº§
-ææ/
+    /**
+     * 获取扩展优先级
+     * 
+     * @return 扩展优先级
+     */
     int getExtensionPriority();
 
-    /ææææ
-ææ è·åæ©å±æä»¶å¤¹è·¯å¾
-ææ 
-ææ @return æ©å±æä»¶å¤¹è·¯å¾
-ææ/
+    /**
+     * 获取扩展文件夹路径
+     * 
+     * @return 扩展文件夹路径
+     */
     @NotNull
     Path getExtensionFolderPath();
 
-    /ææææ
-ææ è·åæå¡å¨ä¿¡æ¯
-ææ 
-ææ @return æå¡å¨ä¿¡æ¯
-ææ/
+    /**
+     * 获取服务器信息
+     * 
+     * @return 服务器信息
+     */
     @NotNull
     ServerInformation getServerInformation();
 
-    /ææææ
-ææ è·åéç½®åæ°
-ææ 
-ææ @return éç½®åæ°æ å°
-ææ/
+    /**
+     * 获取配置参数
+     * 
+     * @return 配置参数映射
+     */
     @NotNull
     Map<String, String> getConfiguration();
 }

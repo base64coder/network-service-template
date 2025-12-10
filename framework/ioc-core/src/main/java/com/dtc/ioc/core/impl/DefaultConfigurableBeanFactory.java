@@ -2,7 +2,7 @@ package com.dtc.ioc.core.impl;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
-import com.dtc.ioc.core.;
+import com.dtc.ioc.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,47 +12,48 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
-     * é»è®¤å¯éç½®Beanå·¥åå®ç°
-åé´Spring ConfigurableBeanFactoryçè®¾è®¡
-@author Network Service Template
-/
+ * 默认可配置Bean工厂实现
+ * 借鉴 ConfigurableBeanFactory 的设计
+ * 
+ * @author Network Service Template
+ */
 public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
     
     private static final Logger log = LoggerFactory.getLogger(DefaultConfigurableBeanFactory.class);
     
-    // Beanå®ä¹æ³¨åè¡¨
+    // Bean定义注册表
     private final Map<String, BeanDefinition> beanDefinitions = new ConcurrentHashMap<>();
     
-    // Beanå®ä¾ç¼å­
+    // Bean实例缓存
     private final Map<String, Object> singletonBeans = new ConcurrentHashMap<>();
     
-    // Beanåå¤çå¨åè¡¨
+    // Bean后处理器列表
     private final List<BeanPostProcessor> beanPostProcessors = new CopyOnWriteArrayList<>();
     
-    // å±æ§ç¼è¾å¨æ³¨åå¨åè¡¨
+    // 属性编辑器注册器列表
     private final List<PropertyEditorRegistrar> propertyEditorRegistrars = new CopyOnWriteArrayList<>();
     
-    // ç±»å è½½å¨
+    // 类加载器
     private ClassLoader beanClassLoader;
     
-    // Beanè¡¨è¾¾å¼è§£æå¨
+    // Bean表达式解析器
     private BeanExpressionResolver beanExpressionResolver;
     
-    // ä¾èµæ³¨å¥å¨
+    // 依赖注入器
     private DependencyInjector dependencyInjector;
     
     public DefaultConfigurableBeanFactory() {
-        // å»¶è¿åå§åä¾èµæ³¨å¥å¨ï¼é¿åå¾ªç¯ä¾èµ
+        // 延迟初始化依赖注入器，避免循环依赖
         this.dependencyInjector = null;
     }
     
     /**
-     * è·åä¾èµæ³¨å¥å¨ï¼å¦ææªåå§åååå»º
-/
+     * 获取依赖注入器，如果未初始化则创建
+     */
     private DependencyInjector getDependencyInjector() {
         if (dependencyInjector == null) {
-            // åå»ºä¸ä¸ªä¸´æ¶çNetworkApplicationContextæ¥é¿åå¾ªç¯ä¾èµ
-            NetworkApplicationContext tempContext = new NetworkApplicationContext() {
+            // 创建一个临时的NetApplicationContext来避免循环依赖
+            NetApplicationContext tempContext = new NetApplicationContext() {
                 @Override
                 public <T> T getBean(Class<T> beanType) {
                     return null;
@@ -95,22 +96,22 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
                 
                 @Override
                 public void registerBean(String beanName, Class<?> beanClass) {
-                    // ç©ºå®ç°
+                    // 空实现
                 }
                 
                 @Override
                 public void registerBean(String beanName, Object beanInstance) {
-                    // ç©ºå®ç°
+                    // 空实现
                 }
                 
                 @Override
                 public void refresh() {
-                    // ç©ºå®ç°
+                    // 空实现
                 }
                 
                 @Override
                 public void close() {
-                    // ç©ºå®ç°
+                    // 空实现
                 }
                 
                 @Override
@@ -120,22 +121,22 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
                 
                 @Override
                 public void publishEvent(ApplicationEvent event) {
-                    // ç©ºå®ç°
+                    // 空实现
                 }
                 
                 @Override
                 public void addApplicationListener(ApplicationListener<?> listener) {
-                    // ç©ºå®ç°
+                    // 空实现
                 }
                 
                 @Override
                 public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
-                    // ç©ºå®ç°
+                    // 空实现
                 }
                 
                 @Override
                 public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor beanFactoryPostProcessor) {
-                    // ç©ºå®ç°
+                    // 空实现
                 }
             };
             this.dependencyInjector = new DefaultDependencyInjector(tempContext);
@@ -151,7 +152,7 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
             throw new IllegalArgumentException("Bean type cannot be null");
         }
         
-        // æ¥æ¾å¹éçBeanå®ä¹
+        // 查找匹配的Bean定义
         for (BeanDefinition definition : beanDefinitions.values()) {
             if (beanType.isAssignableFrom(definition.getBeanClass())) {
                 return (T) getBean(definition.getBeanName());
@@ -168,21 +169,21 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
             throw new IllegalArgumentException("Bean name cannot be null or empty");
         }
         
-        // æ£æ¥åä¾ç¼å­
+        // 检查单例缓存
         if (singletonBeans.containsKey(name)) {
             return singletonBeans.get(name);
         }
         
-        // è·åBeanå®ä¹
+        // 获取Bean定义
         BeanDefinition definition = beanDefinitions.get(name);
         if (definition == null) {
             return null;
         }
         
-        // åå»ºBeanå®ä¾
+        // 创建Bean实例
         Object bean = createBean(name, definition);
         
-        // å¦ææ¯åä¾ï¼ç¼å­å®ä¾
+        // 如果是单例，缓存实例
         if (definition.isSingleton() && bean != null) {
             singletonBeans.put(name, bean);
         }
@@ -222,13 +223,13 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
     @Override
     @NotNull
     public String[] getAliases(String name) {
-        // ç®åå®ç°ï¼æä¸æ¯æå«å
+        // 简化实现，暂不支持别名
         return new String[0];
     }
     
     @Override
     public void preInstantiateSingletons() {
-        log.info("ðï¸ Pre-instantiating singleton beans...");
+        log.info("⚙️ Pre-instantiating singleton beans...");
         
         for (String beanName : beanDefinitions.keySet()) {
             BeanDefinition definition = beanDefinitions.get(beanName);
@@ -237,12 +238,12 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
             }
         }
         
-        log.info("â Singleton beans pre-instantiated successfully");
+        log.info("✅ Singleton beans pre-instantiated successfully");
     }
     
     @Override
     public void destroySingletons() {
-        log.info("ð Destroying singleton beans...");
+        log.info("🔄 Destroying singleton beans...");
         
         for (String beanName : beanDefinitions.keySet()) {
             BeanDefinition definition = beanDefinitions.get(beanName);
@@ -253,32 +254,32 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
                         destroyBean(bean, definition);
                     }
                 } catch (Exception e) {
-                    log.error("â Error destroying singleton bean: {}", beanName, e);
+                    log.error("❌ Error destroying singleton bean: {}", beanName, e);
                 }
             }
         }
         
         singletonBeans.clear();
-        log.info("â Singleton beans destroyed successfully");
+        log.info("✅ Singleton beans destroyed successfully");
     }
     
     @Override
     public void setBeanClassLoader(ClassLoader beanClassLoader) {
         this.beanClassLoader = beanClassLoader;
-        log.debug("ð§ Bean class loader set: {}", beanClassLoader);
+        log.debug("⚙️ Bean class loader set: {}", beanClassLoader);
     }
     
     @Override
     public void setBeanExpressionResolver(BeanExpressionResolver resolver) {
         this.beanExpressionResolver = resolver;
-        log.debug("ð§ Bean expression resolver set: {}", resolver);
+        log.debug("⚙️ Bean expression resolver set: {}", resolver);
     }
     
     @Override
     public void addPropertyEditorRegistrar(PropertyEditorRegistrar registrar) {
         if (registrar != null) {
             propertyEditorRegistrars.add(registrar);
-            log.debug("ð§ Property editor registrar added: {}", registrar);
+            log.debug("⚙️ Property editor registrar added: {}", registrar);
         }
     }
     
@@ -286,7 +287,7 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
     public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
         if (beanPostProcessor != null) {
             beanPostProcessors.add(beanPostProcessor);
-            log.debug("ð§ Bean post processor added: {}", beanPostProcessor.getClass().getSimpleName());
+            log.debug("⚙️ Bean post processor added: {}", beanPostProcessor.getClass().getSimpleName());
         }
     }
     
@@ -296,72 +297,72 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
     }
     
     /**
-     * åå»ºBeanå®ä¾
-/
+     * 创建Bean实例
+     */
     @Nullable
     private Object createBean(String beanName, BeanDefinition definition) {
         try {
-            log.debug("ðï¸ Creating bean: {}", beanName);
+            log.debug("⚙️ Creating bean: {}", beanName);
             
-            // å®ä¾åBean
+            // 实例化Bean
             Object bean = instantiateBean(definition);
             if (bean == null) {
                 return null;
             }
             
-            // æ§è¡Beanåå¤çå¨ï¼åå§ååï¼
+            // 执行Bean后处理器（初始化前）
             bean = applyBeanPostProcessorsBeforeInitialization(bean, beanName);
             
-            // æ³¨å¥ä¾èµ
+            // 注入依赖
             getDependencyInjector().injectDependencies(bean, definition);
             
-            // è°ç¨åå§åæ¹æ³
+            // 调用初始化方法
             initializeBean(bean, definition);
             
-            // æ§è¡Beanåå¤çå¨ï¼åå§ååï¼
+            // 执行Bean后处理器（初始化后）
             bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
             
-            log.debug("â Bean created successfully: {}", beanName);
+            log.debug("✅ Bean created successfully: {}", beanName);
             return bean;
             
         } catch (Exception e) {
-            log.error("â Error creating bean: {}", beanName, e);
+            log.error("❌ Error creating bean: {}", beanName, e);
             return null;
         }
     }
     
     /**
-     * å®ä¾åBean
-/
+     * 实例化Bean
+     */
     @Nullable
     private Object instantiateBean(BeanDefinition definition) {
         try {
             Class<?> beanClass = definition.getBeanClass();
             
-            // ä½¿ç¨æé å½æ°åå»ºå®ä¾
+            // 使用构造函数创建实例
             java.lang.reflect.Constructor<?> constructor = definition.getConstructor();
             if (constructor != null) {
                 return constructor.newInstance();
             }
             
-            // ä½¿ç¨å·¥åæ¹æ³åå»ºå®ä¾
+            // 使用工厂方法创建实例
             java.lang.reflect.Method factoryMethod = definition.getFactoryMethod();
             if (factoryMethod != null) {
                 return factoryMethod.invoke(null);
             }
             
-            // ä½¿ç¨é»è®¤æé å½æ°
+            // 使用默认构造函数
             return beanClass.getDeclaredConstructor().newInstance();
             
         } catch (Exception e) {
-            log.error("â Error instantiating bean: {}", definition.getBeanName(), e);
+            log.error("❌ Error instantiating bean: {}", definition.getBeanName(), e);
             return null;
         }
     }
     
     /**
-     * æ§è¡Beanåå¤çå¨ï¼åå§ååï¼
-/
+     * 执行Bean后处理器（初始化前）
+     */
     @Nullable
     private Object applyBeanPostProcessorsBeforeInitialization(Object bean, String beanName) {
         Object result = bean;
@@ -372,15 +373,15 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
                     return null;
                 }
             } catch (Exception e) {
-                log.error("â Error in bean post processor before initialization: {}", processor.getClass().getSimpleName(), e);
+                log.error("❌ Error in bean post processor before initialization: {}", processor.getClass().getSimpleName(), e);
             }
         }
         return result;
     }
     
     /**
-     * æ§è¡Beanåå¤çå¨ï¼åå§ååï¼
-/
+     * 执行Bean后处理器（初始化后）
+     */
     @Nullable
     private Object applyBeanPostProcessorsAfterInitialization(Object bean, String beanName) {
         Object result = bean;
@@ -391,40 +392,40 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
                     return null;
                 }
             } catch (Exception e) {
-                log.error("â Error in bean post processor after initialization: {}", processor.getClass().getSimpleName(), e);
+                log.error("❌ Error in bean post processor after initialization: {}", processor.getClass().getSimpleName(), e);
             }
         }
         return result;
     }
     
     /**
-     * åå§åBean
-/
+     * 初始化Bean
+     */
     private void initializeBean(Object bean, BeanDefinition definition) {
         String initMethodName = definition.getInitMethodName();
         if (initMethodName != null && !initMethodName.isEmpty()) {
             try {
                 java.lang.reflect.Method initMethod = bean.getClass().getMethod(initMethodName);
                 initMethod.invoke(bean);
-                log.debug("ð§ Initialized bean: {} with method: {}", definition.getBeanName(), initMethodName);
+                log.debug("⚙️ Initialized bean: {} with method: {}", definition.getBeanName(), initMethodName);
             } catch (Exception e) {
-                log.error("â Error initializing bean: {} with method: {}", definition.getBeanName(), initMethodName, e);
+                log.error("❌ Error initializing bean: {} with method: {}", definition.getBeanName(), initMethodName, e);
             }
         }
     }
     
     /**
-     * éæ¯Bean
-/
+     * 销毁Bean
+     */
     private void destroyBean(Object bean, BeanDefinition definition) {
         String destroyMethodName = definition.getDestroyMethodName();
         if (destroyMethodName != null && !destroyMethodName.isEmpty()) {
             try {
                 java.lang.reflect.Method destroyMethod = bean.getClass().getMethod(destroyMethodName);
                 destroyMethod.invoke(bean);
-                log.debug("ð§ Destroyed bean: {} with method: {}", definition.getBeanName(), destroyMethodName);
+                log.debug("⚙️ Destroyed bean: {} with method: {}", definition.getBeanName(), destroyMethodName);
             } catch (Exception e) {
-                log.error("â Error destroying bean: {} with method: {}", definition.getBeanName(), destroyMethodName, e);
+                log.error("❌ Error destroying bean: {} with method: {}", definition.getBeanName(), destroyMethodName, e);
             }
         }
     }
@@ -433,7 +434,7 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
     @Override
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) {
         beanDefinitions.put(beanName, beanDefinition);
-        log.debug("ð Registered bean definition: {} -> {}", beanName, beanDefinition.getBeanClass().getName());
+        log.debug("📦 Registered bean definition: {} -> {}", beanName, beanDefinition.getBeanClass().getName());
     }
     
     @Override
@@ -457,7 +458,7 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
     @Override
     public void registerSingleton(String beanName, Object singletonObject) {
         singletonBeans.put(beanName, singletonObject);
-        log.debug("ð Registered singleton bean: {} -> {}", beanName, singletonObject.getClass().getName());
+        log.debug("📦 Registered singleton bean: {} -> {}", beanName, singletonObject.getClass().getName());
     }
     
     @Override
@@ -474,7 +475,7 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
     @Override
     @NotNull
     public Object getSingletonMutex() {
-        return new Object(); // ç®åå®ç°
+        return new Object(); // 简化实现
     }
     
     @Override
@@ -498,12 +499,12 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
     @Override
     @Nullable
     public PropertyEditorRegistry getPropertyEditorRegistry() {
-        return null; // ç®åå®ç°
+        return null; // 简化实现
     }
     
     @Override
     public void setPropertyEditorRegistry(PropertyEditorRegistry propertyEditorRegistry) {
-        // ç®åå®ç°
+        // 简化实现
     }
     
     @Override
@@ -513,9 +514,9 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
             try {
                 java.lang.reflect.Method destroyMethod = beanInstance.getClass().getMethod(destroyMethodName);
                 destroyMethod.invoke(beanInstance);
-                log.debug("ð§ Destroyed bean: {} with method: {}", beanName, destroyMethodName);
+                log.debug("⚙️ Destroyed bean: {} with method: {}", beanName, destroyMethodName);
             } catch (Exception e) {
-                log.error("â Error destroying bean: {} with method: {}", beanName, destroyMethodName, e);
+                log.error("❌ Error destroying bean: {} with method: {}", beanName, destroyMethodName, e);
             }
         }
     }
@@ -526,6 +527,6 @@ public class DefaultConfigurableBeanFactory implements ConfigurableBeanFactory {
         singletonBeans.clear();
         beanPostProcessors.clear();
         propertyEditorRegistrars.clear();
-        log.info("ðï¸ Cleared all bean definitions and singletons in BeanFactory");
+        log.info("🧹 Cleared all bean definitions and singletons in BeanFactory");
     }
 }

@@ -10,69 +10,70 @@ import java.util.List;
 import java.util.Map;
 
 /**
-     * æ¨¡åç®¡çå¨
-è´è´£ç®¡çIoCæ¨¡åçå è½½åéç½®
-@author Network Service Template
-/
+ * 模块管理器
+ * 负责管理IoC模块的加载和配置
+ * 
+ * @author Network Service Template
+ */
 public class ModuleManager {
     
     private static final Logger log = LoggerFactory.getLogger(ModuleManager.class);
     
-    private final List<IoCModule> modules = new ArrayList<>();
-    private final Map<String, IoCModule> moduleMap = new HashMap<>();
+    private final List<NetModule> modules = new ArrayList<>();
+    private final Map<String, NetModule> moduleMap = new HashMap<>();
     
     /**
-     * æ·»å æ¨¡å
-@param module IoCæ¨¡å
-/
-    public void addModule(@NotNull IoCModule module) {
+     * 添加模块
+     * @param module 网络模块
+     */
+    public void addModule(@NotNull NetModule module) {
         if (moduleMap.containsKey(module.getModuleName())) {
-            log.warn("â ï¸ Module already exists: {}", module.getModuleName());
+            log.warn("⚠️ 模块已存在: {}", module.getModuleName());
             return;
         }
         
         modules.add(module);
         moduleMap.put(module.getModuleName(), module);
-        log.debug("ð Added module: {} v{}", module.getModuleName(), module.getModuleVersion());
+        log.debug("📦 已添加模块: {} v{}", module.getModuleName(), module.getModuleVersion());
     }
     
     /**
-     * éç½®æææ¨¡å
-@param context åºç¨ä¸ä¸æ
-/
-    public void configureModules(@NotNull NetworkApplicationContext context) {
-        log.info("ð§ Configuring {} modules...", modules.size());
+     * 配置所有模块
+     * @param context 应用上下文
+     */
+    public void configureModules(@NotNull NetApplicationContext context) {
+        log.info("⚙️ 正在配置 {} 个模块...", modules.size());
         
-        // æä¾èµé¡ºåºæåºæ¨¡å
-        List<IoCModule> sortedModules = sortModulesByDependencies();
+        // 按依赖顺序排序模块
+        List<NetModule> sortedModules = sortModulesByDependencies();
         
-        for (IoCModule module : sortedModules) {
+        for (NetModule module : sortedModules) {
             try {
-                log.debug("ð§ Configuring module: {}", module.getModuleName());
+                log.debug("⚙️ 正在配置模块: {}", module.getModuleName());
                 module.configure(context);
-                log.debug("â Module configured successfully: {}", module.getModuleName());
+                log.debug("✅ 模块配置成功: {}", module.getModuleName());
             } catch (Exception e) {
-                log.error("â Failed to configure module: {}", module.getModuleName(), e);
-                throw new RuntimeException("Failed to configure module: " + module.getModuleName(), e);
+                log.error("❌ 模块配置失败: {}", module.getModuleName(), e);
+                throw new RuntimeException("模块配置失败: " + module.getModuleName(), e);
             }
         }
         
-        log.info("â All modules configured successfully");
+        log.info("✅ 所有模块配置成功");
     }
     
     /**
-     * æä¾èµå³ç³»æåºæ¨¡å
-/
+     * 按依赖关系排序模块
+     */
     @NotNull
-    private List<IoCModule> sortModulesByDependencies() {
-        List<IoCModule> sorted = new ArrayList<>();
-        List<IoCModule> remaining = new ArrayList<>(modules);
+    private List<NetModule> sortModulesByDependencies() {
+        List<NetModule> sorted = new ArrayList<>();
+        List<NetModule> remaining = new ArrayList<>(modules);
         
         while (!remaining.isEmpty()) {
             boolean progress = false;
             
             for (int i = remaining.size() - 1; i >= 0; i--) {
-                IoCModule module = remaining.get(i);
+                NetModule module = remaining.get(i);
                 if (allDependenciesResolved(module, sorted)) {
                     sorted.add(module);
                     remaining.remove(i);
@@ -81,12 +82,12 @@ public class ModuleManager {
             }
             
             if (!progress) {
-                // æ£æµå¾ªç¯ä¾èµ
+                // 检测循环依赖
                 StringBuilder cycle = new StringBuilder();
-                for (IoCModule module : remaining) {
+                for (NetModule module : remaining) {
                     cycle.append(module.getModuleName()).append(" -> ");
                 }
-                throw new RuntimeException("Circular dependency detected: " + cycle.toString());
+                throw new RuntimeException("检测到循环依赖: " + cycle.toString());
             }
         }
         
@@ -94,13 +95,13 @@ public class ModuleManager {
     }
     
     /**
-     * æ£æ¥æ¨¡åçææä¾èµæ¯å¦å·²è§£æ
-/
-    private boolean allDependenciesResolved(IoCModule module, List<IoCModule> resolved) {
+     * 检查模块的所有依赖是否已解析
+     */
+    private boolean allDependenciesResolved(NetModule module, List<NetModule> resolved) {
         String[] dependencies = module.getDependencies();
         for (String dependency : dependencies) {
             boolean found = false;
-            for (IoCModule resolvedModule : resolved) {
+            for (NetModule resolvedModule : resolved) {
                 if (resolvedModule.getModuleName().equals(dependency)) {
                     found = true;
                     break;
@@ -114,13 +115,13 @@ public class ModuleManager {
     }
     
     /**
-     * è·åæ¨¡åä¿¡æ¯
-@return æ¨¡åä¿¡æ¯åè¡¨
-/
+     * 获取模块信息
+     * @return 模块信息列表
+     */
     @NotNull
     public List<ModuleInfo> getModuleInfo() {
         List<ModuleInfo> infoList = new ArrayList<>();
-        for (IoCModule module : modules) {
+        for (NetModule module : modules) {
             ModuleInfo info = new ModuleInfo(
                 module.getModuleName(),
                 module.getModuleVersion(),
@@ -133,34 +134,34 @@ public class ModuleManager {
     }
     
     /**
-     * è·åæ¨¡åæ°é
-@return æ¨¡åæ°é
-/
+     * 获取模块数量
+     * @return 模块数量
+     */
     public int getModuleCount() {
         return modules.size();
     }
     
     /**
-     * æ£æ¥æ¨¡åæ¯å¦å­å¨
-@param moduleName æ¨¡ååç§°
-@return æ¯å¦å­å¨
-/
+     * 检查模块是否存在
+     * @param moduleName 模块名称
+     * @return 是否存在
+     */
     public boolean hasModule(String moduleName) {
         return moduleMap.containsKey(moduleName);
     }
     
     /**
-     * è·åæ¨¡å
-@param moduleName æ¨¡ååç§°
-@return æ¨¡åå®ä¾
-/
-    public IoCModule getModule(String moduleName) {
+     * 获取模块
+     * @param moduleName 模块名称
+     * @return 模块实例
+     */
+    public NetModule getModule(String moduleName) {
         return moduleMap.get(moduleName);
     }
     
     /**
-     * æ¨¡åä¿¡æ¯ç±»
-/
+     * 模块信息类
+     */
     public static class ModuleInfo {
         private final String name;
         private final String version;

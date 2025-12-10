@@ -6,32 +6,31 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * è¯·æ±åæ°æ³¨è§£
-ç¨äºç»å®HTTPè¯·æ±åæ°
-åé´Springç@RequestParamæ³¨è§£
-@author Network Service Template
-/
+ * 请求参数注解
+ * 用于绑定HTTP请求参数
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequestParam {
     
     /**
-     * åæ°åç§°
-å¦æä¸ºç©ºï¼åä½¿ç¨åæ°åç§°
-@return åæ°åç§°
-/
+     * 参数名称
+     * 如果为空，则使用参数名称
+     * @return 参数名称
+     */
     String value() default "";
     
     /**
-     * æ¯å¦å¿é
-@return æ¯å¦å¿é
-/
+     * 是否必需
+     * @return 是否必需
+     */
     boolean required() default true;
     
     /**
-     * é»è®¤å¼
-@return é»è®¤å¼
-/
+     * 默认值
+     * @return 默认值
+     */
     String defaultValue() default "";
 }
-

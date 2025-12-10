@@ -17,7 +17,7 @@
         <module>annotations</module>
         <module>aop</module>
         <module>aop-aspects</module>
-        <module>beans</module>
+        <module>ioc-core</module>
         <module>ioc-annotation-processor</module>
         <module>distributed</module>
     </modules>

@@ -2,9 +2,9 @@ package com.dtc.framework.aop.aspect;
 
 import com.dtc.api.annotations.NotNull;
 import com.dtc.framework.aop.aspects.JoinPoint;
+import com.dtc.framework.aop.aspects.MethodSignature;
+import com.dtc.framework.aop.aspects.MethodSignatureImpl;
 import com.dtc.framework.aop.intercept.MethodInvocation;
-
-import java.lang.reflect.Method;
 
 /**
  * 方法调用连接点实现
@@ -14,9 +14,11 @@ import java.lang.reflect.Method;
 public class MethodInvocationJoinPoint implements JoinPoint {
     
     private final MethodInvocation invocation;
+    private final MethodSignature signature;
     
     public MethodInvocationJoinPoint(@NotNull MethodInvocation invocation) {
         this.invocation = invocation;
+        this.signature = new MethodSignatureImpl(invocation.getMethod());
     }
     
     @Override
@@ -33,8 +35,8 @@ public class MethodInvocationJoinPoint implements JoinPoint {
     
     @Override
     @NotNull
-    public Method getSignature() {
-        return invocation.getMethod();
+    public MethodSignature getSignature() {
+        return signature;
     }
     
     @Override

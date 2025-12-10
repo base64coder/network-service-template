@@ -1,7 +1,7 @@
 package com.dtc.framework.distributed.rpc;
 
 import com.dtc.api.rpc.RpcService;
-import com.dtc.framework.beans.BeanPostProcessor;
+import com.dtc.ioc.core.BeanPostProcessor;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -27,7 +27,7 @@ public class RpcServiceBeanPostProcessor implements BeanPostProcessor {
     public Object postProcessAfterInitialization(Object bean, String beanName) {
         Class<?> beanClass = bean.getClass();
         // 处理代理类情况
-        if (beanClass.getName().contains("$$EnhancerByGuice$$") || beanClass.getName().contains("CGLIB")) {
+        if (beanClass.getName().contains("$$Enhancer") || beanClass.getName().contains("CGLIB")) {
             beanClass = beanClass.getSuperclass();
         }
         

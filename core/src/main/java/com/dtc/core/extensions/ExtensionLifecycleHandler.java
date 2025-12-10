@@ -691,9 +691,9 @@ public class ExtensionLifecycleHandler {
     @NotNull
     private Object[] getHttpExtensionDependencies() {
         try {
-            log.info("🔍 Attempting to get HTTP extension dependencies from Guice container...");
+            log.info("🔍 Attempting to get HTTP extension dependencies from IoC container...");
 
-            // 从 Guice 容器中获取依赖，通过 Injector
+            // 从 IoC 容器中获取依赖，通过 Injector
             Object[] dependencies = new Object[8];
 
             try {

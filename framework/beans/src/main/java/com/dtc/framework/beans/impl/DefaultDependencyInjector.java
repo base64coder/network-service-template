@@ -17,7 +17,7 @@ import com.dtc.framework.beans.NetworkApplicationContext;
 
 /**
  * 默认依赖注入器实现
- * 借鉴 Guice 的高性能依赖注入机制
+ * 默认依赖注入器实现，提供高性能的依赖注入机制
  * 
  * @author Network Service Template
  */

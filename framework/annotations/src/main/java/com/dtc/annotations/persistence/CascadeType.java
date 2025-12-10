@@ -1,40 +1,39 @@
 package com.dtc.annotations.persistence;
 
 /**
-     * çº§èæä½ç±»åæä¸¾
-åé´JPAçCascadeType
-@author Network Service Template
-/
+ * 级联操作类型枚举
+ * 
+ * @author Network Service Template
+ */
 public enum CascadeType {
     
     /**
-     * ææçº§èæä½
-/
+     * 所有级联操作
+     */
     ALL,
     
     /**
-     * æä¹åï¼ä¿å­ï¼æ¶çº§è
-/
+     * 持久化（保存）时级联
+     */
     PERSIST,
     
     /**
-     * åå¹¶ï¼æ´æ°ï¼æ¶çº§è
-/
+     * 合并（更新）时级联
+     */
     MERGE,
     
     /**
-     * å é¤æ¶çº§è
-/
+     * 删除时级联
+     */
     REMOVE,
     
     /**
-     * å·æ°æ¶çº§è
-/
+     * 刷新时级联
+     */
     REFRESH,
     
     /**
-     * åç¦»æ¶çº§è
-/
+     * 分离时级联
+     */
     DETACH
 }
-

@@ -7,31 +7,31 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * TCPæ¶æ¯å¤çæ³¨è§£
-æ è¯ä¸ä¸ªæ¹æ³ç¨äºå¤çTCPæ¶æ¯
-@author Network Service Template
-/
+ * TCP消息处理注解
+ * 标识一个方法用于处理TCP消息
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface TcpHandler {
     
     /**
-     * æ¶æ¯è·¯ç±/å¹éæ¨¡å¼
-æ¯æï¼
-- ç²¾ç¡®å¹éï¼å¦ "ping"
-- åç¼å¹éï¼å¦ "cmd:"
-- æ­£åå¹éï¼å¦ "^ping."
-å¦æä¸ºç©ºï¼åå¹éæææ¶æ¯
-@return è·¯ç±æ¨¡å¼
-/
+     * 消息路由/匹配模式
+     * 支持：
+     * - 精确匹配：如 "ping"
+     * - 前缀匹配：如 "cmd:"
+     * - 正则匹配：如 "^ping."
+     * 如果为空，则匹配所有消息
+     * @return 路由模式
+     */
     String value() default "";
     
     /**
-     * ä¼åçº§
-æ°å¼è¶å°ï¼ä¼åçº§è¶é«
-@return ä¼åçº§
-/
+     * 优先级
+     * 数值越小，优先级越高
+     * @return 优先级
+     */
     int priority() default 0;
 }
-

@@ -96,10 +96,10 @@ public class ComponentScanner {
     }
 
     /**
-     * 通过Guice Injector扫描并获取组件实例
+     * 通过IoC容器扫描并获取组件实例
      * 扫描@RestController、@Service、@Repository和@Component注解的类
      * 
-     * @param injector Guice注入器
+     * @param injector IoC注入器
      * @param basePackage 基础包名
      * @return 组件实例映射，键为Bean名称，值为Controller、Service、Repository等
      */
@@ -119,7 +119,7 @@ public class ComponentScanner {
                     clazz.isAnnotationPresent(Repository.class) ||
                     clazz.isAnnotationPresent(Component.class)) {
                     try {
-                        // 尝试通过Guice获取实例
+                        // 尝试通过IoC容器获取实例
                         Object instance = injector.getInstance(clazz);
                         if (instance != null) {
                             String beanName = toBeanName(clazz.getSimpleName());
@@ -137,7 +137,7 @@ public class ComponentScanner {
                             }
                         }
                     } catch (Exception e) {
-                        log.debug("Failed to get instance of {} from Guice: {}", clazz.getName(), e.getMessage());
+                        log.debug("Failed to get instance of {} from IoC container: {}", clazz.getName(), e.getMessage());
                     }
                 }
             }

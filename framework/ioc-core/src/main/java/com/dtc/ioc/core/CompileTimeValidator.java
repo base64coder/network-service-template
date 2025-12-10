@@ -10,44 +10,45 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
-     * ç¼è¯æéªè¯å¨
-æä¾ç¼è¯æä¾èµéªè¯åè½
-@author Network Service Template
-/
+ * 编译期验证器
+ * 提供编译期依赖验证功能
+ * 
+ * @author Network Service Template
+ */
 public class CompileTimeValidator {
     
     private static final Logger log = LoggerFactory.getLogger(CompileTimeValidator.class);
     
     /**
-     * éªè¯ç±»çä¾èµ
-@param clazz è¦éªè¯çç±»
-@return éªè¯ç»æ
-/
+     * 验证类的依赖
+     * @param clazz 要验证的类
+     * @return 验证结果
+     */
     @NotNull
     public static ValidationResult validateDependencies(@NotNull Class<?> clazz) {
         ValidationResult result = new ValidationResult();
         
         try {
-            // éªè¯å­æ®µä¾èµ
+            // 验证字段依赖
             validateFieldDependencies(clazz, result);
             
-            // éªè¯æé å½æ°ä¾èµ
+            // 验证构造函数依赖
             validateConstructorDependencies(clazz, result);
             
-            // æ£æµå¾ªç¯ä¾èµ
+            // 检测循环依赖
             detectCircularDependencies(clazz, result);
             
         } catch (Exception e) {
-            result.addError("Validation failed: " + e.getMessage());
-            log.error("â Validation failed for class: {}", clazz.getName(), e);
+            result.addError("验证失败: " + e.getMessage());
+            log.error("❌ 类验证失败: {}", clazz.getName(), e);
         }
         
         return result;
     }
     
     /**
-     * éªè¯å­æ®µä¾èµ
-/
+     * 验证字段依赖
+     */
     private static void validateFieldDependencies(Class<?> clazz, ValidationResult result) {
         Field[] fields = clazz.getDeclaredFields();
         
@@ -55,12 +56,12 @@ public class CompileTimeValidator {
             if (field.isAnnotationPresent(com.dtc.annotations.ioc.Autowired.class)) {
                 Class<?> fieldType = field.getType();
                 
-                // æ£æ¥å­æ®µç±»åæ¯å¦å¯è§£æ
+                // 检查字段类型是否可解析
                 if (!isResolvableType(fieldType)) {
-                    result.addError("Unresolvable dependency for field: " + field.getName() + " of type " + fieldType.getName());
+                    result.addError("字段依赖无法解析: " + field.getName() + " 类型 " + fieldType.getName());
                 }
                 
-                // æ£æ¥å­æ®µè®¿é®æ§
+                // 检查字段访问性
                 if (!field.isAccessible()) {
                     field.setAccessible(true);
                 }
@@ -69,8 +70,8 @@ public class CompileTimeValidator {
     }
     
     /**
-     * éªè¯æé å½æ°ä¾èµ
-/
+     * 验证构造函数依赖
+     */
     private static void validateConstructorDependencies(Class<?> clazz, ValidationResult result) {
         Constructor<?>[] constructors = clazz.getDeclaredConstructors();
         
@@ -80,25 +81,25 @@ public class CompileTimeValidator {
             for (int i = 0; i < parameterTypes.length; i++) {
                 Class<?> paramType = parameterTypes[i];
                 
-                // æ£æ¥åæ°ç±»åæ¯å¦å¯è§£æ
+                // 检查参数类型是否可解析
                 if (!isResolvableType(paramType)) {
-                    result.addError("Unresolvable constructor parameter: " + paramType.getName() + " at index " + i);
+                    result.addError("构造函数参数无法解析: " + paramType.getName() + " 索引 " + i);
                 }
             }
         }
     }
     
     /**
-     * æ£æµå¾ªç¯ä¾èµ
-/
+     * 检测循环依赖
+     */
     private static void detectCircularDependencies(Class<?> clazz, ValidationResult result) {
         List<Class<?>> dependencyChain = new ArrayList<>();
         detectCircularDependenciesRecursive(clazz, dependencyChain, result);
     }
     
     /**
-     * éå½æ£æµå¾ªç¯ä¾èµ
-/
+     * 递归检测循环依赖
+     */
     private static void detectCircularDependenciesRecursive(Class<?> clazz, List<Class<?>> chain, ValidationResult result) {
         if (chain.contains(clazz)) {
             StringBuilder cycle = new StringBuilder();
@@ -106,13 +107,13 @@ public class CompileTimeValidator {
                 cycle.append(c.getSimpleName()).append(" -> ");
             }
             cycle.append(clazz.getSimpleName());
-            result.addError("Circular dependency detected: " + cycle.toString());
+            result.addError("检测到循环依赖: " + cycle.toString());
             return;
         }
         
         chain.add(clazz);
         
-        // æ£æ¥å­æ®µä¾èµ
+        // 检查字段依赖
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
             if (field.isAnnotationPresent(com.dtc.annotations.ioc.Autowired.class)) {
@@ -127,37 +128,37 @@ public class CompileTimeValidator {
     }
     
     /**
-     * æ£æ¥ç±»åæ¯å¦å¯è§£æ
-/
+     * 检查类型是否可解析
+     */
     private static boolean isResolvableType(Class<?> type) {
-        // åºæ¬ç±»åååè£ç±»å
+        // 基本类型和包装类型
         if (type.isPrimitive() || isWrapperType(type)) {
             return true;
         }
         
-        // å­ç¬¦ä¸²ç±»å
+        // 字符串类型
         if (type == String.class) {
             return true;
         }
         
-        // æ°ç»ç±»å
+        // 数组类型
         if (type.isArray()) {
             return isResolvableType(type.getComponentType());
         }
         
-        // éåç±»å
+        // 集合类型
         if (java.util.Collection.class.isAssignableFrom(type) || 
             java.util.Map.class.isAssignableFrom(type)) {
             return true;
         }
         
-        // Beanç±»å
+        // Bean类型
         return isBeanType(type);
     }
     
     /**
-     * æ£æ¥æ¯å¦ä¸ºåè£ç±»å
-/
+     * 检查是否为包装类型
+     */
     private static boolean isWrapperType(Class<?> type) {
         return type == Boolean.class || type == Byte.class || type == Character.class ||
                type == Short.class || type == Integer.class || type == Long.class ||
@@ -165,18 +166,18 @@ public class CompileTimeValidator {
     }
     
     /**
-     * æ£æ¥æ¯å¦ä¸ºBeanç±»å
-/
+     * 检查是否为Bean类型
+     */
     private static boolean isBeanType(Class<?> type) {
-        // æ£æ¥æ¯å¦æ@Componentæ³¨è§£
+        // 检查是否有@Component注解
         return type.isAnnotationPresent(com.dtc.annotations.ioc.Component.class) ||
                type.isAnnotationPresent(com.dtc.annotations.ioc.Service.class) ||
                type.isAnnotationPresent(com.dtc.annotations.ioc.Repository.class);
     }
     
     /**
-     * éªè¯ç»æç±»
-/
+     * 验证结果类
+     */
     public static class ValidationResult {
         private final List<String> errors = new ArrayList<>();
         private final List<String> warnings = new ArrayList<>();
@@ -204,19 +205,19 @@ public class CompileTimeValidator {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("Validation Result:\n");
+            sb.append("验证结果:\n");
             
             if (errors.isEmpty()) {
-                sb.append("â No errors found\n");
+                sb.append("✅ 未发现错误\n");
             } else {
-                sb.append("â Errors:\n");
+                sb.append("❌ 错误:\n");
                 for (String error : errors) {
                     sb.append("  - ").append(error).append("\n");
                 }
             }
             
             if (!warnings.isEmpty()) {
-                sb.append("â ï¸ Warnings:\n");
+                sb.append("⚠️ 警告:\n");
                 for (String warning : warnings) {
                     sb.append("  - ").append(warning).append("\n");
                 }

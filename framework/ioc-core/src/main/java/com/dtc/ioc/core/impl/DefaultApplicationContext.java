@@ -35,7 +35,9 @@ public class DefaultApplicationContext implements ApplicationContext {
         DefaultEnvironment environment = new DefaultEnvironment(); // Assuming DefaultEnvironment exists
         this.conditionEvaluator = new com.dtc.ioc.core.condition.ConditionEvaluator(beanDefinitionReader, environment);
         
-        DependencyInjector dependencyInjector = new DefaultDependencyInjector(beanContainer);
+        // 创建一个临时的 NetApplicationContext 用于依赖注入
+        NetApplicationContext tempContext = new com.dtc.ioc.core.impl.DefaultNetworkApplicationContext();
+        DependencyInjector dependencyInjector = new DefaultDependencyInjector(tempContext);
         this.beanFactory = new DefaultBeanFactory(beanContainer, dependencyInjector);
         this.beanScanner = new BeanScanner();
     }

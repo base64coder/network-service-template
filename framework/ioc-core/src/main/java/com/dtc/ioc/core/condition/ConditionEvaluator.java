@@ -13,7 +13,10 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * Evaluates @Conditional annotations.
+ * 条件评估器
+ * 评估 @Conditional 注解
+ * 
+ * @author Network Service Template
  */
 public class ConditionEvaluator {
     
@@ -34,7 +37,7 @@ public class ConditionEvaluator {
         for (Class<? extends Condition> conditionClass : conditional.value()) {
             try {
                 Condition condition = conditionClass.getDeclaredConstructor().newInstance();
-                if (!condition.matches(context, Collections.emptyMap())) { // Metadata map simplification
+                if (!condition.matches(context, Collections.emptyMap())) {
                     log.debug("Condition {} did not match for element {}", conditionClass.getSimpleName(), metadata);
                     return true;
                 }
@@ -57,14 +60,38 @@ public class ConditionEvaluator {
         }
         
         @Override
-        public BeanDefinitionReader getRegistry() {
+        public Object getRegistry() {
             return registry;
         }
         
         @Override
-        public Environment getEnvironment() {
+        public Object getEnvironment() {
             return environment;
+        }
+        
+        @Override
+        public String getProperty(String key) {
+            return environment.getProperty(key);
+        }
+        
+        @Override
+        public String getProperty(String key, String defaultValue) {
+            return environment.getProperty(key, defaultValue);
+        }
+        
+        @Override
+        public boolean containsBean(String beanName) {
+            return registry.containsBeanDefinition(beanName);
+        }
+        
+        @Override
+        public Map<String, String> getAllProperties() {
+            Map<String, Object> props = environment.getAllProperties();
+            Map<String, String> result = new java.util.HashMap<>();
+            for (Map.Entry<String, Object> entry : props.entrySet()) {
+                result.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
+            }
+            return result;
         }
     }
 }
-

@@ -4,7 +4,7 @@ import java.lang.reflect.Constructor;
 
 /**
  * 依赖注入器接口
- * 借鉴 Guice 的依赖注入机制
+ * 依赖注入器接口，负责处理Bean之间的依赖关系
  * 
  * @author Network Service Template
  */

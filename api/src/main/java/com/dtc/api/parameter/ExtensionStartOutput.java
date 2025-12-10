@@ -6,40 +6,40 @@ import com.dtc.api.annotations.Nullable;
 import java.util.Optional;
 
 /**
- * Extension Start Output Parameters
+ * 扩展启动输出参数
  * 
  * @author Network Service Template
  */
 public interface ExtensionStartOutput {
 
     /**
-     * Set Startup Failure Reason
+     * 设置启动失败原因
      * 
-     * @param reason Failure Reason
+     * @param reason 失败原因
      */
     void preventStartup(@NotNull String reason);
 
     /**
-     * Get Startup Failure Reason
+     * 获取启动失败原因
      * 
-     * @return Failure Reason, returns empty if startup succeeded
+     * @return 失败原因，如果启动成功则返回空
      */
     @NotNull
     Optional<String> getReason();
 
     /**
-     * Set Extension Configuration
+     * 设置扩展配置
      * 
-     * @param key   Configuration Key
-     * @param value Configuration Value
+     * @param key   配置键
+     * @param value 配置值
      */
     void setConfiguration(@NotNull String key, @NotNull String value);
 
     /**
-     * Get Extension Configuration
+     * 获取扩展配置
      * 
-     * @param key Configuration Key
-     * @return Configuration Value
+     * @param key 配置键
+     * @return 配置值
      */
     @Nullable
     String getConfiguration(@NotNull String key);

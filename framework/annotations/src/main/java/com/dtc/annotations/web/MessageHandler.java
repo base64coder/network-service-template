@@ -9,10 +9,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * æ¶æ¯å¤çå¨æ³¨è§£
-æ è¯ä¸ä¸ªç±»ä¸ºæ¶æ¯å¤çå¨ï¼ç¨äºå¤çåç§åè®®çæ¶æ¯
-@author Network Service Template
-/
+ * 消息处理器注解
+ * 标识一个类为消息处理器，用于处理各种协议的消息
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -20,16 +21,15 @@ import java.lang.annotation.Target;
 public @interface MessageHandler {
     
     /**
-     * åè®®ç±»å
-æ¯æï¼UDP, TCP, WebSocket, MQTT, Custom
-@return åè®®ç±»å
-/
+     * 协议类型
+     * 支持：UDP, TCP, WebSocket, MQTT, Custom
+     * @return 协议类型
+     */
     String protocol() default "";
     
     /**
-     * å¤çå¨åç§°
-@return åç§°
-/
+     * 处理器名称
+     * @return 名称
+     */
     String value() default "";
 }
-

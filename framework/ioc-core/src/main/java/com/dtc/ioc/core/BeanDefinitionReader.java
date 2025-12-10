@@ -1,6 +1,7 @@
 package com.dtc.ioc.core;
 
 import com.dtc.api.annotations.NotNull;
+import com.dtc.api.annotations.Nullable;
 import com.dtc.annotations.ioc.Component;
 import com.dtc.annotations.ioc.PostConstruct;
 import com.dtc.annotations.ioc.PreDestroy;
@@ -92,7 +93,7 @@ public class BeanDefinitionReader {
     /**
      * 查找初始化方法（@PostConstruct）
      */
-    @NotNull
+    @Nullable
     private String findInitMethod(@NotNull Class<?> beanClass) {
         for (Method method : beanClass.getDeclaredMethods()) {
             if (method.isAnnotationPresent(PostConstruct.class)) {
@@ -105,7 +106,7 @@ public class BeanDefinitionReader {
     /**
      * 查找销毁方法（@PreDestroy）
      */
-    @NotNull
+    @Nullable
     private String findDestroyMethod(@NotNull Class<?> beanClass) {
         for (Method method : beanClass.getDeclaredMethods()) {
             if (method.isAnnotationPresent(PreDestroy.class)) {

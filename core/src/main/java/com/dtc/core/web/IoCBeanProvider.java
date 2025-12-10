@@ -10,25 +10,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Guice Bean提供者
- * 通过Guice Injector获取Bean实例和类型信息
+ * IoC Bean提供者
+ * 通过IoC容器获取Bean实例和类型信息
  * 如果指定了扫描基础包，则通过ComponentScanner扫描并获取所有已注册的Bean实例
  * 
  * @author Network Service Template
  */
-public class GuiceBeanProvider implements BeanProvider {
+public class IoCBeanProvider implements BeanProvider {
 
-    private static final Logger log = LoggerFactory.getLogger(GuiceBeanProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(IoCBeanProvider.class);
 
     private final @NotNull Injector injector;
     private @Nullable String scanBasePackage;
     private @Nullable Map<String, Object> cachedBeans;
 
-    public GuiceBeanProvider(@NotNull Injector injector) {
+    public IoCBeanProvider(@NotNull Injector injector) {
         this.injector = injector;
     }
 
-    public GuiceBeanProvider(@NotNull Injector injector, @NotNull String scanBasePackage) {
+    public IoCBeanProvider(@NotNull Injector injector, @NotNull String scanBasePackage) {
         this.injector = injector;
         this.scanBasePackage = scanBasePackage;
     }
@@ -39,13 +39,13 @@ public class GuiceBeanProvider implements BeanProvider {
         Map<String, T> beans = new HashMap<>();
         
         try {
-            // 尝试通过Guice获取该类型的Bean实例
+            // 尝试通过IoC容器获取该类型的Bean实例
             T bean = injector.getInstance(beanType);
             if (bean != null) {
                 beans.put(beanType.getSimpleName(), bean);
             }
         } catch (Exception e) {
-            // Guice可能没有绑定该类型的Bean，这是正常的
+            // IoC容器可能没有绑定该类型的Bean，这是正常的
             log.debug("No binding found for type: {}", beanType.getName());
         }
         

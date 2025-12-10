@@ -4,19 +4,21 @@ import com.dtc.ioc.core.BeanScope;
 import com.dtc.ioc.core.provider.Provider;
 
 /**
- * Binder interface for configuring bindings in modules.
- * Inspired by Guice Binder.
+ * 绑定器接口
+ * 用于在模块中配置绑定关系
+ * 
+ * @author Network Service Template
  */
 public interface Binder {
     
     /**
-     * Start a binding for a specific type.
+     * 开始绑定特定类型
      */
     <T> LinkedBindingBuilder<T> bind(Class<T> type);
     
     /**
-     * Install another module.
+     * 安装另一个模块
      */
-    void install(com.dtc.ioc.core.IoCModule module);
+    void install(com.dtc.ioc.core.NetModule module);
 }
 

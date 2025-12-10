@@ -8,11 +8,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * æ°æ®åºåæ³¨è§£
-æ è¯å®ä½å±æ§å¯¹åºçæ°æ®åºå
-åé´MyBatis-Flexç@Columnæ³¨è§£
-@author Network Service Template
-/
+ * 数据库列注解
+ * 标识实体属性对应的数据库列
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -20,56 +20,55 @@ import java.lang.annotation.Target;
 public @interface Column {
     
     /**
-     * ååç§°
-å¦æä¸ºç©ºï¼åä½¿ç¨å±æ§åï¼æ ¹æ®camelToUnderlineè½¬æ¢ï¼
-@return åå
-/
+     * 列名称
+     * 如果为空，则使用属性名（根据camelToUnderline转换）
+     * @return 列名
+     */
     String value() default "";
     
     /**
-     * æ¯å¦å¿½ç¥è¯¥å­æ®µ
-å¦æä¸ºtrueï¼è¯¥å­æ®µä¸ä¼æ å°å°æ°æ®åº
-@return æ¯å¦å¿½ç¥
-/
+     * 是否忽略该字段
+     * 如果为true，该字段不会映射到数据库
+     * @return 是否忽略
+     */
     boolean ignore() default false;
     
     /**
-     * æ¯å¦ä¸ºä¸»é®
-@return æ¯å¦ä¸ºä¸»é®
-/
+     * 是否为主键
+     * @return 是否为主键
+     */
     boolean primaryKey() default false;
     
     /**
-     * æ¯å¦ä¸ºé»è¾å é¤å­æ®µ
-ä¸å¼ è¡¨ä¸­åªè½æä¸ä¸ªé»è¾å é¤å­æ®µ
-@return æ¯å¦ä¸ºé»è¾å é¤å­æ®µ
-/
+     * 是否为逻辑删除字段
+     * 一张表中只能有一个逻辑删除字段
+     * @return 是否为逻辑删除字段
+     */
     boolean logicDelete() default false;
     
     /**
-     * æ¯å¦ä¸ºä¹è§éå­æ®µ
-æ´æ°æ¶ä¼æ£æ¥çæ¬å·ï¼æ´æ°æååçæ¬å·+1
-åªè½ç¨äºæ°å¼ç±»åå­æ®µ
-@return æ¯å¦ä¸ºä¹è§éå­æ®µ
-/
+     * 是否为乐观锁字段
+     * 更新时会检查版本号，更新成功后版本号+1
+     * 只能用于数值类型字段
+     * @return 是否为乐观锁字段
+     */
     boolean version() default false;
     
     /**
-     * åæ³¨é
-@return æ³¨éåå®¹
-/
+     * 列注释
+     * @return 注释内容
+     */
     String comment() default "";
     
     /**
-     * æ¯å¦åè®¸ä¸ºç©º
-@return æ¯å¦åè®¸ä¸ºç©º
-/
+     * 是否允许为空
+     * @return 是否允许为空
+     */
     boolean nullable() default true;
     
     /**
-     * å­æ®µé¿åº¦ï¼ç¨äºå­ç¬¦ä¸²ç±»åï¼
-@return é¿åº¦
-/
+     * 字段长度（用于字符串类型）
+     * @return 长度
+     */
     int length() default 255;
 }
-

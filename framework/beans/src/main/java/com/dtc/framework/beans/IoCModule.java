@@ -4,7 +4,7 @@ import com.dtc.api.annotations.NotNull;
 
 /**
  * IoC 模块接口
- * 提供模块化配置功能，类似 Guice 的 Module
+ * 提供模块化配置功能，支持模块化依赖注入配置
  * 
  * @author Network Service Template
  */

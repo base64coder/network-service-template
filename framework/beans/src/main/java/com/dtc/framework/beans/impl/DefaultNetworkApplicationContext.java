@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Default Network Application Context Implementation
- * Combines advantages of Spring ApplicationContext and Guice Injector
+ * Combines advantages of Spring ApplicationContext with module-based configuration
  * 
  * @author Network Service Template
  */

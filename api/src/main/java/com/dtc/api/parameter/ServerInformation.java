@@ -5,81 +5,81 @@ import com.dtc.api.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.Map;
 
-/ææææ
-ææ æå¡å¨ä¿¡æ¯æ¥å£
-ææ 
-ææ @author Network Service Template
-ææ/
+/**
+ * 服务器信息接口
+ * 
+ * @author Network Service Template
+ */
 public interface ServerInformation {
 
-    /ææææ
-ææ è·åæå¡å¨åç§°
-ææ 
-ææ @return æå¡å¨åç§°
-ææ/
+    /**
+     * 获取服务器名称
+     * 
+     * @return 服务器名称
+     */
     @NotNull
     String getServerName();
 
-    /ææææ
-ææ è·åæå¡å¨çæ¬
-ææ 
-ææ @return æå¡å¨çæ¬
-ææ/
+    /**
+     * 获取服务器版本
+     * 
+     * @return 服务器版本
+     */
     @NotNull
     String getServerVersion();
 
-    /ææææ
-ææ è·åæå¡å¨ID
-ææ 
-ææ @return æå¡å¨ID
-ææ/
+    /**
+     * 获取服务器ID
+     * 
+     * @return 服务器ID
+     */
     @NotNull
     String getServerId();
 
-    /ææææ
-ææ è·åæ°æ®æä»¶å¤¹è·¯å¾
-ææ 
-ææ @return æ°æ®æä»¶å¤¹è·¯å¾
-ææ/
+    /**
+     * 获取数据文件夹路径
+     * 
+     * @return 数据文件夹路径
+     */
     @NotNull
     Path getDataFolder();
 
-    /ææææ
-ææ è·åéç½®æä»¶å¤¹è·¯å¾
-ææ 
-ææ @return éç½®æä»¶å¤¹è·¯å¾
-ææ/
+    /**
+     * 获取配置文件夹路径
+     * 
+     * @return 配置文件夹路径
+     */
     @NotNull
     Path getConfigFolder();
 
-    /ææææ
-ææ è·åæ©å±æä»¶å¤¹è·¯å¾
-ææ 
-ææ @return æ©å±æä»¶å¤¹è·¯å¾
-ææ/
+    /**
+     * 获取扩展文件夹路径
+     * 
+     * @return 扩展文件夹路径
+     */
     @NotNull
     Path getExtensionsFolder();
 
-    /ææææ
-ææ è·åç³»ç»å±æ§
-ææ 
-ææ @return ç³»ç»å±æ§æ å°
-ææ/
+    /**
+     * 获取系统属性
+     * 
+     * @return 系统属性映射
+     */
     @NotNull
     Map<String, String> getSystemProperties();
 
-    /ææææ
-ææ è·åç¯å¢åé
-ææ 
-ææ @return ç¯å¢åéæ å°
-ææ/
+    /**
+     * 获取环境变量
+     * 
+     * @return 环境变量映射
+     */
     @NotNull
     Map<String, String> getEnvironmentVariables();
 
-    /ææææ
-ææ æ¯å¦è¿è¡å¨åµå¥å¼æ¨¡å¼
-ææ 
-ææ @return æ¯å¦åµå¥å¼æ¨¡å¼
-ææ/
+    /**
+     * 是否运行在嵌入式模式
+     * 
+     * @return 是否嵌入式模式
+     */
     boolean isEmbedded();
 }

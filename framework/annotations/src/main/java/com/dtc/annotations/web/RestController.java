@@ -8,20 +8,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
-     * RESTæ§å¶å¨æ³¨è§£
-æ è¯ä¸ä¸ªç±»ä¸ºRESTæ§å¶å¨ï¼èªå¨æ³¨åä¸ºç»ä»¶
-åé´Springç@RestControlleræ³¨è§£
-@author Network Service Template
-/
+ * REST控制器注解
+ * 标识一个类为REST控制器，自动注册为组件
+ * 
+ * @author Network Service Template
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Component
 public @interface RestController {
     
     /**
-     * æ§å¶å¨çåºç¡è·¯å¾
-@return åºç¡è·¯å¾
-/
+     * 控制器的基础路径
+     * @return 基础路径
+     */
     String value() default "";
 }
-

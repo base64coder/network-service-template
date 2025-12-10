@@ -4,40 +4,41 @@ import com.dtc.api.annotations.NotNull;
 import java.beans.PropertyEditor;
 
 /**
-     * å±æ§ç¼è¾å¨æ³¨åè¡¨æ¥å£
-ç®¡çå±æ§ç¼è¾å¨
-åé´Spring PropertyEditorRegistryçè®¾è®¡
-@author Network Service Template
-/
+ * 属性编辑器注册表接口
+ * 管理属性编辑器
+ * 借鉴Spring PropertyEditorRegistry的设计
+ * 
+ * @author Network Service Template
+ */
 public interface PropertyEditorRegistry {
     
     /**
-     * æ³¨åå±æ§ç¼è¾å¨
-@param requiredType å¿éç±»å
-@param propertyEditor å±æ§ç¼è¾å¨
-/
+     * 注册属性编辑器
+     * @param requiredType 必需类型
+     * @param propertyEditor 属性编辑器
+     */
     void registerCustomEditor(@NotNull Class<?> requiredType, @NotNull PropertyEditor propertyEditor);
     
     /**
-     * æ³¨åå±æ§ç¼è¾å¨ï¼æå®å±æ§è·¯å¾ï¼
-@param requiredType å¿éç±»å
-@param propertyPath å±æ§è·¯å¾
-@param propertyEditor å±æ§ç¼è¾å¨
-/
+     * 注册属性编辑器（指定属性路径）
+     * @param requiredType 必需类型
+     * @param propertyPath 属性路径
+     * @param propertyEditor 属性编辑器
+     */
     void registerCustomEditor(@NotNull Class<?> requiredType, @NotNull String propertyPath, @NotNull PropertyEditor propertyEditor);
     
     /**
-     * æ¥æ¾å±æ§ç¼è¾å¨
-@param requiredType å¿éç±»å
-@return å±æ§ç¼è¾å¨
-/
+     * 查找属性编辑器
+     * @param requiredType 必需类型
+     * @return 属性编辑器
+     */
     PropertyEditor findCustomEditor(@NotNull Class<?> requiredType);
     
     /**
-     * æ¥æ¾å±æ§ç¼è¾å¨ï¼æå®å±æ§è·¯å¾ï¼
-@param requiredType å¿éç±»å
-@param propertyPath å±æ§è·¯å¾
-@return å±æ§ç¼è¾å¨
-/
+     * 查找属性编辑器（指定属性路径）
+     * @param requiredType 必需类型
+     * @param propertyPath 属性路径
+     * @return 属性编辑器
+     */
     PropertyEditor findCustomEditor(@NotNull Class<?> requiredType, @NotNull String propertyPath);
 }

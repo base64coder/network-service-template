@@ -48,7 +48,7 @@
         <!-- 依赖注入 -->
         <dependency>
             <groupId>com.dtc</groupId>
-            <artifactId>beans</artifactId>
+            <artifactId>ioc-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         
