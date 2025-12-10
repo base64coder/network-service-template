@@ -35,6 +35,13 @@
             <artifactId>byte-buddy</artifactId>
         </dependency>
         
+        <!-- Google Guice (临时恢复) -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+        
         <!-- 测试依赖 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

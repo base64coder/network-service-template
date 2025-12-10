@@ -21,7 +21,7 @@ public class DefaultApplicationContext implements ApplicationContext {
     private static final Logger log = LoggerFactory.getLogger(DefaultApplicationContext.class);
     
     private final BeanContainer beanContainer;
-    private final BeanFactory beanFactory;
+    private final ConfigurableBeanFactory beanFactory;
     private final BeanScanner beanScanner;
     private final BeanDefinitionReader beanDefinitionReader;
     private final com.dtc.ioc.core.condition.ConditionEvaluator conditionEvaluator;
@@ -32,13 +32,17 @@ public class DefaultApplicationContext implements ApplicationContext {
         this.scanBasePackages = scanBasePackages;
         this.beanContainer = new DefaultBeanContainer();
         this.beanDefinitionReader = new BeanDefinitionReader();
-        DefaultEnvironment environment = new DefaultEnvironment(); // Assuming DefaultEnvironment exists
-        this.conditionEvaluator = new com.dtc.ioc.core.condition.ConditionEvaluator(beanDefinitionReader, environment);
+        DefaultEnvironment environment = new DefaultEnvironment();
         
         // 创建一个临时的 NetApplicationContext 用于依赖注入
         NetApplicationContext tempContext = new com.dtc.ioc.core.impl.DefaultNetworkApplicationContext();
         DependencyInjector dependencyInjector = new DefaultDependencyInjector(tempContext);
-        this.beanFactory = new DefaultBeanFactory(beanContainer, dependencyInjector);
+        
+        // 使用 DefaultConfigurableBeanFactory 而不是 DefaultBeanFactory
+        this.beanFactory = new DefaultConfigurableBeanFactory();
+        
+        // 创建条件评估器
+        this.conditionEvaluator = new com.dtc.ioc.core.condition.ConditionEvaluator(this.beanFactory, environment);
         this.beanScanner = new BeanScanner();
     }
     
@@ -104,7 +108,7 @@ public class DefaultApplicationContext implements ApplicationContext {
 
                 BeanDefinition definition = beanDefinitionReader.readBeanDefinition(componentClass);
                 if (definition != null) {
-                    ((DefaultBeanFactory) beanFactory).registerBeanDefinition(
+                    beanFactory.registerBeanDefinition(
                             definition.getBeanName(), definition);
                     log.debug("Registered bean definition: {}", definition.getBeanName());
                 }

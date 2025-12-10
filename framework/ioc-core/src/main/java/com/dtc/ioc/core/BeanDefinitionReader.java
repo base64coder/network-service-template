@@ -33,7 +33,7 @@ public class BeanDefinitionReader {
      */
     @NotNull
     public BeanDefinition readBeanDefinition(@NotNull Class<?> beanClass) {
-        BeanDefinition definition = new com.dtc.ioc.core.impl.DefaultBeanDefinition();
+        com.dtc.ioc.core.impl.DefaultBeanDefinition definition = new com.dtc.ioc.core.impl.DefaultBeanDefinition();
         
         // 确定 Bean 名称
         String beanName = determineBeanName(beanClass);

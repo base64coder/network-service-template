@@ -32,6 +32,11 @@ public class DefaultBeanDefinition implements BeanDefinition {
     public DefaultBeanDefinition() {
     }
     
+    public DefaultBeanDefinition(@NotNull Class<?> beanClass) {
+        this.beanClass = beanClass;
+        this.beanName = beanClass.getSimpleName();
+    }
+
     public DefaultBeanDefinition(@NotNull String beanName, @NotNull Class<?> beanClass) {
         this.beanName = beanName;
         this.beanClass = beanClass;
@@ -89,11 +94,11 @@ public class DefaultBeanDefinition implements BeanDefinition {
     @Override
     @NotNull
     public List<String> getDependsOn() {
-        return new ArrayList<>(dependsOn);
+        return dependsOn;
     }
     
-    public void setDependsOn(@NotNull List<String> dependsOn) {
-        this.dependsOn = dependsOn != null ? new ArrayList<>(dependsOn) : new ArrayList<>();
+    public void setDependsOn(List<String> dependsOn) {
+        this.dependsOn = dependsOn;
     }
     
     @Override
@@ -102,7 +107,7 @@ public class DefaultBeanDefinition implements BeanDefinition {
         return initMethodName;
     }
     
-    public void setInitMethodName(@Nullable String initMethodName) {
+    public void setInitMethodName(String initMethodName) {
         this.initMethodName = initMethodName;
     }
     
@@ -112,7 +117,7 @@ public class DefaultBeanDefinition implements BeanDefinition {
         return destroyMethodName;
     }
     
-    public void setDestroyMethodName(@Nullable String destroyMethodName) {
+    public void setDestroyMethodName(String destroyMethodName) {
         this.destroyMethodName = destroyMethodName;
     }
     
@@ -122,7 +127,7 @@ public class DefaultBeanDefinition implements BeanDefinition {
         return constructor;
     }
     
-    public void setConstructor(@Nullable Constructor<?> constructor) {
+    public void setConstructor(Constructor<?> constructor) {
         this.constructor = constructor;
     }
     
@@ -132,7 +137,7 @@ public class DefaultBeanDefinition implements BeanDefinition {
         return factoryMethod;
     }
     
-    public void setFactoryMethod(@Nullable Method factoryMethod) {
+    public void setFactoryMethod(Method factoryMethod) {
         this.factoryMethod = factoryMethod;
     }
     
@@ -142,12 +147,8 @@ public class DefaultBeanDefinition implements BeanDefinition {
         return new HashMap<>(propertyValues);
     }
     
-    public void setPropertyValue(@NotNull String name, @NotNull Object value) {
-        this.propertyValues.put(name, value);
-    }
-    
-    public void setPropertyValues(@NotNull Map<String, Object> propertyValues) {
-        this.propertyValues = new HashMap<>(propertyValues);
+    public void setPropertyValue(@NotNull String name, @Nullable Object value) {
+        propertyValues.put(name, value);
     }
     
     @Override
@@ -158,11 +159,5 @@ public class DefaultBeanDefinition implements BeanDefinition {
     
     public void setAnnotationMetadata(@NotNull Map<String, Object> annotationMetadata) {
         this.annotationMetadata = new HashMap<>(annotationMetadata);
-    }
-    
-    @Override
-    public String toString() {
-        return String.format("DefaultBeanDefinition{beanName='%s', beanClass=%s, scope=%s, lazyInit=%s}",
-                beanName, beanClass != null ? beanClass.getName() : "null", scope, lazyInit);
     }
 }

@@ -3,7 +3,7 @@ package com.dtc.ioc.core.condition;
 import com.dtc.annotations.condition.Condition;
 import com.dtc.annotations.condition.ConditionContext;
 import com.dtc.annotations.condition.Conditional;
-import com.dtc.ioc.core.BeanDefinitionReader;
+import com.dtc.ioc.core.ConfigurableBeanFactory;
 import com.dtc.ioc.core.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +24,8 @@ public class ConditionEvaluator {
     
     private final ConditionContext context;
     
-    public ConditionEvaluator(BeanDefinitionReader registry, Environment environment) {
-        this.context = new ConditionContextImpl(registry, environment);
+    public ConditionEvaluator(ConfigurableBeanFactory beanFactory, Environment environment) {
+        this.context = new ConditionContextImpl(beanFactory, environment);
     }
     
     public boolean shouldSkip(AnnotatedElement metadata) {
@@ -51,17 +51,17 @@ public class ConditionEvaluator {
     }
     
     private static class ConditionContextImpl implements ConditionContext {
-        private final BeanDefinitionReader registry;
+        private final ConfigurableBeanFactory beanFactory;
         private final Environment environment;
         
-        public ConditionContextImpl(BeanDefinitionReader registry, Environment environment) {
-            this.registry = registry;
+        public ConditionContextImpl(ConfigurableBeanFactory beanFactory, Environment environment) {
+            this.beanFactory = beanFactory;
             this.environment = environment;
         }
         
         @Override
         public Object getRegistry() {
-            return registry;
+            return beanFactory;
         }
         
         @Override
@@ -81,7 +81,7 @@ public class ConditionEvaluator {
         
         @Override
         public boolean containsBean(String beanName) {
-            return registry.containsBeanDefinition(beanName);
+            return beanFactory.getBeanDefinition(beanName) != null;
         }
         
         @Override
