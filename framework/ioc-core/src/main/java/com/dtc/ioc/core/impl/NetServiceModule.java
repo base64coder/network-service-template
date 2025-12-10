@@ -4,8 +4,12 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.ioc.core.NetApplicationContext;
 
 /**
- * 网络服务核心模块
+ * 网络服务核心模块（自定义IOC实现版本 - 暂时不使用）
  * 配置网络服务的核心组件
+ * 
+ * 注意：此模块是自定义IOC容器的实现版本，当前框架暂时使用 Google Guice。
+ * 
+ * 当自定义IOC容器完全实现后，可以使用此版本替换 Guice 版本。
  * 
  * @author Network Service Template
  */

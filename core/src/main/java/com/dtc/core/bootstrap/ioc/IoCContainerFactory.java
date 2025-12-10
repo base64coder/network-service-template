@@ -6,13 +6,17 @@ import org.slf4j.LoggerFactory;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.annotations.Nullable;
 import com.dtc.core.bootstrap.config.ServerConfiguration;
-import com.dtc.ioc.core.NetModule;
-import com.dtc.ioc.core.NetApplicationContext;
-import com.dtc.ioc.core.context.AnnotationConfigApplicationContext;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * IoC 容器工厂
  * 负责创建和配置依赖注入容器
+ * 暂时使用 Google Guice 实现
  * 
  * @author Network Service Template
  */
@@ -24,46 +28,42 @@ public class IoCContainerFactory {
      * 创建网络服务主容器
      *
      * @param configuration 服务器配置
-     * @return 注入器 (ApplicationContext)
+     * @return 注入器
      */
     @Nullable
-    public static NetApplicationContext bootstrapInjector(@NotNull ServerConfiguration configuration) {
+    public static Injector bootstrapInjector(@NotNull ServerConfiguration configuration) {
         log.info("Bootstrapping Network Service IoC container...");
 
         try {
-            // 使用 AnnotationConfigApplicationContext 作为容器实现
-            AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+            List<Module> modules = new ArrayList<>();
             
             // 注册核心模块
-            registerModule(context, new SystemInformationModule(configuration));
-            registerModule(context, new LazySingletonModule());
-            registerModule(context, new LifecycleModule());
-            registerModule(context, new ConfigurationModule(configuration));
-            registerModule(context, new PersistenceModule());
-            registerModule(context, new NettyModule());
-            registerModule(context, new NetworkServiceMainModule());
-            registerModule(context, new ExtensionModule());
-            registerModule(context, new ExtensionDependencyModule());
-            registerModule(context, new MetricsModule());
-            registerModule(context, new SecurityModule());
-            registerModule(context, new DiagnosticModule());
-            registerModule(context, new SerializationModule());
-            registerModule(context, new QueueModule());
-            registerModule(context, new CodecModule());
-            registerModule(context, new ValidationModule());
+            modules.add(new SystemInformationModule(configuration));
+            modules.add(new LazySingletonModule());
+            modules.add(new LifecycleModule());
+            modules.add(new ConfigurationModule(configuration));
+            modules.add(new PersistenceModule());
+            modules.add(new NettyModule());
+            modules.add(new NetworkServiceMainModule());
+            modules.add(new ExtensionModule());
+            modules.add(new ExtensionDependencyModule());
+            modules.add(new MetricsModule());
+            modules.add(new SecurityModule());
+            modules.add(new DiagnosticModule());
+            modules.add(new SerializationModule());
+            modules.add(new QueueModule());
+            modules.add(new CodecModule());
+            modules.add(new ValidationModule());
 
             // 动态加载外部模块
             java.util.ServiceLoader.load(ModuleProvider.class).forEach(provider -> {
                 log.info("Loading modules from provider: {}", provider.getClass().getName());
-                provider.getModules().forEach(module -> {
-                     if (module instanceof NetModule) {
-                         registerModule(context, (NetModule) module);
-                     }
-                });
+                modules.addAll(provider.getModules());
             });
 
-            context.refresh();
-            return context;
+            Injector injector = Guice.createInjector(modules);
+            log.info("Network Service IoC container bootstrapped successfully");
+            return injector;
 
         } catch (Exception e) {
             log.error("Failed to bootstrap Network Service IoC container", e);
@@ -78,39 +78,37 @@ public class IoCContainerFactory {
      * 创建扩展系统容器
      */
     @NotNull
-    public static NetApplicationContext extensionInjector(@NotNull ServerConfiguration configuration) {
+    public static Injector extensionInjector(@NotNull ServerConfiguration configuration) {
         log.info("Bootstrapping Extension System IoC container...");
         
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-        registerModule(context, new SystemInformationModule(configuration));
-        registerModule(context, new ConfigurationModule(configuration));
-        registerModule(context, new LazySingletonModule());
-        registerModule(context, new LifecycleModule());
-        registerModule(context, new ExtensionModule());
+        List<Module> modules = new ArrayList<>();
+        modules.add(new SystemInformationModule(configuration));
+        modules.add(new ConfigurationModule(configuration));
+        modules.add(new LazySingletonModule());
+        modules.add(new LifecycleModule());
+        modules.add(new ExtensionModule());
         
-        context.refresh();
-        return context;
+        Injector injector = Guice.createInjector(modules);
+        log.info("Extension System IoC container bootstrapped successfully");
+        return injector;
     }
 
     /**
      * 创建持久化系统容器
      */
     @NotNull
-    public static NetApplicationContext persistenceInjector(@NotNull ServerConfiguration configuration) {
+    public static Injector persistenceInjector(@NotNull ServerConfiguration configuration) {
         log.info("Bootstrapping Persistence System IoC container...");
 
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-        registerModule(context, new SystemInformationModule(configuration));
-        registerModule(context, new ConfigurationModule(configuration));
-        registerModule(context, new LazySingletonModule());
-        registerModule(context, new LifecycleModule());
-        registerModule(context, new PersistenceModule());
+        List<Module> modules = new ArrayList<>();
+        modules.add(new SystemInformationModule(configuration));
+        modules.add(new ConfigurationModule(configuration));
+        modules.add(new LazySingletonModule());
+        modules.add(new LifecycleModule());
+        modules.add(new PersistenceModule());
         
-        context.refresh();
-        return context;
-    }
-    
-    private static void registerModule(NetApplicationContext context, NetModule module) {
-        module.configure(context);
+        Injector injector = Guice.createInjector(modules);
+        log.info("Persistence System IoC container bootstrapped successfully");
+        return injector;
     }
 }

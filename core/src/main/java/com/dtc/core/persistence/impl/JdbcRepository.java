@@ -196,7 +196,6 @@ public class JdbcRepository<T, ID> implements BaseRepository<T, ID> {
         return 0;
     }
     
-    @Override
     @NotNull
     public T update(@NotNull T entity) {
         return save(entity);

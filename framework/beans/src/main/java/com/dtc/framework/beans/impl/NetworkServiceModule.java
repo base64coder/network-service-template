@@ -1,55 +1,33 @@
 package com.dtc.framework.beans.impl;
 
-import com.dtc.api.annotations.NotNull;
-import com.dtc.framework.beans.NetworkApplicationContext;
+import com.dtc.core.network.http.HttpRequestHandler;
+import com.dtc.core.network.http.HttpResponseHandler;
+import com.dtc.core.network.http.HttpServer;
+import com.dtc.core.statistics.StatisticsCollector;
+import com.dtc.core.messaging.NetworkMessageQueue;
+import com.google.inject.AbstractModule;
 
 /**
-     * ç½ç»æå¡æ ¸å¿æ¨¡å
-éç½®ç½ç»æå¡çæ ¸å¿ç»ä»¶
-@author Network Service Template
-/
-public class NetworkServiceModule extends AbstractIoCModule {
+ * 网络服务核心模块（自定义IOC实现版本 - 暂时不使用）
+ * 配置网络服务的核心组件
+ * 
+ * 注意：此模块已改为使用 Google Guice 的依赖注入方式。
+ * 当前框架暂时使用 Google Guice，此模块作为参考实现。
+ * 
+ * 当自定义IOC容器完全实现后，可以基于此模块创建自定义IOC版本。
+ * 
+ * @author Network Service Template
+ */
+public class NetworkServiceModule extends AbstractModule {
     
     @Override
-    public void configure(@NotNull NetworkApplicationContext context) {
-        // æ³¨åæ ¸å¿æå¡ç»ä»¶
-        bind(context, "httpRequestHandler", HttpRequestHandler.class);
-        bind(context, "httpResponseHandler", HttpResponseHandler.class);
-        bind(context, "httpServer", HttpServer.class);
-        bind(context, "statisticsCollector", StatisticsCollector.class);
-        bind(context, "networkMessageQueue", NetworkMessageQueue.class);
-        
-        // æ³¨ååä¾å®ä¾
-        bindInstance(context, "serverConfiguration", createServerConfiguration());
+    protected void configure() {
+        // 绑定核心服务组件（使用 Guice 方式）
+        bind(HttpRequestHandler.class).asEagerSingleton();
+        bind(HttpResponseHandler.class).asEagerSingleton();
+        bind(HttpServer.class).asEagerSingleton();
+        bind(StatisticsCollector.class).asEagerSingleton();
+        bind(NetworkMessageQueue.class).asEagerSingleton();
     }
     
-    @Override
-    @NotNull
-    public String getModuleName() {
-        return "NetworkServiceModule";
-    }
-    
-    @Override
-    @NotNull
-    public String getModuleDescription() {
-        return "ç½ç»æå¡æ ¸å¿æ¨¡åï¼æä¾HTTPãç»è®¡ãæ¶æ¯éåç­æ ¸å¿åè½";
-    }
-    
-    @Override
-    @NotNull
-    public String[] getDependencies() {
-        return new String[0]; // æ ¸å¿æ¨¡åï¼æ ä¾èµ
-    }
-    
-    private Object createServerConfiguration() {
-        // åå»ºæå¡å¨éç½®å®ä¾
-        return new Object(); // ç®åå®ç°
-    }
-    
-    // æ¨¡æçç±»å®ä¹ï¼å®éé¡¹ç®ä¸­è¿äºç±»åºè¯¥å­å¨ï¼
-    public static class HttpRequestHandler {}
-    public static class HttpResponseHandler {}
-    public static class HttpServer {}
-    public static class StatisticsCollector {}
-    public static class NetworkMessageQueue {}
 }

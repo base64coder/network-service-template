@@ -1,13 +1,13 @@
 package com.dtc.framework.distributed;
 
 import com.dtc.core.bootstrap.ioc.ModuleProvider;
-import com.dtc.ioc.core.IoCModule; // Changed from Module
+import com.google.inject.Module;
 import java.util.Collection;
 import java.util.Collections;
 
 public class DistributedModuleProvider implements ModuleProvider {
     @Override
-    public Collection<IoCModule> getModules() { // Changed return type
+    public Collection<Module> getModules() {
         return Collections.singletonList(new DistributedModule());
     }
 }

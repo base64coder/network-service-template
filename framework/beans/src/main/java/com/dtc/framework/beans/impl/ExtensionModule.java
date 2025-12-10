@@ -4,20 +4,27 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.framework.beans.NetworkApplicationContext;
 
 /**
-     * æ©å±æ¨¡å
-éç½®æ©å±ç³»ç»ç¸å³ç»ä»¶
-@author Network Service Template
-/
+ * 扩展模块（自定义IOC实现版本 - 暂时不使用）
+ * 配置扩展系统相关组件
+ * 
+ * 注意：此模块是自定义IOC容器的实现版本，当前框架暂时使用 Google Guice。
+ * 请使用 core/src/main/java/com/dtc/core/bootstrap/ioc/ExtensionModule.java（Guice版本）
+ * 
+ * ExtensionModule 是处理扩展协议的核心模块，功能本身非常重要，不能被弃用。
+ * 当自定义IOC容器完全实现后，可以使用此版本替换 Guice 版本。
+ * 
+ * @author Network Service Template
+ */
 public class ExtensionModule extends AbstractIoCModule {
     
     @Override
     public void configure(@NotNull NetworkApplicationContext context) {
-        // æ³¨åæ©å±ç®¡çç»ä»¶
+        // 注册扩展管理组件
         bind(context, "extensionManager", ExtensionManager.class);
         bind(context, "extensionBootstrap", ExtensionBootstrap.class);
         bind(context, "extensionLifecycleHandler", ExtensionLifecycleHandler.class);
         
-        // æ³¨åæ©å±ä¾èµ
+        // 注册扩展依赖
         bind(context, "httpExtension", HttpExtension.class);
         bind(context, "mqttExtension", MqttExtension.class);
         bind(context, "tcpExtension", TcpExtension.class);
@@ -33,16 +40,16 @@ public class ExtensionModule extends AbstractIoCModule {
     @Override
     @NotNull
     public String getModuleDescription() {
-        return "æ©å±ç³»ç»æ¨¡åï¼æä¾æ©å±ç®¡çãçå½å¨æç®¡çç­åè½";
+        return "扩展系统模块，提供扩展管理、生命周期管理等功能";
     }
     
     @Override
     @NotNull
     public String[] getDependencies() {
-        return new String[]{"NetworkServiceModule"}; // ä¾èµæ ¸å¿æ¨¡å
+        return new String[]{"NetworkServiceModule"}; // 依赖核心模块
     }
     
-    // æ¨¡æçç±»å®ä¹ï¼å®éé¡¹ç®ä¸­è¿äºç±»åºè¯¥å­å¨ï¼
+    // 模拟的类定义（实际项目中这些类应该存在）
     public static class ExtensionManager {}
     public static class ExtensionBootstrap {}
     public static class ExtensionLifecycleHandler {}

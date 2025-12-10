@@ -78,7 +78,7 @@ public class NetworkMessageConsumer implements QueueConsumer<NetworkMessageEvent
     }
 
     @Override
-    public void consume(NetworkMessageEvent event) {
+    public void consume(@NotNull NetworkMessageEvent event, long sequence, boolean endOfBatch) {
         if (event == null || !event.isValid()) {
             log.warn("Invalid event received, skipping");
             return;
@@ -98,20 +98,24 @@ public class NetworkMessageConsumer implements QueueConsumer<NetworkMessageEvent
             }
 
             // 更新统计信息
-            statisticsCollector.recordMessageReceived(protocolType, event.getMessageSize());
+            statisticsCollector.onRequestStart();
 
             // 处理消息
+            long startTime = System.currentTimeMillis();
             handler.accept(event);
+            long processingTime = System.currentTimeMillis() - startTime;
+            statisticsCollector.onRequestComplete(processingTime);
 
         } catch (Exception e) {
             log.error("Error processing message event: {}", event.getEventId(), e);
-            statisticsCollector.recordError(event.getProtocolType(), "CONSUME_ERROR");
+            statisticsCollector.onRequestError();
         }
     }
 
-    @Override
     public void onError(Throwable error) {
         log.error("Error in NetworkMessageConsumer", error);
-        statisticsCollector.recordError("UNKNOWN", "CONSUMER_ERROR");
+        if (statisticsCollector != null) {
+            statisticsCollector.onRequestError();
+        }
     }
 }

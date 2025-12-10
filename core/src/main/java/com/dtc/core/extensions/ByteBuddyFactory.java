@@ -430,7 +430,8 @@ public class ByteBuddyFactory {
                     originalClass.getName(), ctor);
             T instance = (T) ctor.newInstance(processedArgs);
 
-            // 茅陋聦猫炉聛氓庐聻盲戮聥盲赂聧盲赂潞莽漏?            if (instance == null) {
+            // 验证实例不为空
+            if (instance == null) {
                 throw new RuntimeException("Constructor returned null instance for: " + originalClass.getName());
             }
 

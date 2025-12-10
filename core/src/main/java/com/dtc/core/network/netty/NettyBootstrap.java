@@ -9,7 +9,9 @@ import javax.inject.Singleton;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Nettyéîå§©é£?çç»çéîå§©éå²î¸éåettyéå¶å§é£? * 
+ * Netty启动器
+ * 负责启动和停止Netty服务器
+ * 
  * @author Network Service Template
  */
 @Singleton
@@ -26,8 +28,9 @@ public class NettyBootstrap {
     }
 
     /**
-     * éîå§©Nettyéå¶å§é£?     * 
-     * @return éîå§©ç¹å±¾åé¨å¢uture
+     * 启动Netty服务器
+     * 
+     * @return 启动完成的Future
      */
     @NotNull
     public CompletableFuture<Void> startServer() {
@@ -39,20 +42,21 @@ public class NettyBootstrap {
 
         return CompletableFuture.runAsync(() -> {
             try {
-                log.info("é¦æ¡ éæ¿îé?Netty éå¶å§é£ã§ç²æµ ?..");
+                log.info("启动 Netty 服务器...");
                 nettyServer.start();
                 started = true;
-                log.info("é?Netty éå¶å§é£ã¥æéã¦åé?- ç¼æ ç²¶çåå¡çè¾©å");
+                log.info("Netty 服务器启动成功 - 监听端口：{}", nettyServer.getPort());
             } catch (Exception e) {
-                log.error("é?Netty éå¶å§é£ã¥æéã¥ãç?, e);
+                log.error("Netty 服务器启动失败", e);
                 throw new RuntimeException("Failed to start Netty server", e);
             }
         });
     }
 
     /**
-     * éæ»îNettyéå¶å§é£?     * 
-     * @return éæ»îç¹å±¾åé¨å¢uture
+     * 停止Netty服务器
+     * 
+     * @return 停止完成的Future
      */
     @NotNull
     public CompletableFuture<Void> stopServer() {
@@ -75,8 +79,9 @@ public class NettyBootstrap {
     }
 
     /**
-     * éîæå®¸ææé?     * 
-     * @return éîæå®¸ææé
+     * 检查是否已启动
+     * 
+     * @return 是否已启动
      */
     public boolean isStarted() {
         return started;

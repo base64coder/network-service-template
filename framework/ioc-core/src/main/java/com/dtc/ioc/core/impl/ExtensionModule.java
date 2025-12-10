@@ -4,8 +4,14 @@ import com.dtc.api.annotations.NotNull;
 import com.dtc.ioc.core.NetApplicationContext;
 
 /**
- * 扩展模块
+ * 扩展模块（自定义IOC实现版本 - 暂时不使用）
  * 配置扩展系统相关组件
+ * 
+ * 注意：此模块是自定义IOC容器的实现版本，当前框架暂时使用 Google Guice。
+ * 请使用 core/src/main/java/com/dtc/core/bootstrap/ioc/ExtensionModule.java（Guice版本）
+ * 
+ * ExtensionModule 是处理扩展协议的核心模块，功能本身非常重要，不能被弃用。
+ * 当自定义IOC容器完全实现后，可以使用此版本替换 Guice 版本。
  * 
  * @author Network Service Template
  */

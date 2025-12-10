@@ -12,7 +12,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * é¸å¨ç£éå æ³¦é£? * ç¹æ°­æ¹¡éå æ³¦éå±¾å§¤éå©å¯é? * 
+ * 指标收集器
+ * 负责定期收集和汇总系统中的指标数据
+ * 
  * @author Network Service Template
  */
 @Singleton
@@ -35,7 +37,7 @@ public class MetricsCollector {
     }
 
     /**
-     * éîå§©é¸å¨ç£éå æ³¦
+     * 启动指标收集器
      */
     public void start() {
         if (started) {
@@ -44,14 +46,15 @@ public class MetricsCollector {
 
         log.info("Starting metrics collection...");
 
-        // å§£?0ç»ææ¹éåç«´å¨âå¯é?        scheduler.scheduleAtFixedRate(this::collectMetrics, 30, 30, TimeUnit.SECONDS);
+        // 每30秒收集一次指标数据
+        scheduler.scheduleAtFixedRate(this::collectMetrics, 30, 30, TimeUnit.SECONDS);
 
         started = true;
         log.info("Metrics collection started");
     }
 
     /**
-     * éæ»îé¸å¨ç£éå æ³¦
+     * 停止指标收集器
      */
     public void stop() {
         if (!started) {
@@ -75,16 +78,17 @@ public class MetricsCollector {
     }
 
     /**
-     * éå æ³¦é¸å¨ç£
+     * 收集指标数据
      */
     private void collectMetrics() {
         try {
-            // éå æ³¦çâæé£ã¦å¯é?            Map<String, Long> counters = metricsRegistry.getAllCounters();
+            // 收集计数器指标
+            Map<String, Long> counters = metricsRegistry.getAllCounters();
             if (!counters.isEmpty()) {
                 log.debug("Collected {} counter metrics", counters.size());
             }
 
-            // éå æ³¦æµ îãé¸å¨ç£
+            // 收集仪表盘指标
             Map<String, Long> gauges = metricsRegistry.getAllGauges();
             if (!gauges.isEmpty()) {
                 log.debug("Collected {} gauge metrics", gauges.size());
@@ -96,8 +100,9 @@ public class MetricsCollector {
     }
 
     /**
-     * éîæå®¸ææé?     * 
-     * @return éîæå®¸ææé
+     * 检查是否已启动
+     * 
+     * @return 是否已启动
      */
     public boolean isStarted() {
         return started;

@@ -1,5 +1,7 @@
 package com.dtc.core.bootstrap.ioc;
 
+import com.dtc.core.messaging.MessageHandlerRegistry;
+import com.dtc.core.messaging.handler.MessageHandlerInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,8 +86,8 @@ public class ExtensionDependencyModule extends AbstractModule {
         bind(RequestBodyMethodArgumentResolver.class).asEagerSingleton();
         
         // 注册消息处理器注册表和初始化器
-        bind(com.dtc.core.messaging.MessageHandlerRegistry.class).asEagerSingleton();
-        bind(com.dtc.core.messaging.MessageHandlerInitializer.class).asEagerSingleton();
+        bind(MessageHandlerRegistry.class).asEagerSingleton();
+        bind(MessageHandlerInitializer.class).asEagerSingleton();
 
         log.info("Extension dependencies configured successfully");
     }
