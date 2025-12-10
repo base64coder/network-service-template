@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
@@ -52,13 +53,13 @@ class H2StateMachineTest {
         when(iter.done()).thenReturn(done);
 
         // Mock Engine
-        when(storageEngine.update(anyString(), any())).thenReturn(CompletableFuture.completedFuture(1));
+        when(storageEngine.update(eq(sql), eq("a"), eq(1))).thenReturn(CompletableFuture.completedFuture(1));
 
         // Execute
         stateMachine.onApply(iter);
 
         // Verify
-        verify(storageEngine).update(eq(sql), any());
+        verify(storageEngine).update(eq(sql), eq("a"), eq(1));
         verify(done).run(argThat(Status::isOk));
     }
 
@@ -76,7 +77,8 @@ class H2StateMachineTest {
         when(iter.done()).thenReturn(done);
 
         // Mock Engine Exception
-        when(storageEngine.update(anyString(), any())).thenThrow(new RuntimeException("DB Error"));
+        // When params is null, the varargs is passed as null array
+        when(storageEngine.update(anyString(), (Object[]) isNull())).thenThrow(new RuntimeException("DB Error"));
 
         // Execute
         stateMachine.onApply(iter);
