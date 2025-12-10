@@ -3,8 +3,8 @@ package com.dtc.core.bootstrap.config;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.api.parameter.ServerInformation;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.nio.file.Path;
 import java.util.Map;
 

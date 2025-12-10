@@ -6,7 +6,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * WebSocket 消息辅助工具类

@@ -9,7 +9,7 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

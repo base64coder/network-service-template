@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;

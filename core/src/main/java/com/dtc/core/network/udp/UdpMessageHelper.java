@@ -3,7 +3,7 @@ package com.dtc.core.network.udp;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

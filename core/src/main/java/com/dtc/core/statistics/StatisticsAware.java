@@ -4,7 +4,7 @@ import com.dtc.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * 统计信息感知接口

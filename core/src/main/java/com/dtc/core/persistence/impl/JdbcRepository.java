@@ -8,7 +8,7 @@ import com.dtc.annotations.persistence.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

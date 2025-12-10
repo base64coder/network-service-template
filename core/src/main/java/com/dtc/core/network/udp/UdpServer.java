@@ -1,6 +1,6 @@
 package com.dtc.core.network.udp;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

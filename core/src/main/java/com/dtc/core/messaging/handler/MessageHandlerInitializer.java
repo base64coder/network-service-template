@@ -1,6 +1,6 @@
 package com.dtc.core.messaging.handler;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

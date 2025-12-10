@@ -3,8 +3,8 @@ package com.dtc.core.persistence.impl;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
