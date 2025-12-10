@@ -40,7 +40,7 @@
         <hikaricp.version>5.0.1</hikaricp.version>
 
         <!-- 测试覆盖率 -->
-        <jacoco.version>0.8.8</jacoco.version>
+        <jacoco.version>0.8.11</jacoco.version>
         <surefire.version>3.2.5</surefire.version>
         <api.version>1.0-SNAPSHOT</api.version>
         <core.version>1.0-SNAPSHOT</core.version>
