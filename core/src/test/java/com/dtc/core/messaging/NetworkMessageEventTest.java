@@ -23,7 +23,22 @@ public class NetworkMessageEventTest {
     @DisplayName("测试事件创建")
     void testEventCreation() {
         assertNotNull(event);
-        assertNotNull(event.getEventId());
+        // eventId默认为null，需要通过builder设置
+    }
+
+    @Test
+    @DisplayName("测试Builder模式创建事件")
+    void testBuilderPattern() {
+        NetworkMessageEvent builtEvent = NetworkMessageEvent.builder()
+                .eventId("test-001")
+                .protocolType("HTTP")
+                .message("test message")
+                .build();
+        
+        assertNotNull(builtEvent);
+        assertEquals("test-001", builtEvent.getEventId());
+        assertEquals("HTTP", builtEvent.getProtocolType());
+        assertEquals("test message", builtEvent.getMessage());
     }
 
     @Test
@@ -44,9 +59,19 @@ public class NetworkMessageEventTest {
     @Test
     @DisplayName("测试事件有效性")
     void testEventValidity() {
-        event.setProtocolType("HTTP");
-        event.setMessage("test");
-        assertTrue(event.isValid());
+        // isValid()检查eventId、message和channelContext都不为null
+        io.netty.channel.ChannelHandlerContext mockContext = 
+            org.mockito.Mockito.mock(io.netty.channel.ChannelHandlerContext.class);
+        
+        NetworkMessageEvent validEvent = NetworkMessageEvent.builder()
+                .eventId("test-001")
+                .protocolType("HTTP")
+                .message("test")
+                .channelContext(mockContext)
+                .build();
+        
+        assertTrue(validEvent.isValid(), 
+            "Event should be valid with all required fields set");
     }
 
     @Test
