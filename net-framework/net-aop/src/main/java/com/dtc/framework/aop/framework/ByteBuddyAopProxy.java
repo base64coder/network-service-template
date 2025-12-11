@@ -72,7 +72,7 @@ public class ByteBuddyAopProxy implements AopProxy {
             
             ReflectiveMethodInvocation invocation = new ReflectiveMethodInvocation(
                     target,
-                    method,
+                    targetMethod,
                     args,
                     chain
             );

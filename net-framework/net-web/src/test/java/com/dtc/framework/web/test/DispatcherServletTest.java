@@ -20,6 +20,8 @@ import com.dtc.framework.web.servlet.HandlerInterceptor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -153,11 +155,6 @@ public class DispatcherServletTest {
         }
     }
 
-import java.util.HashMap;
-import java.util.Map;
-
-// ... imports ...
-
     @Test
     public void testPathVariable() throws Exception {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -251,4 +248,3 @@ import java.util.Map;
         }
     }
 }
-
