@@ -2,8 +2,17 @@ package com.dtc.core.framework.ioc.context;
 
 import com.dtc.core.framework.ioc.annotation.Bean;
 import com.dtc.core.framework.ioc.annotation.Component;
+import com.dtc.core.framework.ioc.annotation.Condition;
+import com.dtc.core.framework.ioc.annotation.Conditional;
+import com.dtc.core.framework.ioc.annotation.ConditionalOnClass;
+import com.dtc.core.framework.ioc.annotation.ConditionalOnMissingBean;
 import com.dtc.core.framework.ioc.annotation.Configuration;
+import com.dtc.core.framework.ioc.annotation.OnClassCondition;
+import com.dtc.core.framework.ioc.annotation.OnMissingBeanCondition;
 import com.dtc.core.framework.ioc.annotation.Scope;
+import com.dtc.core.framework.ioc.event.ContextClosedEvent;
+import com.dtc.core.framework.ioc.event.ContextRefreshedEvent;
+import com.dtc.core.framework.ioc.event.SimpleEventMulticaster;
 import com.dtc.core.framework.ioc.exception.BeansException;
 import com.dtc.core.framework.ioc.factory.BeanPostProcessor;
 import com.dtc.core.framework.ioc.factory.DefaultListableBeanFactory;
@@ -23,6 +32,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     private static final Logger log = LoggerFactory.getLogger(AnnotationConfigApplicationContext.class);
     private final DefaultListableBeanFactory beanFactory;
     private final String[] basePackages;
+    private final SimpleEventMulticaster eventMulticaster = new SimpleEventMulticaster();
 
     public AnnotationConfigApplicationContext(String... basePackages) {
         this.beanFactory = new DefaultListableBeanFactory();
@@ -46,13 +56,53 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         // 3. 实例化所有非懒加载单例
         beanFactory.preInstantiateSingletons();
         
+        // 4. 注册事件监听器
+        registerEventListeners();
+        
+        // 5. 发布ContextRefreshedEvent
+        eventMulticaster.multicastEvent(new ContextRefreshedEvent(this));
+        
         log.info("DtcIoc ApplicationContext refreshed successfully.");
+    }
+    
+    private void registerEventListeners() {
+        String[] beanNames = beanFactory.getBeanDefinitionNames();
+        for (String beanName : beanNames) {
+            BeanDefinition bd = beanFactory.getBeanDefinition(beanName);
+            if (bd != null && bd.getBeanClass() != null) {
+                // 检查是否实现了ApplicationListener接口
+                if (com.dtc.core.framework.ioc.event.ApplicationListener.class.isAssignableFrom(bd.getBeanClass())) {
+                    try {
+                        Object listener = beanFactory.getBean(beanName);
+                        eventMulticaster.addListener((com.dtc.core.framework.ioc.event.ApplicationListener<?>) listener);
+                    } catch (Exception e) {
+                        log.warn("Failed to register event listener: {}", beanName, e);
+                    }
+                }
+            }
+        }
     }
     
     @Override
     public void close() {
         log.info("Closing DtcIoc ApplicationContext...");
-        // 销毁 Bean 逻辑
+        
+        // 发布ContextClosedEvent
+        eventMulticaster.multicastEvent(new ContextClosedEvent(this));
+        
+        // 销毁所有单例Bean
+        String[] beanNames = beanFactory.getBeanDefinitionNames();
+        for (String beanName : beanNames) {
+            try {
+                Object bean = beanFactory.getBean(beanName);
+                BeanDefinition bd = beanFactory.getBeanDefinition(beanName);
+                if (bd != null && bd.isSingleton()) {
+                    ((DefaultListableBeanFactory) beanFactory).invokeDestroyMethods(beanName, bean, bd);
+                }
+            } catch (Exception e) {
+                log.warn("Error destroying bean '{}'", beanName, e);
+            }
+        }
     }
 
     @Override
@@ -75,6 +125,12 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     private void parseConfigurationClass(Class<?> configClass, String configBeanName) {
         for (Method method : configClass.getDeclaredMethods()) {
             if (method.isAnnotationPresent(Bean.class)) {
+                // 检查条件装配
+                if (!shouldRegisterMethod(method)) {
+                    log.debug("Skipping @Bean method {} due to condition", method.getName());
+                    continue;
+                }
+                
                 Bean beanAnno = method.getAnnotation(Bean.class);
                 String methodBeanName = method.getName();
                 if (beanAnno.value().length > 0) {
@@ -103,6 +159,41 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
             }
         }
     }
+    
+    private boolean shouldRegisterMethod(Method method) {
+        // 检查 @Conditional
+        if (method.isAnnotationPresent(Conditional.class)) {
+            Conditional conditional = method.getAnnotation(Conditional.class);
+            try {
+                Condition condition = conditional.value().getDeclaredConstructor().newInstance();
+                return condition.matches();
+            } catch (Exception e) {
+                log.warn("Failed to instantiate condition for method {}", method.getName(), e);
+                return false;
+            }
+        }
+        
+        // 检查 @ConditionalOnClass
+        if (method.isAnnotationPresent(ConditionalOnClass.class)) {
+            ConditionalOnClass onClass = method.getAnnotation(ConditionalOnClass.class);
+            OnClassCondition condition = new OnClassCondition(onClass.value());
+            if (!condition.matches()) {
+                return false;
+            }
+        }
+        
+        // 检查 @ConditionalOnMissingBean
+        if (method.isAnnotationPresent(ConditionalOnMissingBean.class)) {
+            ConditionalOnMissingBean onMissing = method.getAnnotation(ConditionalOnMissingBean.class);
+            OnMissingBeanCondition condition = new OnMissingBeanCondition(onMissing.value(), onMissing.name());
+            condition.setBeanFactory(beanFactory);
+            if (!condition.matches()) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
 
     private void registerBeanPostProcessors() {
         String[] beanNames = beanFactory.getBeanDefinitionNames();
@@ -125,6 +216,12 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     }
     
     private void registerBean(Class<?> clazz) {
+        // 检查条件装配
+        if (!shouldRegister(clazz)) {
+            log.debug("Skipping bean registration for {} due to condition", clazz.getName());
+            return;
+        }
+        
         BeanDefinition bd = new BeanDefinition();
         bd.setBeanClass(clazz);
         
@@ -149,6 +246,41 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         
         // 简单处理：如果已存在，覆盖还是忽略？目前是覆盖
         beanFactory.registerBeanDefinition(beanName, bd);
+    }
+    
+    private boolean shouldRegister(Class<?> clazz) {
+        // 检查 @Conditional
+        if (clazz.isAnnotationPresent(Conditional.class)) {
+            Conditional conditional = clazz.getAnnotation(Conditional.class);
+            try {
+                Condition condition = conditional.value().getDeclaredConstructor().newInstance();
+                return condition.matches();
+            } catch (Exception e) {
+                log.warn("Failed to instantiate condition for {}", clazz.getName(), e);
+                return false;
+            }
+        }
+        
+        // 检查 @ConditionalOnClass
+        if (clazz.isAnnotationPresent(ConditionalOnClass.class)) {
+            ConditionalOnClass onClass = clazz.getAnnotation(ConditionalOnClass.class);
+            OnClassCondition condition = new OnClassCondition(onClass.value());
+            if (!condition.matches()) {
+                return false;
+            }
+        }
+        
+        // 检查 @ConditionalOnMissingBean
+        if (clazz.isAnnotationPresent(ConditionalOnMissingBean.class)) {
+            ConditionalOnMissingBean onMissing = clazz.getAnnotation(ConditionalOnMissingBean.class);
+            OnMissingBeanCondition condition = new OnMissingBeanCondition(onMissing.value(), onMissing.name());
+            condition.setBeanFactory(beanFactory);
+            if (!condition.matches()) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     @Override

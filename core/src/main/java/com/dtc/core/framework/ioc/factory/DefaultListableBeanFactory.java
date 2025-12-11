@@ -1,6 +1,8 @@
 package com.dtc.core.framework.ioc.factory;
 
 import com.dtc.core.framework.ioc.annotation.Inject;
+import com.dtc.core.framework.ioc.annotation.PostConstruct;
+import com.dtc.core.framework.ioc.annotation.PreDestroy;
 import com.dtc.core.framework.ioc.exception.BeanCreationException;
 import com.dtc.core.framework.ioc.exception.BeansException;
 import com.dtc.core.framework.ioc.model.BeanDefinition;
@@ -9,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -329,8 +332,44 @@ public class DefaultListableBeanFactory implements BeanFactory {
     }
 
     private void invokeInitMethods(String beanName, Object bean, BeanDefinition bd) throws Exception {
+        // 1. 调用 @PostConstruct 方法
+        Class<?> clazz = bean.getClass();
+        while (clazz != null && clazz != Object.class) {
+            for (Method method : clazz.getDeclaredMethods()) {
+                if (method.isAnnotationPresent(PostConstruct.class)) {
+                    method.setAccessible(true);
+                    method.invoke(bean);
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+        
+        // 2. 调用 init-method
         if (bd.getInitMethodName() != null && !bd.getInitMethodName().isEmpty()) {
             bean.getClass().getMethod(bd.getInitMethodName()).invoke(bean);
+        }
+    }
+    
+    public void invokeDestroyMethods(String beanName, Object bean, BeanDefinition bd) throws Exception {
+        try {
+            // 1. 调用 @PreDestroy 方法
+            Class<?> clazz = bean.getClass();
+            while (clazz != null && clazz != Object.class) {
+                for (Method method : clazz.getDeclaredMethods()) {
+                    if (method.isAnnotationPresent(PreDestroy.class)) {
+                        method.setAccessible(true);
+                        method.invoke(bean);
+                    }
+                }
+                clazz = clazz.getSuperclass();
+            }
+            
+            // 2. 调用 destroy-method
+            if (bd.getDestroyMethodName() != null && !bd.getDestroyMethodName().isEmpty()) {
+                bean.getClass().getMethod(bd.getDestroyMethodName()).invoke(bean);
+            }
+        } catch (Exception e) {
+            log.warn("Error invoking destroy methods for bean '{}'", beanName, e);
         }
     }
     
