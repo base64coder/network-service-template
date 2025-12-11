@@ -1,0 +1,270 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] net-framework                                                      [pom]
+[INFO] net-beans                                                          [jar]
+[INFO] net-aop                                                            [jar]
+[INFO] net-context                                                        [jar]
+[INFO] 
+[INFO] -----------------------< com.dtc:net-framework >------------------------
+[INFO] Building net-framework 1.0-SNAPSHOT                                [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ net-framework ---
+[INFO] 
+[INFO] -------------------------< com.dtc:net-beans >--------------------------
+[INFO] Building net-beans 1.0-SNAPSHOT                                    [2/4]
+[INFO]   from net-beans/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+Downloading from internal: https://repo.njslt.com.cn/repository/dtc-maven-group/com/dtc/annotations/1.0-SNAPSHOT/maven-metadata.xml
+Downloading from internal: https://repo.njslt.com.cn/repository/dtc-maven-group/com/dtc/framework/1.0-SNAPSHOT/maven-metadata.xml
+Downloading from internal: https://repo.njslt.com.cn/repository/dtc-maven-group/com/dtc/network-service-template/1.0-SNAPSHOT/maven-metadata.xml
+Downloading from internal: https://repo.njslt.com.cn/repository/dtc-maven-group/com/dtc/api/1.0-SNAPSHOT/maven-metadata.xml
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ net-beans ---
+[INFO] Deleting /Users/liqing/Works/projects/network-service-template/net-framework/net-beans/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ net-beans ---
+[INFO] skip non existing resourceDirectory /Users/liqing/Works/projects/network-service-template/net-framework/net-beans/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ net-beans ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 22 source files with javac [debug target 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ net-beans ---
+[INFO] skip non existing resourceDirectory /Users/liqing/Works/projects/network-service-template/net-framework/net-beans/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ net-beans ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --------------------------< com.dtc:net-aop >---------------------------
+[INFO] Building net-aop 1.0-SNAPSHOT                                      [3/4]
+[INFO]   from net-aop/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ net-aop ---
+[INFO] Deleting /Users/liqing/Works/projects/network-service-template/net-framework/net-aop/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ net-aop ---
+[INFO] skip non existing resourceDirectory /Users/liqing/Works/projects/network-service-template/net-framework/net-aop/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ net-aop ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 1 source file with javac [debug target 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ net-aop ---
+[INFO] skip non existing resourceDirectory /Users/liqing/Works/projects/network-service-template/net-framework/net-aop/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ net-aop ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] ------------------------< com.dtc:net-context >-------------------------
+[INFO] Building net-context 1.0-SNAPSHOT                                  [4/4]
+[INFO]   from net-context/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ net-context ---
+[INFO] Deleting /Users/liqing/Works/projects/network-service-template/net-framework/net-context/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ net-context ---
+[INFO] skip non existing resourceDirectory /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ net-context ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 8 source files with javac [debug target 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ net-context ---
+[INFO] skip non existing resourceDirectory /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ net-context ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 16 source files with javac [debug target 21] to target/test-classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[6,29] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[8,36] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/performance/IoCPerformanceTest.java:[6,29] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[7,29] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[9,36] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[6,29] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[8,36] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[12,6] 找不到符号
+  符号:   类 Test
+  位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/performance/IoCPerformanceTest.java:[15,6] 找不到符号
+  符号:   类 Test
+  位置: 类 com.dtc.framework.test.performance.IoCPerformanceTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/performance/IoCPerformanceTest.java:[27,6] 找不到符号
+  符号:   类 Test
+  位置: 类 com.dtc.framework.test.performance.IoCPerformanceTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[13,6] 找不到符号
+  符号:   类 Test
+  位置: 类 com.dtc.framework.test.complex.FactoryMethodTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[12,6] 找不到符号
+  符号:   类 Test
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[20,6] 找不到符号
+  符号:   类 Test
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[28,6] 找不到符号
+  符号:   类 Test
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[36,6] 找不到符号
+  符号:   类 Test
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[21,9] 找不到符号
+  符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.ServiceA)
+  位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[22,9] 找不到符号
+  符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.ServiceB)
+  位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[23,9] 找不到符号
+  符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.ServiceC)
+  位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[25,9] 找不到符号
+  符号:   方法 assertSame(com.dtc.framework.test.beans.complex.ServiceB,com.dtc.framework.test.beans.complex.ServiceB)
+  位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[26,9] 找不到符号
+  符号:   方法 assertSame(com.dtc.framework.test.beans.complex.ServiceC,com.dtc.framework.test.beans.complex.ServiceC)
+  位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[27,9] 找不到符号
+  符号:   方法 assertSame(com.dtc.framework.test.beans.complex.ServiceA,com.dtc.framework.test.beans.complex.ServiceA)
+  位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[20,9] 找不到符号
+  符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.Repository)
+  位置: 类 com.dtc.framework.test.complex.FactoryMethodTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[21,9] 找不到符号
+  符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.Service)
+  位置: 类 com.dtc.framework.test.complex.FactoryMethodTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[22,9] 找不到符号
+  符号:   方法 assertSame(com.dtc.framework.test.beans.complex.Repository,com.dtc.framework.test.beans.complex.Repository)
+  位置: 类 com.dtc.framework.test.complex.FactoryMethodTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[16,9] 找不到符号
+  符号:   方法 assertNotNull(com.dtc.framework.test.beans.basic.UserService)
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[17,9] 找不到符号
+  符号:   方法 assertNotNull(com.dtc.framework.test.beans.basic.UserRepository)
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[25,9] 找不到符号
+  符号:   方法 assertSame(com.dtc.framework.test.beans.basic.UserService,com.dtc.framework.test.beans.basic.UserService)
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[33,9] 找不到符号
+  符号:   方法 assertNotSame(com.dtc.framework.test.beans.basic.PrototypeBean,com.dtc.framework.test.beans.basic.PrototypeBean)
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[40,9] 找不到符号
+  符号:   方法 assertTrue(boolean)
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[41,9] 找不到符号
+  符号:   方法 assertFalse(boolean)
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[44,9] 找不到符号
+  符号:   方法 assertTrue(boolean)
+  位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[INFO] 31 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for net-framework 1.0-SNAPSHOT:
+[INFO] 
+[INFO] net-framework ...................................... SUCCESS [  0.117 s]
+[INFO] net-beans .......................................... SUCCESS [  1.238 s]
+[INFO] net-aop ............................................ SUCCESS [  0.107 s]
+[INFO] net-context ........................................ FAILURE [  0.195 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.753 s
+[INFO] Finished at: 2025-12-11T22:21:11+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:testCompile (default-testCompile) on project net-context: Compilation failure: Compilation failure: 
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[6,29] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[8,36] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/performance/IoCPerformanceTest.java:[6,29] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[7,29] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[9,36] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[6,29] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[8,36] 程序包org.junit.jupiter.api不存在
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[12,6] 找不到符号
+[ERROR]   符号:   类 Test
+[ERROR]   位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/performance/IoCPerformanceTest.java:[15,6] 找不到符号
+[ERROR]   符号:   类 Test
+[ERROR]   位置: 类 com.dtc.framework.test.performance.IoCPerformanceTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/performance/IoCPerformanceTest.java:[27,6] 找不到符号
+[ERROR]   符号:   类 Test
+[ERROR]   位置: 类 com.dtc.framework.test.performance.IoCPerformanceTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[13,6] 找不到符号
+[ERROR]   符号:   类 Test
+[ERROR]   位置: 类 com.dtc.framework.test.complex.FactoryMethodTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[12,6] 找不到符号
+[ERROR]   符号:   类 Test
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[20,6] 找不到符号
+[ERROR]   符号:   类 Test
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[28,6] 找不到符号
+[ERROR]   符号:   类 Test
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[36,6] 找不到符号
+[ERROR]   符号:   类 Test
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[21,9] 找不到符号
+[ERROR]   符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.ServiceA)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[22,9] 找不到符号
+[ERROR]   符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.ServiceB)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[23,9] 找不到符号
+[ERROR]   符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.ServiceC)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[25,9] 找不到符号
+[ERROR]   符号:   方法 assertSame(com.dtc.framework.test.beans.complex.ServiceB,com.dtc.framework.test.beans.complex.ServiceB)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[26,9] 找不到符号
+[ERROR]   符号:   方法 assertSame(com.dtc.framework.test.beans.complex.ServiceC,com.dtc.framework.test.beans.complex.ServiceC)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/CircularDependencyTest.java:[27,9] 找不到符号
+[ERROR]   符号:   方法 assertSame(com.dtc.framework.test.beans.complex.ServiceA,com.dtc.framework.test.beans.complex.ServiceA)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.CircularDependencyTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[20,9] 找不到符号
+[ERROR]   符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.Repository)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.FactoryMethodTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[21,9] 找不到符号
+[ERROR]   符号:   方法 assertNotNull(com.dtc.framework.test.beans.complex.Service)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.FactoryMethodTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/complex/FactoryMethodTest.java:[22,9] 找不到符号
+[ERROR]   符号:   方法 assertSame(com.dtc.framework.test.beans.complex.Repository,com.dtc.framework.test.beans.complex.Repository)
+[ERROR]   位置: 类 com.dtc.framework.test.complex.FactoryMethodTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[16,9] 找不到符号
+[ERROR]   符号:   方法 assertNotNull(com.dtc.framework.test.beans.basic.UserService)
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[17,9] 找不到符号
+[ERROR]   符号:   方法 assertNotNull(com.dtc.framework.test.beans.basic.UserRepository)
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[25,9] 找不到符号
+[ERROR]   符号:   方法 assertSame(com.dtc.framework.test.beans.basic.UserService,com.dtc.framework.test.beans.basic.UserService)
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[33,9] 找不到符号
+[ERROR]   符号:   方法 assertNotSame(com.dtc.framework.test.beans.basic.PrototypeBean,com.dtc.framework.test.beans.basic.PrototypeBean)
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[40,9] 找不到符号
+[ERROR]   符号:   方法 assertTrue(boolean)
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[41,9] 找不到符号
+[ERROR]   符号:   方法 assertFalse(boolean)
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] /Users/liqing/Works/projects/network-service-template/net-framework/net-context/src/test/java/com/dtc/framework/test/DtcIocBasicTest.java:[44,9] 找不到符号
+[ERROR]   符号:   方法 assertTrue(boolean)
+[ERROR]   位置: 类 com.dtc.framework.test.DtcIocBasicTest
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :net-context
