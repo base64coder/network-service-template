@@ -3,8 +3,11 @@ package com.dtc.core.diagnostic;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * HealthChecker 测试
@@ -12,11 +15,16 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("健康检查器测试")
 public class HealthCheckerTest {
 
+    @Mock
+    private DiagnosticService mockDiagnosticService;
+
     private HealthChecker healthChecker;
+    private AutoCloseable mocks;
 
     @BeforeEach
     void setUp() {
-        healthChecker = new HealthChecker();
+        mocks = MockitoAnnotations.openMocks(this);
+        healthChecker = new HealthChecker(mockDiagnosticService);
     }
 
     @Test
@@ -26,22 +34,16 @@ public class HealthCheckerTest {
     }
 
     @Test
-    @DisplayName("测试执行健康检查")
-    void testPerformHealthCheck() {
-        assertDoesNotThrow(() -> {
-            boolean healthy = healthChecker.isHealthy();
-            // 默认应该是健康的
-            assertTrue(healthy);
-        });
+    @DisplayName("测试启动健康检查器")
+    void testStart() {
+        assertDoesNotThrow(() -> healthChecker.start());
     }
 
     @Test
-    @DisplayName("测试获取健康状态")
-    void testGetHealthStatus() {
-        assertDoesNotThrow(() -> {
-            String status = healthChecker.getHealthStatus();
-            assertNotNull(status);
-        });
+    @DisplayName("测试停止健康检查器")
+    void testStop() {
+        healthChecker.start();
+        assertDoesNotThrow(() -> healthChecker.stop());
     }
 }
 
