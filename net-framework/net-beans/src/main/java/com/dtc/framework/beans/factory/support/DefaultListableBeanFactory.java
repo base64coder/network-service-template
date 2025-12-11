@@ -5,6 +5,8 @@ import com.dtc.framework.beans.annotation.PostConstruct;
 import com.dtc.framework.beans.annotation.PreDestroy;
 import com.dtc.framework.beans.factory.BeanFactory;
 import com.dtc.framework.beans.factory.BeanPostProcessor;
+import com.dtc.framework.beans.factory.accessor.BeanAccessor;
+import com.dtc.framework.beans.factory.accessor.ByteBuddyAccessorFactory;
 import com.dtc.framework.beans.factory.config.BeanDefinition;
 import com.dtc.framework.beans.exception.BeanCreationException;
 import com.dtc.framework.beans.exception.BeansException;
@@ -41,6 +43,9 @@ public class DefaultListableBeanFactory implements BeanFactory {
 
     // 正在创建中的Bean集合
     private final Set<String> singletonsCurrentlyInCreation = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    // 注入元数据缓存
+    private final Map<Class<?>, InjectionMetadata> injectionMetadataCache = new ConcurrentHashMap<>();
 
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) {
         beanDefinitionMap.put(beanName, beanDefinition);
@@ -252,24 +257,31 @@ public class DefaultListableBeanFactory implements BeanFactory {
         
         // fallback to no-arg
         try {
-            return beanClass.getDeclaredConstructor().newInstance();
-        } catch (NoSuchMethodException e) {
-            // 如果没有无参构造函数，且没有@Inject标注的构造函数，且只有一个构造函数，尝试自动注入
-             if (constructors.length == 1) {
-                Constructor<?> c = constructors[0];
-                c.setAccessible(true);
-                Class<?>[] paramTypes = c.getParameterTypes();
-                 if (paramTypes.length > 0) {
-                     Object[] args = new Object[paramTypes.length];
-                     for (int i = 0; i < paramTypes.length; i++) {
-                         args[i] = getBean(paramTypes[i]);
+            // 使用 ByteBuddy 高性能 Accessor 创建实例
+            BeanAccessor accessor = ByteBuddyAccessorFactory.getBeanAccessor(beanClass);
+            return accessor.newInstance();
+        } catch (Exception e) {
+            // 如果 ByteBuddy 失败，尝试反射（虽然 Factory 内部已经有降级，这里双重保险）
+            try {
+                return beanClass.getDeclaredConstructor().newInstance();
+            } catch (Exception ex) {
+                 // 如果没有无参构造函数，且没有@Inject标注的构造函数，且只有一个构造函数，尝试自动注入
+                 if (constructors.length == 1) {
+                    Constructor<?> c = constructors[0];
+                    c.setAccessible(true);
+                    Class<?>[] paramTypes = c.getParameterTypes();
+                     if (paramTypes.length > 0) {
+                         Object[] args = new Object[paramTypes.length];
+                         for (int i = 0; i < paramTypes.length; i++) {
+                             args[i] = getBean(paramTypes[i]);
+                         }
+                         return c.newInstance(args);
+                     } else {
+                         return c.newInstance();
                      }
-                     return c.newInstance(args);
-                 } else {
-                     return c.newInstance();
                  }
-             }
-             throw e;
+                 throw e;
+            }
         }
     }
 
@@ -294,17 +306,15 @@ public class DefaultListableBeanFactory implements BeanFactory {
     }
 
     private void populateBean(String beanName, BeanDefinition bd, Object instance) throws Exception {
-        // 字段注入
-        Class<?> clazz = bd.getBeanClass();
-        while (clazz != null && clazz != Object.class) {
-            for (Field field : clazz.getDeclaredFields()) {
-                if (field.isAnnotationPresent(Inject.class)) {
-                    field.setAccessible(true);
-                    Object value = getBean(field.getType());
-                    field.set(instance, value);
-                }
-            }
-            clazz = clazz.getSuperclass();
+        Class<?> beanClass = bd.getBeanClass();
+        // 使用 InjectionMetadata 缓存注入点，避免重复反射扫描
+        InjectionMetadata metadata = injectionMetadataCache.computeIfAbsent(beanClass, 
+            clazz -> InjectionMetadata.forClass(clazz));
+        
+        try {
+            metadata.inject(instance, beanName, this);
+        } catch (Throwable e) {
+            throw new BeanCreationException(beanName, "Injection of autowired dependencies failed", e);
         }
     }
 
