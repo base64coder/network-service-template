@@ -6,7 +6,7 @@ import com.dtc.framework.aop.ClassFilter;
 /**
      * å§ç»å¹éçç±»è¿æ»¤å¨
 @author Network Service Template
-/
+ */
 public class TrueClassFilter implements ClassFilter {
 
     public static final TrueClassFilter INSTANCE = new TrueClassFilter();

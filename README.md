@@ -1,357 +1,163 @@
 # Network Service Template
 
-基于Netty的扩展系统设计的最小化Maven工程模板，支持网络协议的热插拔扩展。
+基于 Netty 和 LMAX Disruptor 的高性能、模块化网络服务框架模板。它不仅支持网络协议的热插拔扩展，还内置了强大的持久化层和分布式事务支持，旨在为开发者提供一个低延迟、高吞吐、易扩展的下一代网络应用基座。
 
 ## 🚀 项目特性
 
-- **🔌 热插拔扩展** - 支持运行时动态加载/卸载网络协议扩展
-- **🏗️ 模块化架构** - 清晰的模块分离，易于维护和扩展
-- **🌐 多协议支持** - 内置MQTT、WebSocket、TCP等协议扩展示例
-- **⚡ 高性能** - 基于Netty的高性能网络框架
-- **🛠️ 易于开发** - 简单的API接口，快速开发自定义协议扩展
+- **⚡ 极致性能**
+    - **Netty 驱动** - 基于 Netty 4.x 的异步非阻塞 IO 模型。
+    - **Disruptor 核心** - 引入 [LMAX Disruptor](https://lmax-exchange.github.io/disruptor/) 无锁环形队列作为核心消息总线，实现纳秒级消息分发。
+    - **零拷贝** - 优化的缓冲区管理和高效的 Protobuf 序列化支持。
+
+- **💾 强大的持久化层 (Robust Persistence)**
+    - **多方言支持** - 内置 MySQL, PostgreSQL, H2 等多种数据库方言适配 (`Dialect`)。
+    - **读写分离** - 支持主从 (`Master-Slave`) 多数据源智能路由，通过 `@Transactional(readOnly=true)` 自动切换。
+    - **分布式事务** - 内置轻量级分布式事务管理器，支持跨服务的全局事务协调 (`@DistributedTransactional`)。
+
+- **🏗️ 现代化的 IoC 容器**
+    - **轻量级注入** - 实现了参考 Guice/Spring 的轻量级依赖注入容器。
+    - **全功能 AOP** - 支持切面编程，轻松实现日志、事务、权限控制。
+    - **生命周期管理** - 完善的 Bean 生命周期和应用事件机制。
+
+- **🌐 全栈协议支持**
+    - **多协议接入** - 内置 HTTP/HTTPS, WebSocket, TCP, MQTT, UDP 支持。
+    - **热插拔扩展** - 协议层采用 SPI 设计，支持运行时动态加载/卸载协议扩展。
+
+- **🛠️ 开发者友好**
+    - **注解驱动** - 使用 `@MessageHandler`, `@Inject`, `@Repository`, `@Transactional` 等注解简化开发。
+    - **模块化设计** - 清晰的 `api`, `core`, `framework` 分层架构。
+    - **完备的监控** - 内置指标收集 (`Metrics`)、健康检查 (`HealthCheck`) 和系统诊断。
 
 ## 📁 项目结构
 
 ```
 network-service-template/
-├── pom.xml                          # 父POM
-├── api/                             # 扩展API接口
-│   ├── pom.xml
-│   └── src/main/java/com/network/api/
-├── core/                            # 核心框架
-│   ├── pom.xml
-│   └── src/main/java/com/network/core/
-├── extensions/                      # 协议扩展
-│   ├── mqtt-extension/              # MQTT协议扩展
-│   ├── websocket-extension/         # WebSocket协议扩展
-│   └── tcp-extension/               # TCP协议扩展
-└── distribution/                    # 发行包
-    ├── pom.xml
-    └── src/main/resources/
+├── api/                             # 扩展 API 接口定义
+├── core/                            # 核心框架实现 (Netty, Disruptor, Persistence)
+├── framework/                       # 基础框架层
+│   ├── annotations/                 # 核心注解定义
+│   ├── beans/                       # 自研 IoC/AOP 容器实现
+├── extensions/                      # 协议扩展示例
+│   ├── mqtt-extension/              # MQTT 协议实现
+│   ├── websocket-extension/         # WebSocket 协议实现
+│   └── tcp-extension/               # TCP 协议实现
+└── distribution/                    # 发行包构建
 ```
 
 ## 🏗️ 核心架构
 
-### 分层设计架构
+### 系统分层
 
 ```mermaid
 graph TD
-    A[NetworkService] --> B[IoCContainerFactory]
-    B --> C[Module Layer]
-    
-    C --> D[SystemInformationModule]
-    C --> E[ConfigurationModule]
-    C --> F[NettyModule]
-    C --> G[ExtensionModule]
-    C --> H[MetricsModule]
-    C --> I[SecurityModule]
-    C --> J[DiagnosticModule]
-    C --> K[PersistenceModule]
-    
-    A --> L[NetworkServiceLauncher]
-    A --> M[ExtensionBootstrap]
-    A --> N[ExtensionManager]
-    
-    H --> M[ExtensionBootstrap]
-    M --> N[ExtensionLoader]
-    N --> O[ExtensionManager]
-    O --> P[ProtocolExtension]
-    P --> Q[MessageHandler]
+    User[用户业务代码] --> Extension[扩展层 (API/SPI)]
+    Extension --> Framework[框架层 (IoC, AOP, Utils)]
+    Framework --> Persistence[持久化层 (JDBC, TX, Dialect)]
+    Persistence --> Core[核心层 (Netty, Disruptor, Metrics)]
 ```
 
-### 扩展系统设计
+### 消息处理流水线
 
-```mermaid
-graph TD
-    A[NetworkService] --> B[ExtensionBootstrap]
-    B --> C[ExtensionLoader]
-    C --> D[ExtensionManager]
-    D --> E[ProtocolExtension]
-    E --> F[MessageHandler]
-    
-    G[扩展目录] --> C
-    H[扩展JAR] --> C
-    I[扩展XML] --> C
-```
+采用了 Reactor + Disruptor 模式，将 IO 线程与业务线程彻底解耦：
 
-### 扩展生命周期
-
-1. **扫描阶段** - 扫描extensions目录，发现扩展
-2. **加载阶段** - 创建独立ClassLoader，加载扩展类
-3. **启动阶段** - 调用扩展的extensionStart方法
-4. **运行阶段** - 处理网络消息和协议逻辑
-5. **停止阶段** - 调用扩展的extensionStop方法
-6. **清理阶段** - 清理资源，关闭ClassLoader
+1.  **Netty IO Threads**: 负责连接接入、协议编解码 (Codec)。
+2.  **Disruptor RingBuffer**: 无锁高性能队列，缓冲并通过内存屏障传递消息。
+3.  **Worker Threads**: 消费者从队列获取消息，路由到具体的 `@MessageHandler` 执行业务逻辑。
 
 ## 🚀 快速开始
 
-### 1. 构建项目
+### 1. 环境要求
+*   JDK 17+ (推荐 21)
+*   Maven 3.8+
+
+### 2. 构建项目
 
 ```bash
 # 克隆项目
 git clone <repository-url>
 cd network-service-template
 
-# 构建项目
-mvn clean package
+# 构建并运行测试
+mvn clean install
 ```
 
-### 2. 运行服务
+### 3. 运行服务
 
 ```bash
 # 进入发行包目录
 cd distribution/target/network-service-1.0.0
 
-# 启动服务 (Linux/Mac)
+# 启动服务
 ./bin/start.sh
-
-# 启动服务 (Windows)
-bin\start.bat
 ```
 
-### 3. 验证服务
+## 🔧 开发指南
 
-```bash
-# 检查MQTT服务 (端口1883)
-telnet localhost 1883
-
-# 检查WebSocket服务 (端口8080)
-curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" http://localhost:8080/
-
-# 测试TCP服务 (端口9999)
-echo "ping" | nc localhost 9999
-echo "hello" | nc localhost 9999
-```
-
-## 🏗️ 分层设计架构
-
-### 分层依赖注入设计
-
-基于模块化设计，我们的模板采用了清晰的分层依赖注入架构：
-
-#### 1. **核心启动器层**
-- `NetworkService` - 网络服务主类
-- `IoCContainerFactory` - IoC容器工厂
-- `NetworkServiceLauncher` - 网络服务启动器
-- `ExtensionBootstrap` - 扩展系统启动器
-
-#### 2. **模块层**
-- `SystemInformationModule` - 系统信息模块
-- `ConfigurationModule` - 配置管理模块
-- `NettyModule` - 网络通信模块
-- `ExtensionModule` - 扩展系统模块
-- `MetricsModule` - 指标监控模块
-- `SecurityModule` - 安全认证模块
-- `DiagnosticModule` - 诊断服务模块
-- `PersistenceModule` - 持久化模块
-
-#### 3. **服务层**
-- `ConfigurationService` - 配置服务
-- `MetricsRegistry` - 指标注册表
-- `SecurityManager` - 安全管理器
-- `DiagnosticService` - 诊断服务
-- `PersistenceManager` - 持久化管理器
-
-#### 4. **扩展层**
-- `ExtensionLoader` - 扩展加载器
-- `ExtensionManager` - 扩展管理器
-- `ExtensionLifecycleHandler` - 扩展生命周期处理器
-
-### 分层优势
-
-1. **🔧 模块化** - 每个模块职责单一，易于维护
-2. **🔄 可扩展** - 新功能通过添加新模块实现
-3. **🧪 可测试** - 每个模块可以独立测试
-4. **📊 可观测** - 完整的监控和诊断体系
-5. **🔒 安全性** - 统一的安全管理机制
-6. **🎯 清晰性** - 类名明确表达职责，避免混淆
-7. **🏗️ 分层性** - 依赖关系清晰，便于理解和维护
-
-### 类名设计原则
-
-为了避免同名类造成的混淆，我们采用了清晰的命名策略：
-
-- **`IoCContainerFactory`** - IoC容器工厂，负责创建依赖注入容器
-- **`NetworkServiceLauncher`** - 网络服务启动器，负责启动网络服务组件
-- **`NetworkService`** - 网络服务主类，协调各个组件
-- **`ExtensionBootstrap`** - 扩展系统启动器，管理扩展生命周期
-- **`ExtensionManager`** - 扩展管理器，管理已加载的扩展
-
-## 🔧 开发自定义扩展
-
-### 1. 创建扩展项目
-
-```bash
-# 创建新的扩展模块
-mkdir extensions/my-protocol-extension
-cd extensions/my-protocol-extension
-
-# 创建Maven项目结构
-mkdir -p src/main/java/com/network/myprotocol
-```
-
-### 2. 实现扩展接口
+### 1. 声明持久化 Repository
+框架提供了类似 Spring Data 的 `JdbcRepository`：
 
 ```java
-// MyProtocolExtension.java
-public class MyProtocolExtension implements ExtensionMain, ProtocolExtension {
-    
-    @Override
-    public void extensionStart(ExtensionStartInput input, ExtensionStartOutput output) {
-        // 扩展启动逻辑
-        System.out.println("My Protocol Extension started!");
+// 1. 定义实体
+@Table(name = "users")
+public class User {
+    @Id(keyType = KeyType.AUTO)
+    private Long id;
+    private String username;
+}
+
+// 2. 声明 Repository
+@Repository
+public class UserRepository extends JdbcRepository<User, Long> {
+    @Inject
+    public UserRepository(DataSourceProvider provider) { super(provider); }
+}
+
+// 3. 使用事务 (支持读写分离)
+@Service
+public class UserService {
+    @Inject UserRepository userRepo;
+
+    @Transactional(readOnly = false) // 自动路由到主库，并在异常时回滚
+    public void createUser(User user) {
+        userRepo.save(user);
     }
     
-    @Override
-    public void extensionStop(ExtensionStopInput input, ExtensionStopOutput output) {
-        // 扩展停止逻辑
-        System.out.println("My Protocol Extension stopped!");
+    @DistributedTransactional // 开启分布式全局事务
+    public void createGlobalUser(User user) {
+        // ...
     }
-    
-    @Override
-    public String getProtocolName() {
-        return "MyProtocol";
-    }
-    
-    @Override
-    public String getProtocolVersion() {
-        return "1.0.0";
-    }
-    
-    @Override
-    public int getDefaultPort() {
-        return 9999;
-    }
-    
-    // 实现其他协议方法...
 }
 ```
 
-### 3. 创建扩展配置
+### 2. 自定义协议扩展
 
-```xml
-<!-- extension.xml -->
-<extension>
-    <id>my-protocol-extension</id>
-    <name>My Protocol Extension</name>
-    <version>1.0.0</version>
-    <author>Developer</author>
-    <priority>100</priority>
-    <start-priority>1000</start-priority>
-</extension>
-```
+实现一个自定义协议只需三步：
 
-### 4. 打包和部署
+1.  **定义协议**: 实现 `ProtocolExtension` 接口。
+2.  **编写处理器**: 使用注解标记业务逻辑。
+3.  **注册扩展**: 通过 SPI 或 IoC 容器注册。
 
-```bash
-# 构建扩展
-mvn clean package
+## 📊 监控和观测
 
-# 复制到扩展目录
-cp target/my-protocol-extension-1.0.0.jar /path/to/network-service/extensions/my-protocol-extension/
+框架内置了全面的观测指标：
 
-# 重启服务或热重载
-```
+*   **JVM 指标**: 内存、GC、线程状态。
+*   **网络指标**: 连接数、吞吐量、包大小分布。
+*   **Disruptor 指标**: 队列深度、消费延迟、生产速率。
 
-## 📊 扩展API参考
+可以通过 `DiagnosticService` 或暴露的 HTTP 端点获取。
 
-### 核心接口
+## 💡 项目现状与设计验证
 
-- **ExtensionMain** - 扩展主接口，定义启动和停止方法
-- **ProtocolExtension** - 协议扩展接口，定义协议处理逻辑
-- **MessageHandler** - 消息处理器接口，定义消息处理逻辑
+### 核心功能实现状态
 
-### 参数类
+| 设计目标 | 实现状态 | 具体实现分析 |
+| :--- | :--- | :--- |
+| **基于 Netty** | ✅ 已实现 | 核心通信层 (`core/network/netty`) 封装了 Netty，提供了健壮的 NIO 通信基座。 |
+| **高性能 (High Perf)** | ✅ 超预期 | 引入 **LMAX Disruptor** (`core/queue/DisruptorQueue`) 作为核心消息总线，实现了 IO 线程与业务线程的无锁解耦。 |
+| **持久化与事务** | ✅ 新增 | 实现了多方言 JDBC 封装、**读写分离** (`RoutingDataSource`) 和 **分布式事务** (`GlobalTransactionManager`)。 |
+| **模块化/热插拔** | ✅ 已实现 | 工程结构清晰，实现了轻量级 IoC 容器和模块化加载机制。 |
+| **多协议支持** | ✅ 已实现 | 内置 HTTP, TCP, WebSocket, MQTT, UDP 及 Custom 协议支持。 |
 
-- **ExtensionStartInput/Output** - 扩展启动参数
-- **ExtensionStopInput/Output** - 扩展停止参数
-- **ServerInformation** - 服务器信息
-
-### 注解
-
-- **@NotNull** - 标记非空参数
-- **@Nullable** - 标记可空参数
-
-## 🛠️ 配置说明
-
-### 服务器配置 (network-service.xml)
-
-```xml
-<network-service>
-    <server>
-        <name>Network Service</name>
-        <version>1.0.0</version>
-        <id>network-service-001</id>
-    </server>
-    
-    <listeners>
-        <listener>
-            <type>mqtt</type>
-            <port>1883</port>
-            <bind-address>0.0.0.0</bind-address>
-            <enabled>true</enabled>
-        </listener>
-    </listeners>
-    
-    <extensions>
-        <auto-load>true</auto-load>
-        <hot-reload>true</hot-reload>
-        <scan-interval>5000</scan-interval>
-    </extensions>
-</network-service>
-```
-
-### 扩展配置 (extension.xml)
-
-```xml
-<extension>
-    <id>extension-id</id>
-    <name>Extension Name</name>
-    <version>1.0.0</version>
-    <author>Developer</author>
-    <priority>100</priority>
-    <start-priority>1000</start-priority>
-</extension>
-```
-
-## 🔍 监控和调试
-
-### 日志配置
-
-```xml
-<logging>
-    <level>INFO</level>
-    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-    <file>logs/network-service.log</file>
-    <max-file-size>10MB</max-file-size>
-    <max-history>30</max-history>
-</logging>
-```
-
-### 性能监控
-
-```xml
-<performance>
-    <worker-threads>0</worker-threads>
-    <boss-threads>1</boss-threads>
-    <max-connections>10000</max-connections>
-    <connection-timeout>30000</connection-timeout>
-</performance>
-```
-
-## 🎯 使用场景
-
-- **IoT设备连接** - 支持多种协议的物联网设备接入
-- **微服务通信** - 服务间异步消息传递
-- **实时数据流** - 传感器数据收集和分发
-- **协议网关** - 不同协议之间的转换和路由
-- **自定义协议** - 快速实现和部署自定义网络协议
-
-## 🤝 贡献指南
-
-1. Fork 项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
-
+---
+*Built with ❤️ for high-performance network applications.*

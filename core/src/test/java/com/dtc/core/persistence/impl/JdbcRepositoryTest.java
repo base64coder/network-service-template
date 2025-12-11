@@ -9,6 +9,7 @@ import org.mockito.MockitoAnnotations;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -34,6 +35,9 @@ public class JdbcRepositoryTest {
     private PreparedStatement mockStatement;
 
     @Mock
+    private DatabaseMetaData mockMetaData;
+
+    @Mock
     private ResultSet mockResultSet;
 
     private TestJdbcRepository repository;
@@ -45,6 +49,12 @@ public class JdbcRepositoryTest {
         
         when(mockDataSourceProvider.getDataSource()).thenReturn(mockDataSource);
         when(mockDataSource.getConnection()).thenReturn(mockConnection);
+        when(mockDataSourceProvider.getConnection()).thenReturn(mockConnection);
+        
+        // Mock DatabaseMetaData
+        when(mockConnection.getMetaData()).thenReturn(mockMetaData);
+        when(mockMetaData.getURL()).thenReturn("jdbc:mysql://localhost:3306/test");
+        
         when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
         when(mockStatement.executeQuery()).thenReturn(mockResultSet);
         

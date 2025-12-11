@@ -1,33 +1,25 @@
 package com.dtc.framework.beans.annotation;
 
+import com.dtc.framework.beans.context.ConditionContext;
 import com.dtc.framework.beans.factory.BeanFactory;
+import java.lang.reflect.AnnotatedElement;
 
 public class OnMissingBeanCondition implements Condition {
-    private final Class<?>[] types;
-    private final String[] names;
-    private BeanFactory beanFactory;
-    
-    public OnMissingBeanCondition() {
-        this.types = new Class<?>[0];
-        this.names = new String[0];
-    }
-    
-    public OnMissingBeanCondition(Class<?>[] types, String[] names) {
-        this.types = types;
-        this.names = names;
-    }
-    
-    public void setBeanFactory(BeanFactory beanFactory) {
-        this.beanFactory = beanFactory;
-    }
     
     @Override
-    public boolean matches() {
-        if (beanFactory == null) {
+    public boolean matches(ConditionContext context, AnnotatedElement metadata) {
+        if (context == null || context.getBeanFactory() == null) {
+            return true;
+        }
+        BeanFactory beanFactory = context.getBeanFactory();
+        
+        if (!metadata.isAnnotationPresent(ConditionalOnMissingBean.class)) {
             return true;
         }
         
-        for (Class<?> type : types) {
+        ConditionalOnMissingBean annotation = metadata.getAnnotation(ConditionalOnMissingBean.class);
+        
+        for (Class<?> type : annotation.value()) {
             try {
                 if (beanFactory.getBean(type) != null) {
                     return false;
@@ -37,7 +29,7 @@ public class OnMissingBeanCondition implements Condition {
             }
         }
         
-        for (String name : names) {
+        for (String name : annotation.name()) {
             if (beanFactory.containsBean(name)) {
                 return false;
             }

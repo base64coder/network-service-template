@@ -15,13 +15,12 @@ public class DtcIocConfigurationTest {
     @Test
     public void testConfigurationAndBean() {
         ApplicationContext context = new AnnotationConfigApplicationContext("com.dtc.core.framework.ioc.test");
-        DataSource dataSource = context.getBean(DataSource.class);
+        MockDataSource dataSource = context.getBean(MockDataSource.class);
         assertNotNull(dataSource);
         assertEquals("jdbc:mysql://localhost:3306/test", dataSource.getUrl());
         
-        JdbcTemplate jdbcTemplate = context.getBean(JdbcTemplate.class);
+        MockJdbcTemplate jdbcTemplate = context.getBean(MockJdbcTemplate.class);
         assertNotNull(jdbcTemplate);
         assertSame(dataSource, jdbcTemplate.dataSource);
     }
 }
-

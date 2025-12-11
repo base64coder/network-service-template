@@ -1,12 +1,20 @@
 package com.dtc.framework.aop.framework;
 
+import com.dtc.framework.aop.Advisor;
+import com.dtc.framework.aop.PointcutAdvisor;
+import com.dtc.framework.aop.support.SingletonTargetSource;
+import com.dtc.framework.beans.annotation.Inject;
 import com.dtc.framework.beans.exception.BeansException;
+import com.dtc.framework.beans.factory.BeanFactory;
 import com.dtc.framework.beans.factory.BeanPostProcessor;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.implementation.MethodDelegation;
-import net.bytebuddy.matcher.ElementMatchers;
-
+import com.dtc.framework.beans.factory.config.BeanDefinition;
+import com.dtc.framework.beans.factory.support.DefaultListableBeanFactory;
+import com.dtc.framework.aop.MethodMatcher;
+import com.dtc.framework.aop.Pointcut;
 import java.lang.reflect.Method;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * AOP代理处理器
@@ -14,71 +22,96 @@ import java.lang.reflect.Method;
  */
 public class AopProxyPostProcessor implements BeanPostProcessor {
     
+    @Inject
+    private BeanFactory beanFactory;
+    
+    private final DefaultAopProxyFactory proxyFactory = new DefaultAopProxyFactory();
+    
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        // 简单实现：如果Bean有需要代理的方法，创建代理
-        // 实际应用中，这里应该检查是否有@Transactional等注解
-        Class<?> beanClass = bean.getClass();
-        
-        // 检查是否有需要代理的方法（这里简化处理，实际应该检查注解）
-        boolean needsProxy = false;
-        for (Method method : beanClass.getDeclaredMethods()) {
-            // 这里可以检查@Transactional等注解
-            if (method.getName().startsWith("save") || method.getName().startsWith("delete")) {
-                needsProxy = true;
-                break;
-            }
+        // Avoid proxying infrastructure beans
+        if (bean instanceof Advisor || bean instanceof AdvisedSupport || bean instanceof AopProxyFactory) {
+            return bean;
         }
         
-        if (!needsProxy) {
+        // Find eligible advisors
+        List<Advisor> advisors = findEligibleAdvisors(bean.getClass());
+        if (advisors.isEmpty()) {
             return bean;
+        }
+        
+        // Create proxy
+        AdvisedSupport advised = new AdvisedSupport();
+        advised.setTargetSource(new SingletonTargetSource(bean));
+        for (Advisor advisor : advisors) {
+            advised.addAdvisor(advisor);
         }
         
         try {
-            // 使用ByteBuddy创建代理
-            return new ByteBuddy()
-                    .subclass(beanClass)
-                    .method(ElementMatchers.any())
-                    .intercept(MethodDelegation.to(new AopInterceptor(bean)))
-                    .make()
-                    .load(beanClass.getClassLoader())
-                    .getLoaded()
-                    .getDeclaredConstructor()
-                    .newInstance();
+            return proxyFactory.createAopProxy(advised).getProxy();
         } catch (Exception e) {
-            // 如果代理创建失败，返回原Bean
-            return bean;
+            throw new BeansException("Failed to create AOP proxy for bean " + beanName, e);
         }
     }
     
-    public static class AopInterceptor {
-        private final Object target;
+    private List<Advisor> findEligibleAdvisors(Class<?> beanClass) {
+        List<Advisor> eligibleAdvisors = new ArrayList<>();
         
-        public AopInterceptor(Object target) {
-            this.target = target;
-        }
-        
-        @net.bytebuddy.implementation.bind.annotation.RuntimeType
-        public Object intercept(@net.bytebuddy.implementation.bind.annotation.AllArguments Object[] args,
-                                @net.bytebuddy.implementation.bind.annotation.Origin Method method,
-                                @net.bytebuddy.implementation.bind.annotation.SuperCall java.util.concurrent.Callable<?> callable) throws Exception {
-            // 前置处理
-            System.out.println("AOP: Before " + method.getName());
+        if (beanFactory instanceof DefaultListableBeanFactory) {
+            DefaultListableBeanFactory lbf = (DefaultListableBeanFactory) beanFactory;
+            String[] beanNames = lbf.getBeanDefinitionNames();
             
-            try {
-                // 调用原方法
-                Object result = method.invoke(target, args);
-                
-                // 后置处理
-                System.out.println("AOP: After " + method.getName());
-                
-                return result;
-            } catch (Exception e) {
-                // 异常处理
-                System.out.println("AOP: Exception in " + method.getName() + ": " + e.getMessage());
-                throw e;
+            for (String name : beanNames) {
+                try {
+                    BeanDefinition bd = lbf.getBeanDefinition(name);
+                    if (bd == null) continue;
+                    
+                    Class<?> type = bd.getBeanClass();
+                    if (type != null && Advisor.class.isAssignableFrom(type)) {
+                        Advisor advisor = (Advisor) lbf.getBean(name);
+                        if (canApply(advisor, beanClass)) {
+                            eligibleAdvisors.add(advisor);
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
             }
         }
+        
+        return eligibleAdvisors;
+    }
+    
+    private boolean canApply(Advisor advisor, Class<?> targetClass) {
+        if (advisor instanceof PointcutAdvisor) {
+            PointcutAdvisor pa = (PointcutAdvisor) advisor;
+            Pointcut pc = pa.getPointcut();
+            if (!pc.getClassFilter().matches(targetClass)) {
+                return false;
+            }
+            
+            // Check if any method matches
+            MethodMatcher mm = pc.getMethodMatcher();
+            for (Method method : targetClass.getMethods()) { // Check all public methods (including inherited)
+                if (mm.matches(method, targetClass)) {
+                    return true;
+                }
+            }
+            for (Method method : targetClass.getDeclaredMethods()) { // Check declared (protected/private)
+                if (mm.matches(method, targetClass)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        return true;
+    }
+    
+    // Placeholder for non-interface method to avoid compilation error if needed
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        return bean;
     }
 }
+
 

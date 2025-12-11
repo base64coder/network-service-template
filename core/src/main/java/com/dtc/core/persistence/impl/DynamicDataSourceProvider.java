@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory;
 import com.dtc.api.annotations.NotNull;
 import com.dtc.core.persistence.DataSourceConfig;
 import com.dtc.core.persistence.DataSourceProvider;
+import com.dtc.core.persistence.datasource.RoutingDataSource;
+import com.dtc.core.persistence.transaction.ConnectionHolder;
+import com.dtc.core.persistence.transaction.ConnectionProxy;
 
 /**
  * 动态数据源提供者
@@ -30,36 +33,39 @@ public class DynamicDataSourceProvider implements DataSourceProvider, AutoClosea
     
     @Inject
     public DynamicDataSourceProvider() {
-        // 延迟初始化：先创建一个占位符，等待 DataSourceInitializer 初始化
-        // 这样可以避免循环依赖，因为 DataSourceInitializer 需要 ServerConfiguration
-        // 而 ServerConfiguration 可能也需要 DataSourceProvider
         log.info("DynamicDataSourceProvider created, waiting for initialization...");
     }
     
     /**
      * 初始化数据源（由 DataSourceInitializer 调用）
-     * 
-     * @param config 数据源配置
      */
     public void initialize(@NotNull DataSourceConfig config) {
         log.info("Initializing DynamicDataSourceProvider with config: {}", config.getUrl());
-        DataSourceProvider provider = new HikariDataSourceProvider(config);
+        // 创建主数据源
+        HikariDataSourceProvider masterProvider = new HikariDataSourceProvider(config);
+        DataSource masterDS = masterProvider.getDataSource();
+        
+        // 创建路由数据源
+        RoutingDataSource routingDataSource = new RoutingDataSource();
+        routingDataSource.setMasterDataSource(masterDS);
+        // TODO: 从配置中加载从数据源并添加到 routingDataSource
+        
+        // 创建包装了 RoutingDataSource 的 Provider
+        DataSourceProvider provider = new RoutingDataSourceProvider(routingDataSource, masterProvider);
+        
         this.currentProvider.set(provider);
-        log.info("DynamicDataSourceProvider initialized successfully");
+        log.info("DynamicDataSourceProvider initialized successfully with RoutingDataSource");
     }
     
     /**
      * 切换数据源
-     * 
-     * @param newConfig 新的数据源配置
      */
     public synchronized void switchDataSource(@NotNull DataSourceConfig newConfig) {
         log.info("Switching DataSource to: {}", newConfig.getUrl());
         
         DataSourceProvider oldProvider = currentProvider.get();
-        DataSourceProvider newProvider = new HikariDataSourceProvider(newConfig);
-        
-        currentProvider.set(newProvider);
+        // 重新初始化（简化版，实际可能需要平滑切换）
+        initialize(newConfig);
         
         // 关闭旧数据源
         if (oldProvider instanceof AutoCloseable closeable) {
@@ -78,8 +84,7 @@ public class DynamicDataSourceProvider implements DataSourceProvider, AutoClosea
     public DataSource getDataSource() {
         DataSourceProvider provider = currentProvider.get();
         if (provider == null) {
-            throw new IllegalStateException("DataSourceProvider has not been initialized yet. " +
-                    "Please ensure DataSourceInitializer is properly configured.");
+            throw new IllegalStateException("DataSourceProvider has not been initialized yet.");
         }
         return provider.getDataSource();
     }
@@ -87,19 +92,27 @@ public class DynamicDataSourceProvider implements DataSourceProvider, AutoClosea
     @Override
     @NotNull
     public Connection getConnection() throws SQLException {
-        DataSourceProvider provider = currentProvider.get();
-        if (provider == null) {
-            throw new IllegalStateException("DataSourceProvider has not been initialized yet. " +
-                    "Please ensure DataSourceInitializer is properly configured.");
+        DataSource ds = getDataSource();
+        // 检查当前线程是否有事务连接
+        Connection txnConn = ConnectionHolder.getConnection(ds);
+        if (txnConn != null) {
+            return ConnectionProxy.wrap(txnConn);
         }
-        return provider.getConnection();
+        
+        // 否则返回新连接
+        return ds.getConnection();
     }
     
     @Override
     public void releaseConnection(Connection connection) {
-        DataSourceProvider provider = currentProvider.get();
-        if (provider != null) {
-            provider.releaseConnection(connection);
+        // 对于通过 getConnection() 获取的连接，如果是 Proxy，close() 会被忽略
+        // 如果是原生连接，需要关闭
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                log.error("Failed to close connection", e);
+            }
         }
     }
     
@@ -114,5 +127,41 @@ public class DynamicDataSourceProvider implements DataSourceProvider, AutoClosea
             }
         }
     }
+    
+    // 内部类：RoutingDataSourceProvider
+    private static class RoutingDataSourceProvider implements DataSourceProvider, AutoCloseable {
+        private final RoutingDataSource dataSource;
+        private final AutoCloseable underlyingCloseable;
+        
+        public RoutingDataSourceProvider(RoutingDataSource dataSource, AutoCloseable underlyingCloseable) {
+            this.dataSource = dataSource;
+            this.underlyingCloseable = underlyingCloseable;
+        }
+        
+        @Override
+        public DataSource getDataSource() {
+            return dataSource;
+        }
+        
+        @Override
+        public Connection getConnection() throws SQLException {
+            return dataSource.getConnection();
+        }
+        
+        @Override
+        public void releaseConnection(Connection connection) {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    // log
+                }
+            }
+        }
+        
+        @Override
+        public void close() throws Exception {
+            underlyingCloseable.close();
+        }
+    }
 }
-

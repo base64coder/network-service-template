@@ -5,7 +5,14 @@ import com.dtc.core.persistence.DataStore;
 import com.dtc.core.persistence.PersistenceManager;
 import com.dtc.core.persistence.impl.DataSourceInitializer;
 import com.dtc.core.persistence.impl.DynamicDataSourceProvider;
+import com.dtc.annotations.transaction.Transactional;
+import com.dtc.core.persistence.transaction.TransactionInterceptor;
+import com.dtc.annotations.transaction.DistributedTransactional;
+import com.dtc.core.persistence.transaction.distributed.GlobalTransactionManager;
+import com.dtc.core.persistence.transaction.distributed.DistributedTransactionInterceptor;
+import com.dtc.core.persistence.transaction.distributed.impl.DbBasedGlobalTransactionManager;
 import com.google.inject.AbstractModule;
+import com.google.inject.matcher.Matchers;
 
 /**
  * 持久化模块
@@ -29,5 +36,24 @@ public class PersistenceModule extends AbstractModule {
 
         // 绑定数据存储
         bind(DataStore.class).asEagerSingleton();
+        
+        // 绑定全局事务管理器
+        bind(GlobalTransactionManager.class).to(DbBasedGlobalTransactionManager.class).asEagerSingleton();
+
+        // 配置分布式事务拦截器
+        DistributedTransactionInterceptor distributedInterceptor = new DistributedTransactionInterceptor();
+        requestInjection(distributedInterceptor);
+        
+        bindInterceptor(Matchers.annotatedWith(DistributedTransactional.class), Matchers.any(), distributedInterceptor);
+        bindInterceptor(Matchers.any(), Matchers.annotatedWith(DistributedTransactional.class), distributedInterceptor);
+
+        // 配置本地事务拦截器
+        TransactionInterceptor transactionInterceptor = new TransactionInterceptor();
+        requestInjection(transactionInterceptor);
+        
+        // 类级别 @Transactional
+        bindInterceptor(Matchers.annotatedWith(Transactional.class), Matchers.any(), transactionInterceptor);
+        // 方法级别 @Transactional
+        bindInterceptor(Matchers.any(), Matchers.annotatedWith(Transactional.class), transactionInterceptor);
     }
 }

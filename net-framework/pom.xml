@@ -20,6 +20,7 @@
         <module>net-persistent</module>
         <module>net-web</module>
         <module>net-extensions</module>
+        <!-- <module>net-aot</module> -->
     </modules>
 
     <properties>

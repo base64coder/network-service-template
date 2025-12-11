@@ -1,7 +1,18 @@
 package com.dtc.framework.context;
 
+import com.dtc.framework.beans.context.ConditionContext;
+import com.dtc.framework.beans.factory.BeanFactory;
+import com.dtc.framework.beans.factory.ListableBeanFactory;
+import java.util.Map;
+import java.lang.reflect.AnnotatedElement;
+import com.dtc.framework.beans.module.Module;
+import com.dtc.framework.beans.module.support.DefaultBinder;
+import com.dtc.framework.beans.env.Environment;
+import com.dtc.framework.context.env.StandardEnvironment;
 import com.dtc.framework.beans.annotation.*;
+import java.util.HashSet;
 import com.dtc.framework.beans.factory.config.BeanDefinition;
+import com.dtc.framework.beans.factory.config.ConfigurationPropertiesBindingPostProcessor;
 import com.dtc.framework.context.event.ContextClosedEvent;
 import com.dtc.framework.context.event.ContextRefreshedEvent;
 import com.dtc.framework.context.event.SimpleEventMulticaster;
@@ -13,6 +24,8 @@ import com.dtc.framework.context.annotation.ClassScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Set;
 
@@ -23,21 +36,54 @@ import java.util.Set;
 public class AnnotationConfigApplicationContext implements ApplicationContext {
     private static final Logger log = LoggerFactory.getLogger(AnnotationConfigApplicationContext.class);
     private final DefaultListableBeanFactory beanFactory;
-    private final String[] basePackages;
+    private String[] basePackages;
+    private final Set<Module> modules = new HashSet<>();
+    private final StandardEnvironment environment;
     private final SimpleEventMulticaster eventMulticaster = new SimpleEventMulticaster();
 
-    public AnnotationConfigApplicationContext(String... basePackages) {
+    public AnnotationConfigApplicationContext() {
+        this.environment = new StandardEnvironment();
         this.beanFactory = new DefaultListableBeanFactory();
-        this.basePackages = basePackages;
+        this.beanFactory.addEmbeddedValueResolver(environment::resolvePlaceholders);
+        this.beanFactory.registerResolvableDependency(ApplicationContext.class, this);
+        this.basePackages = new String[0];
+    }
+
+    public AnnotationConfigApplicationContext(String... basePackages) {
+        this();
+        this.basePackages = basePackages; // Reassign
+        refresh(); // Refresh automatically
+    }
+
+    public AnnotationConfigApplicationContext(Module... modules) {
+        this();
+        // this.basePackages already set
+        for (Module m : modules) {
+            this.modules.add(m);
+        }
         refresh();
+    }
+    
+    public Environment getEnvironment() {
+        return environment;
+    }
+
+    public void registerModule(Module module) {
+        this.modules.add(module);
     }
 
     @Override
     public void refresh() {
         log.info("Refreshing DtcIoc ApplicationContext...");
         
+        // 0. Install Modules (Guice Compatibility)
+        installModules();
+
         // 1. 扫描包
         scan(basePackages);
+        
+        // 1.2 注册内部后置处理器
+        registerInternalPostProcessors();
         
         // 1.5 处理 @Configuration 类中的 @Bean 方法
         processConfigurationClasses();
@@ -57,6 +103,15 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         log.info("DtcIoc ApplicationContext refreshed successfully.");
     }
     
+    private void installModules() {
+        if (modules.isEmpty()) return;
+        
+        DefaultBinder binder = new DefaultBinder(beanFactory);
+        for (Module module : modules) {
+            binder.install(module);
+        }
+    }
+
     private void registerEventListeners() {
         String[] beanNames = beanFactory.getBeanDefinitionNames();
         for (String beanName : beanNames) {
@@ -100,6 +155,23 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     @Override
     public String getApplicationName() {
         return "DtcApplication";
+    }
+
+    private void registerInternalPostProcessors() {
+        // ConfigurationPropertiesBindingPostProcessor
+        BeanDefinition cpBd = new BeanDefinition();
+        cpBd.setBeanClass(ConfigurationPropertiesBindingPostProcessor.class);
+        beanFactory.registerBeanDefinition(ConfigurationPropertiesBindingPostProcessor.class.getName(), cpBd);
+        
+        // AopProxyPostProcessor
+        try {
+            Class<?> aopClass = Class.forName("com.dtc.framework.aop.framework.AopProxyPostProcessor");
+            BeanDefinition aopBd = new BeanDefinition();
+            aopBd.setBeanClass(aopClass);
+            beanFactory.registerBeanDefinition(aopClass.getName(), aopBd);
+        } catch (ClassNotFoundException e) {
+            // ignore
+        }
     }
 
     private void processConfigurationClasses() {
@@ -153,38 +225,7 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     }
     
     private boolean shouldRegisterMethod(Method method) {
-        // 检查 @Conditional
-        if (method.isAnnotationPresent(Conditional.class)) {
-            Conditional conditional = method.getAnnotation(Conditional.class);
-            try {
-                Condition condition = conditional.value().getDeclaredConstructor().newInstance();
-                return condition.matches();
-            } catch (Exception e) {
-                log.warn("Failed to instantiate condition for method {}", method.getName(), e);
-                return false;
-            }
-        }
-        
-        // 检查 @ConditionalOnClass
-        if (method.isAnnotationPresent(ConditionalOnClass.class)) {
-            ConditionalOnClass onClass = method.getAnnotation(ConditionalOnClass.class);
-            OnClassCondition condition = new OnClassCondition(onClass.value());
-            if (!condition.matches()) {
-                return false;
-            }
-        }
-        
-        // 检查 @ConditionalOnMissingBean
-        if (method.isAnnotationPresent(ConditionalOnMissingBean.class)) {
-            ConditionalOnMissingBean onMissing = method.getAnnotation(ConditionalOnMissingBean.class);
-            OnMissingBeanCondition condition = new OnMissingBeanCondition(onMissing.value(), onMissing.name());
-            condition.setBeanFactory(beanFactory);
-            if (!condition.matches()) {
-                return false;
-            }
-        }
-        
-        return true;
+        return checkConditions(method);
     }
 
     private void registerBeanPostProcessors() {
@@ -193,8 +234,17 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
             BeanDefinition bd = beanFactory.getBeanDefinition(beanName);
             if (bd.getBeanClass() != null && BeanPostProcessor.class.isAssignableFrom(bd.getBeanClass())) {
                 Object processor = beanFactory.getBean(beanName);
+                if (processor instanceof ConfigurationPropertiesBindingPostProcessor) {
+                    ((ConfigurationPropertiesBindingPostProcessor) processor).setEmbeddedValueResolver(environment::resolvePlaceholders);
+                }
                 beanFactory.addBeanPostProcessor((BeanPostProcessor) processor);
             }
+        }
+    }
+
+    public void register(Class<?>... componentClasses) {
+        for (Class<?> clazz : componentClasses) {
+            registerBean(clazz);
         }
     }
 
@@ -240,39 +290,57 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         beanFactory.registerBeanDefinition(beanName, bd);
     }
     
+    private class ConditionContextImpl implements ConditionContext {
+        @Override
+        public BeanFactory getBeanFactory() {
+            return beanFactory;
+        }
+
+        @Override
+        public Environment getEnvironment() {
+            return environment;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return getClass().getClassLoader();
+        }
+    }
+    
     private boolean shouldRegister(Class<?> clazz) {
-        // 检查 @Conditional
-        if (clazz.isAnnotationPresent(Conditional.class)) {
-            Conditional conditional = clazz.getAnnotation(Conditional.class);
-            try {
-                Condition condition = conditional.value().getDeclaredConstructor().newInstance();
-                return condition.matches();
-            } catch (Exception e) {
-                log.warn("Failed to instantiate condition for {}", clazz.getName(), e);
+        return checkConditions(clazz);
+    }
+    
+    private boolean checkConditions(AnnotatedElement element) {
+        ConditionContext context = new ConditionContextImpl();
+        
+        // 1. Direct @Conditional
+        if (element.isAnnotationPresent(Conditional.class)) {
+            if (!evaluateCondition(element.getAnnotation(Conditional.class), element, context)) {
                 return false;
             }
         }
         
-        // 检查 @ConditionalOnClass
-        if (clazz.isAnnotationPresent(ConditionalOnClass.class)) {
-            ConditionalOnClass onClass = clazz.getAnnotation(ConditionalOnClass.class);
-            OnClassCondition condition = new OnClassCondition(onClass.value());
-            if (!condition.matches()) {
-                return false;
+        // 2. Meta-annotations
+        for (Annotation ann : element.getAnnotations()) {
+            Conditional conditional = ann.annotationType().getAnnotation(Conditional.class);
+            if (conditional != null) {
+                if (!evaluateCondition(conditional, element, context)) {
+                    return false;
+                }
             }
         }
-        
-        // 检查 @ConditionalOnMissingBean
-        if (clazz.isAnnotationPresent(ConditionalOnMissingBean.class)) {
-            ConditionalOnMissingBean onMissing = clazz.getAnnotation(ConditionalOnMissingBean.class);
-            OnMissingBeanCondition condition = new OnMissingBeanCondition(onMissing.value(), onMissing.name());
-            condition.setBeanFactory(beanFactory);
-            if (!condition.matches()) {
-                return false;
-            }
-        }
-        
         return true;
+    }
+    
+    private boolean evaluateCondition(Conditional conditional, AnnotatedElement element, ConditionContext context) {
+        try {
+            Condition condition = conditional.value().getDeclaredConstructor().newInstance();
+            return condition.matches(context, element);
+        } catch (Exception e) {
+            log.warn("Failed to check condition on {}", element, e);
+            return false;
+        }
     }
 
     @Override
@@ -303,5 +371,20 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     @Override
     public boolean isPrototype(String name) throws BeansException {
         return beanFactory.isPrototype(name);
+    }
+
+    @Override
+    public <T> Map<String, T> getBeansOfType(Class<T> type) throws BeansException {
+        return beanFactory.getBeansOfType(type);
+    }
+
+    @Override
+    public String[] getBeanDefinitionNames() {
+        return beanFactory.getBeanDefinitionNames();
+    }
+
+    @Override
+    public int getBeanDefinitionCount() {
+        return beanFactory.getBeanDefinitionCount();
     }
 }

@@ -15,11 +15,11 @@
 
     <modules>
         <module>annotations</module>
-        <module>aop</module>
-        <module>aop-aspects</module>
+        <!-- <module>aop</module> -->
+        <!-- <module>aop-aspects</module> -->
         <module>ioc-core</module>
         <module>ioc-annotation-processor</module>
-        <module>distributed</module>
+        <!-- <module>distributed</module> moved to root net-cluster -->
     </modules>
 
     <properties>

@@ -1,28 +1,28 @@
 package com.dtc.framework.beans.annotation;
 
+import com.dtc.framework.beans.context.ConditionContext;
+import java.lang.reflect.AnnotatedElement;
+
 public class OnClassCondition implements Condition {
-    private final String[] classNames;
-    
-    public OnClassCondition(String[] classNames) {
-        this.classNames = classNames;
-    }
-    
-    public OnClassCondition() {
-        // 用于注解实例化
-        this.classNames = new String[0];
-    }
-    
-    public OnClassCondition(ConditionalOnClass annotation) {
-        this.classNames = annotation.value();
-    }
     
     @Override
-    public boolean matches() {
+    public boolean matches(ConditionContext context, AnnotatedElement metadata) {
+        if (!metadata.isAnnotationPresent(ConditionalOnClass.class)) {
+            return true;
+        }
+        
+        ConditionalOnClass annotation = metadata.getAnnotation(ConditionalOnClass.class);
+        String[] classNames = annotation.value();
+        
         if (classNames.length == 0) return true;
         
         for (String className : classNames) {
             try {
-                Class.forName(className);
+                if (context != null && context.getClassLoader() != null) {
+                    Class.forName(className, false, context.getClassLoader());
+                } else {
+                    Class.forName(className);
+                }
             } catch (ClassNotFoundException e) {
                 return false;
             }

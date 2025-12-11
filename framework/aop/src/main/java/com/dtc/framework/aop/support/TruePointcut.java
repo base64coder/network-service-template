@@ -8,7 +8,7 @@ import com.dtc.framework.aop.Pointcut;
 /**
      * å§ç»å¹éçåç¹
 @author Network Service Template
-/
+ */
 public class TruePointcut implements Pointcut {
 
     public static final TruePointcut INSTANCE = new TruePointcut();

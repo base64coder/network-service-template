@@ -8,7 +8,7 @@ import java.lang.reflect.Method;
 /**
      * 濮嬬粓鍖归厤鐨勬柟娉曞尮閰嶅櫒
 @author Network Service Template
-/
+ */
 public class TrueMethodMatcher implements MethodMatcher {
 
     public static final TrueMethodMatcher INSTANCE = new TrueMethodMatcher();

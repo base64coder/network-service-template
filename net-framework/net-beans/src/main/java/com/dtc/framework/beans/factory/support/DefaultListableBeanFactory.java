@@ -3,27 +3,36 @@ package com.dtc.framework.beans.factory.support;
 import com.dtc.framework.beans.annotation.Inject;
 import com.dtc.framework.beans.annotation.PostConstruct;
 import com.dtc.framework.beans.annotation.PreDestroy;
+import com.dtc.framework.beans.annotation.Value;
 import com.dtc.framework.beans.factory.BeanFactory;
 import com.dtc.framework.beans.factory.BeanPostProcessor;
-import com.dtc.framework.beans.factory.accessor.BeanAccessor;
-import com.dtc.framework.beans.factory.accessor.ByteBuddyAccessorFactory;
+import com.dtc.framework.beans.factory.ListableBeanFactory;
+import com.dtc.framework.beans.factory.bytecode.BeanInstantiator;
+import com.dtc.framework.beans.factory.bytecode.ByteBuddyAccessorGenerator;
+import com.dtc.framework.beans.factory.bytecode.FieldAccessor;
 import com.dtc.framework.beans.factory.config.BeanDefinition;
+import com.dtc.framework.beans.factory.config.StringValueResolver;
 import com.dtc.framework.beans.exception.BeanCreationException;
 import com.dtc.framework.beans.exception.BeansException;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 核心 Bean 工厂实现
  * 包含特性：12(循环依赖), 3(生命周期), 2(依赖注入)
  */
-public class DefaultListableBeanFactory implements BeanFactory {
+public class DefaultListableBeanFactory implements ListableBeanFactory {
     private static final Logger log = LoggerFactory.getLogger(DefaultListableBeanFactory.class);
 
     // Bean定义 Map
@@ -40,12 +49,25 @@ public class DefaultListableBeanFactory implements BeanFactory {
     
     // 扩展处理器
     private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
+    
+    // 可解析的依赖（如 ApplicationContext）
+    private final Map<Class<?>, Object> resolvableDependencies = new ConcurrentHashMap<>();
+
+    public void registerResolvableDependency(Class<?> dependencyType, Object autowiredValue) {
+        resolvableDependencies.put(dependencyType, autowiredValue);
+    }
 
     // 正在创建中的Bean集合
     private final Set<String> singletonsCurrentlyInCreation = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    // 注入元数据缓存
-    private final Map<Class<?>, InjectionMetadata> injectionMetadataCache = new ConcurrentHashMap<>();
+    // ByteBuddy 访问器生成器
+    private final ByteBuddyAccessorGenerator accessorGenerator = new ByteBuddyAccessorGenerator();
+    
+    // 注入元数据缓存 (Class -> List<InjectionPoint>)
+    private final Map<Class<?>, List<InjectionPoint>> injectionMetadataCache = new ConcurrentHashMap<>();
+    
+    // 值解析器
+    private final List<StringValueResolver> embeddedValueResolvers = new CopyOnWriteArrayList<>();
 
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) {
         beanDefinitionMap.put(beanName, beanDefinition);
@@ -240,6 +262,12 @@ public class DefaultListableBeanFactory implements BeanFactory {
              throw new BeanCreationException(bd.getBeanClassName(), "Bean class is null");
         }
         
+        // 尝试使用 ByteBuddy 高性能实例化
+        BeanInstantiator instantiator = accessorGenerator.getInstantiator(beanClass);
+        if (instantiator != null) {
+            return instantiator.newInstance();
+        }
+
         // 2. 构造器创建
         // 简单实现：优先查找 @Inject 构造器，否则用无参构造器
         Constructor<?>[] constructors = beanClass.getDeclaredConstructors();
@@ -257,31 +285,24 @@ public class DefaultListableBeanFactory implements BeanFactory {
         
         // fallback to no-arg
         try {
-            // 使用 ByteBuddy 高性能 Accessor 创建实例
-            BeanAccessor accessor = ByteBuddyAccessorFactory.getBeanAccessor(beanClass);
-            return accessor.newInstance();
-        } catch (Exception e) {
-            // 如果 ByteBuddy 失败，尝试反射（虽然 Factory 内部已经有降级，这里双重保险）
-            try {
-                return beanClass.getDeclaredConstructor().newInstance();
-            } catch (Exception ex) {
-                 // 如果没有无参构造函数，且没有@Inject标注的构造函数，且只有一个构造函数，尝试自动注入
-                 if (constructors.length == 1) {
-                    Constructor<?> c = constructors[0];
-                    c.setAccessible(true);
-                    Class<?>[] paramTypes = c.getParameterTypes();
-                     if (paramTypes.length > 0) {
-                         Object[] args = new Object[paramTypes.length];
-                         for (int i = 0; i < paramTypes.length; i++) {
-                             args[i] = getBean(paramTypes[i]);
-                         }
-                         return c.newInstance(args);
-                     } else {
-                         return c.newInstance();
+            return beanClass.getDeclaredConstructor().newInstance();
+        } catch (NoSuchMethodException e) {
+            // 如果没有无参构造函数，且没有@Inject标注的构造函数，且只有一个构造函数，尝试自动注入
+             if (constructors.length == 1) {
+                Constructor<?> c = constructors[0];
+                c.setAccessible(true);
+                Class<?>[] paramTypes = c.getParameterTypes();
+                 if (paramTypes.length > 0) {
+                     Object[] args = new Object[paramTypes.length];
+                     for (int i = 0; i < paramTypes.length; i++) {
+                         args[i] = getBean(paramTypes[i]);
                      }
+                     return c.newInstance(args);
+                 } else {
+                     return c.newInstance();
                  }
-                 throw e;
-            }
+             }
+             throw e;
         }
     }
 
@@ -307,14 +328,124 @@ public class DefaultListableBeanFactory implements BeanFactory {
 
     private void populateBean(String beanName, BeanDefinition bd, Object instance) throws Exception {
         Class<?> beanClass = bd.getBeanClass();
-        // 使用 InjectionMetadata 缓存注入点，避免重复反射扫描
-        InjectionMetadata metadata = injectionMetadataCache.computeIfAbsent(beanClass, 
-            clazz -> InjectionMetadata.forClass(clazz));
+        if (beanClass == null) return;
+
+        // 获取或计算注入点（缓存优化）
+        List<InjectionPoint> injectionPoints = injectionMetadataCache.computeIfAbsent(beanClass, this::findInjectionPoints);
+
+        // 执行注入
+        for (InjectionPoint point : injectionPoints) {
+            Object value = resolveDependency(point);
+            if (value != null) {
+                point.accessor.set(instance, value);
+            }
+        }
+    }
+    
+    public void addEmbeddedValueResolver(StringValueResolver resolver) {
+        this.embeddedValueResolvers.add(resolver);
+    }
+
+    public String resolveEmbeddedValue(String value) {
+        String result = value;
+        for (StringValueResolver resolver : this.embeddedValueResolvers) {
+            result = resolver.resolveStringValue(result);
+        }
+        return result;
+    }
+    
+    private Object resolveDependency(InjectionPoint point) {
+        // 0. Check resolvable dependencies
+        for (Map.Entry<Class<?>, Object> entry : resolvableDependencies.entrySet()) {
+            if (point.type.isAssignableFrom(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
         
-        try {
-            metadata.inject(instance, beanName, this);
-        } catch (Throwable e) {
-            throw new BeanCreationException(beanName, "Injection of autowired dependencies failed", e);
+        // 0.1 Handle BeanFactory self-injection
+        if (BeanFactory.class.isAssignableFrom(point.type)) {
+            return this;
+        }
+
+        // 1. Handle Provider
+        if (Provider.class.isAssignableFrom(point.type)) {
+            Type genericType = point.genericType;
+            if (genericType instanceof java.lang.reflect.ParameterizedType) {
+                Type actualType = ((java.lang.reflect.ParameterizedType) genericType).getActualTypeArguments()[0];
+                if (actualType instanceof Class) {
+                    Class<?> dependencyType = (Class<?>) actualType;
+                    return (Provider<Object>) () -> getBean(dependencyType);
+                }
+            }
+            return null; 
+        }
+        
+        // 2. Handle @Value
+        for (Annotation ann : point.annotations) {
+            if (ann instanceof Value) {
+                String value = ((Value) ann).value();
+                value = resolveEmbeddedValue(value);
+                return convertIfNecessary(value, point.type);
+            }
+        }
+        
+        // 3. Handle @Named
+        for (Annotation ann : point.annotations) {
+            if (ann instanceof Named) {
+                String name = ((Named) ann).value();
+                return getBean(name, point.type);
+            }
+        }
+        
+        // 4. Default
+        return getBean(point.type);
+    }
+    
+    private Object convertIfNecessary(Object value, Class<?> targetType) {
+        if (targetType.isInstance(value)) return value;
+        if (value instanceof String) {
+            String strVal = (String) value;
+            if (targetType == int.class || targetType == Integer.class) return Integer.parseInt(strVal);
+            if (targetType == long.class || targetType == Long.class) return Long.parseLong(strVal);
+            if (targetType == boolean.class || targetType == Boolean.class) return Boolean.parseBoolean(strVal);
+            if (targetType == double.class || targetType == Double.class) return Double.parseDouble(strVal);
+        }
+        return value;
+    }
+
+    private List<InjectionPoint> findInjectionPoints(Class<?> clazz) {
+        List<InjectionPoint> points = new ArrayList<>();
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            for (Field field : current.getDeclaredFields()) {
+                boolean isInjectionPoint = false;
+                if (field.isAnnotationPresent(Inject.class)) {
+                    isInjectionPoint = true;
+                } else if (field.isAnnotationPresent(Value.class)) {
+                    isInjectionPoint = true;
+                }
+                
+                if (isInjectionPoint) {
+                    FieldAccessor accessor = accessorGenerator.getFieldAccessor(field);
+                    points.add(new InjectionPoint(accessor, field.getType(), field.getGenericType(), field.getAnnotations()));
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return points;
+    }
+
+    private static class InjectionPoint {
+        final FieldAccessor accessor;
+        final Class<?> type;
+        final Type genericType;
+        final Annotation[] annotations;
+
+        InjectionPoint(FieldAccessor accessor, Class<?> type, Type genericType, Annotation[] annotations) {
+            this.accessor = accessor;
+            this.type = type;
+            this.genericType = genericType;
+            this.annotations = annotations;
         }
     }
 
@@ -399,6 +530,38 @@ public class DefaultListableBeanFactory implements BeanFactory {
         return beanDefinitionMap.keySet().toArray(new String[0]);
     }
 
+    @Override
+    public int getBeanDefinitionCount() {
+        return beanDefinitionMap.size();
+    }
+
+    @Override
+    public <T> Map<String, T> getBeansOfType(Class<T> type) throws BeansException {
+        Map<String, T> beans = new HashMap<>();
+        for (String beanName : beanDefinitionMap.keySet()) {
+            try {
+                if (isTypeMatch(beanName, type)) {
+                    beans.put(beanName, getBean(beanName, type));
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        return beans;
+    }
+
+    private boolean isTypeMatch(String name, Class<?> typeToMatch) {
+        if (singletonObjects.containsKey(name)) {
+            Object bean = singletonObjects.get(name);
+            return typeToMatch.isInstance(bean);
+        }
+        BeanDefinition bd = beanDefinitionMap.get(name);
+        if (bd != null && bd.getBeanClass() != null) {
+            return typeToMatch.isAssignableFrom(bd.getBeanClass());
+        }
+        return false;
+    }
+
     public BeanDefinition getBeanDefinition(String beanName) {
         return beanDefinitionMap.get(beanName);
     }
@@ -412,9 +575,20 @@ public class DefaultListableBeanFactory implements BeanFactory {
         }
     }
 
+    public Object autowireBean(Object existingBean) {
+        BeanDefinition bd = new BeanDefinition();
+        bd.setBeanClass(existingBean.getClass());
+        String beanName = existingBean.getClass().getName();
+        try {
+            populateBean(beanName, bd, existingBean);
+            return initializeBean(beanName, existingBean, bd);
+        } catch (Exception e) {
+            throw new BeanCreationException(beanName, "Autowire failed", e);
+        }
+    }
+
     @FunctionalInterface
     public interface ObjectFactory<T> {
         T getObject();
     }
 }
-

@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
-import java.util.Properties;
 
 /**
  * 配置属性绑定处理器
@@ -16,14 +15,18 @@ import java.util.Properties;
 public class ConfigurationPropertiesBindingPostProcessor implements BeanPostProcessor {
     private static final Logger log = LoggerFactory.getLogger(ConfigurationPropertiesBindingPostProcessor.class);
     
-    private final Properties properties;
+    private StringValueResolver valueResolver;
     
-    public ConfigurationPropertiesBindingPostProcessor(Properties properties) {
-        this.properties = properties;
+    public void setEmbeddedValueResolver(StringValueResolver resolver) {
+        this.valueResolver = resolver;
     }
     
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        if (valueResolver == null) {
+            return bean;
+        }
+        
         Class<?> beanClass = bean.getClass();
         
         if (!beanClass.isAnnotationPresent(ConfigurationProperties.class)) {
@@ -46,16 +49,22 @@ public class ConfigurationPropertiesBindingPostProcessor implements BeanPostProc
         while (clazz != null && clazz != Object.class) {
             for (Field field : clazz.getDeclaredFields()) {
                 String propertyKey = prefix + field.getName();
-                String propertyValue = properties.getProperty(propertyKey);
-                
-                if (propertyValue != null) {
-                    try {
+                // Use resolver to check value: ${prefix.field}
+                try {
+                    String resolved = valueResolver.resolveStringValue("${" + propertyKey + "}");
+                    // If not resolved, it returns ${...} usually, or we can check null if resolver supports it.
+                    // AbstractEnvironment returns ${...} if not found and no default.
+                    // We need a way to know if it exists.
+                    // AbstractEnvironment returns original string if not resolved?
+                    // "resolvePlaceholders" usually leaves unresolved placeholders alone.
+                    
+                    if (resolved != null && !resolved.equals("${" + propertyKey + "}")) {
                         field.setAccessible(true);
-                        Object convertedValue = convertValue(propertyValue, field.getType());
+                        Object convertedValue = convertValue(resolved, field.getType());
                         field.set(bean, convertedValue);
-                    } catch (Exception e) {
-                        log.warn("Failed to bind property {} to field {}", propertyKey, field.getName(), e);
                     }
+                } catch (Exception e) {
+                    log.warn("Failed to bind property {} to field {}", propertyKey, field.getName(), e);
                 }
             }
             clazz = clazz.getSuperclass();

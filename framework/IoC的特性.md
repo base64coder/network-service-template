@@ -1,4 +1,4 @@
-现代高性能 IoC 容器所必须拥有的核心能力，适用于构建类似 Spring Framework + Guice + Micronaut + AOT 的新一代企业级框架。
+先集中精力攻克 P0现代高性能 IoC 容器所必须拥有的核心能力，适用于构建类似 Spring Framework + Guice + Micronaut + AOT 的新一代企业级框架。
 
 1. BeanDefinition：IoC 的核心元数据体系
 
